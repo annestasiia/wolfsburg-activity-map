@@ -45,7 +45,7 @@ export default function MapView({ onVenueClick }) {
   const tooltipRef   = useRef(null)
   const [mapReady, setMapReady] = useState(false)
 
-  const { districtBoundaries, selectedDistricts, showNotes, parks } = useAppStore()
+  const { districtBoundaries, selectedDistricts, showNotes, parks, water } = useAppStore()
   const { filteredVenues } = useFilters()
 
   // ── Initialise map (once) ──────────────────────────────────────────────────
@@ -152,6 +152,25 @@ export default function MapView({ onVenueClick }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ── Water bodies blue fill layer ──────────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !water) return
+    const map = mapRef.current
+    if (map.getSource('water')) {
+      map.getSource('water').setData(water)
+      return
+    }
+    map.addSource('water', { type: 'geojson', data: water })
+    map.addLayer({
+      id: 'water-fill', type: 'fill', source: 'water',
+      paint: { 'fill-color': '#5B9BD5', 'fill-opacity': 0.55 },
+    }, 'venue-circles')
+    map.addLayer({
+      id: 'water-outline', type: 'line', source: 'water',
+      paint: { 'line-color': '#2563a8', 'line-width': 1, 'line-opacity': 0.7 },
+    }, 'venue-circles')
+  }, [mapReady, water])
 
   // ── Parks green fill layer ─────────────────────────────────────────────────
   useEffect(() => {

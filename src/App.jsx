@@ -7,9 +7,10 @@ import VenuePopup from './components/VenuePopup'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
+import waterData from './data/water.json'
 
 export default function App() {
-  const { setVenues, setDistrictBoundaries, setParks, selectedDay, selectedTime, boundariesError } = useAppStore()
+  const { setVenues, setDistrictBoundaries, setParks, setWater, selectedDay, selectedTime, boundariesError } = useAppStore()
   const { filteredVenues, openCount } = useFilters()
 
   const [selectedVenue, setSelectedVenue] = useState(null)
@@ -19,7 +20,8 @@ export default function App() {
     setVenues(venuesData.filter(v => v.lat !== null && v.lng !== null))
     setDistrictBoundaries(districtBoundariesData)
     setParks(parksData)
-  }, [setVenues, setDistrictBoundaries, setParks])
+    setWater(waterData)
+  }, [setVenues, setDistrictBoundaries, setParks, setWater])
 
   const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
 
