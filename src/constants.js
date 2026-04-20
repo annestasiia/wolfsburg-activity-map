@@ -1,8 +1,6 @@
 export const DISTRICTS = [
-  { name: 'Stadtmitte',         color: '#185FA5', relationId: '288449'   },
   { name: 'Mitte-West',         color: '#534AB7', relationId: '11042427' },
   { name: 'Kästorf-Sandkamp',   color: '#1D9E75', relationId: '20064844' },
-  { name: 'Nordstadt',          color: '#BA7517', relationId: '11680489' },
   { name: 'Vorsfelde',          color: '#D85A30', relationId: '19800466' },
   { name: 'Neuhaus-Reislingen', color: '#3B6D11', relationId: '20064820' },
 ]
