@@ -45,7 +45,7 @@ export default function MapView({ onVenueClick }) {
   const tooltipRef   = useRef(null)
   const [mapReady, setMapReady] = useState(false)
 
-  const { districtBoundaries, selectedDistricts, showNotes, parks, water, forest } = useAppStore()
+  const { districtBoundaries, selectedDistricts, showNotes, parks, water, forest, showParks, showWater, showForest } = useAppStore()
   const { filteredVenues } = useFilters()
 
   // ── Initialise map (once) ──────────────────────────────────────────────────
@@ -153,62 +153,44 @@ export default function MapView({ onVenueClick }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── Forest / woodland deep-green fill layer ────────────────────────────────
+  // ── Natural feature layers (forest, water, parks) ─────────────────────────
   useEffect(() => {
-    if (!mapReady || !mapRef.current || !forest) return
+    if (!mapReady || !mapRef.current) return
     const map = mapRef.current
-    if (map.getSource('forest')) {
-      map.getSource('forest').setData(forest)
-      return
-    }
-    map.addSource('forest', { type: 'geojson', data: forest })
-    map.addLayer({
-      id: 'forest-fill', type: 'fill', source: 'forest',
-      paint: { 'fill-color': '#6B9E6E', 'fill-opacity': 0.55 },
-    }, 'venue-circles')
-    map.addLayer({
-      id: 'forest-outline', type: 'line', source: 'forest',
-      paint: { 'line-color': '#4a7a4d', 'line-width': 0.5, 'line-opacity': 0.5 },
-    }, 'venue-circles')
-  }, [mapReady, forest])
 
-  // ── Water bodies blue fill layer ──────────────────────────────────────────
-  useEffect(() => {
-    if (!mapReady || !mapRef.current || !water) return
-    const map = mapRef.current
-    if (map.getSource('water')) {
-      map.getSource('water').setData(water)
-      return
-    }
-    map.addSource('water', { type: 'geojson', data: water })
-    map.addLayer({
-      id: 'water-fill', type: 'fill', source: 'water',
-      paint: { 'fill-color': '#5B9BD5', 'fill-opacity': 0.55 },
-    }, 'venue-circles')
-    map.addLayer({
-      id: 'water-outline', type: 'line', source: 'water',
-      paint: { 'line-color': '#2563a8', 'line-width': 1, 'line-opacity': 0.7 },
-    }, 'venue-circles')
-  }, [mapReady, water])
+    const layers = [
+      {
+        id: 'forest', data: forest,
+        fill: { 'fill-color': '#6B9E6E', 'fill-opacity': 0.55 },
+        line: { 'line-color': '#4a7a4d', 'line-width': 0.5, 'line-opacity': 0.5 },
+        visible: showForest,
+      },
+      {
+        id: 'water', data: water,
+        fill: { 'fill-color': '#5B9BD5', 'fill-opacity': 0.55 },
+        line: { 'line-color': '#2563a8', 'line-width': 1, 'line-opacity': 0.7 },
+        visible: showWater,
+      },
+      {
+        id: 'parks', data: parks,
+        fill: { 'fill-color': '#4CAF50', 'fill-opacity': 0.25 },
+        line: { 'line-color': '#2e7d32', 'line-width': 1, 'line-opacity': 0.6 },
+        visible: showParks,
+      },
+    ]
 
-  // ── Parks green fill layer ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (!mapReady || !mapRef.current || !parks) return
-    const map = mapRef.current
-    if (map.getSource('parks')) {
-      map.getSource('parks').setData(parks)
-      return
+    for (const { id, data, fill, line, visible } of layers) {
+      if (!data) continue
+      const vis = visible ? 'visible' : 'none'
+      if (!map.getSource(id)) {
+        map.addSource(id, { type: 'geojson', data })
+        map.addLayer({ id: `${id}-fill`,    type: 'fill', source: id, paint: fill }, 'venue-circles')
+        map.addLayer({ id: `${id}-outline`, type: 'line', source: id, paint: line }, 'venue-circles')
+      }
+      if (map.getLayer(`${id}-fill`))    map.setLayoutProperty(`${id}-fill`,    'visibility', vis)
+      if (map.getLayer(`${id}-outline`)) map.setLayoutProperty(`${id}-outline`, 'visibility', vis)
     }
-    map.addSource('parks', { type: 'geojson', data: parks })
-    map.addLayer({
-      id: 'parks-fill', type: 'fill', source: 'parks',
-      paint: { 'fill-color': '#4CAF50', 'fill-opacity': 0.25 },
-    }, 'venue-circles')
-    map.addLayer({
-      id: 'parks-outline', type: 'line', source: 'parks',
-      paint: { 'line-color': '#2e7d32', 'line-width': 1, 'line-opacity': 0.6 },
-    }, 'venue-circles')
-  }, [mapReady, parks])
+  }, [mapReady, forest, water, parks, showForest, showWater, showParks])
 
   // ── Re-wire click handler when showNotes changes ───────────────────────────
   useEffect(() => {

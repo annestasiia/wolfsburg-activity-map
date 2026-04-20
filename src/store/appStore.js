@@ -13,6 +13,9 @@ export const useAppStore = create((set) => ({
   parks: null,
   water: null,
   forest: null,
+  showParks: true,
+  showWater: true,
+  showForest: true,
 
   selectedDistricts: new Set(DISTRICTS.map(d => d.name)),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
@@ -31,6 +34,9 @@ export const useAppStore = create((set) => ({
   setParks: (parks) => set({ parks }),
   setWater: (water) => set({ water }),
   setForest: (forest) => set({ forest }),
+  toggleParks:  () => set(s => ({ showParks:  !s.showParks  })),
+  toggleWater:  () => set(s => ({ showWater:  !s.showWater  })),
+  toggleForest: () => set(s => ({ showForest: !s.showForest })),
 
   toggleDistrict: (name) => set((s) => {
     const next = new Set(s.selectedDistricts)

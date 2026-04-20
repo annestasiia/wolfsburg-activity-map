@@ -10,6 +10,8 @@ export default function Sidebar({ venueCount, openCount }) {
     showNotes, setShowNotes,
     boundariesError,
     geocodingSkipped,
+    showParks, showWater, showForest,
+    toggleParks, toggleWater, toggleForest,
   } = useAppStore()
 
   const allSelected = selectedDistricts.size === DISTRICTS.length
@@ -74,6 +76,34 @@ export default function Sidebar({ venueCount, openCount }) {
                   style={{ background: c.color }}
                 />
                 {c.name}
+              </span>
+            </label>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── Natural Features ── */}
+      <Section title="Natural Features">
+        <div className="space-y-1.5">
+          {[
+            { label: 'Parks',   checked: showParks,  toggle: toggleParks,  fill: '#4CAF50', border: '#2e7d32' },
+            { label: 'Water',   checked: showWater,  toggle: toggleWater,  fill: '#5B9BD5', border: '#2563a8' },
+            { label: 'Forest',  checked: showForest, toggle: toggleForest, fill: '#6B9E6E', border: '#4a7a4d' },
+          ].map(({ label, checked, toggle, fill, border }) => (
+            <label key={label} className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={toggle}
+                className="rounded border-gray-300 focus:ring-0 cursor-pointer"
+                style={{ accentColor: fill }}
+              />
+              <span className="text-xs text-gray-700 group-hover:text-gray-900 flex items-center gap-1.5">
+                <span
+                  className="inline-block w-3 h-3 rounded-sm flex-shrink-0"
+                  style={{ background: fill, border: `1.5px solid ${border}` }}
+                />
+                {label}
               </span>
             </label>
           ))}
