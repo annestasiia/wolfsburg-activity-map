@@ -17,7 +17,7 @@ export const useAppStore = create((set) => ({
   showWater: true,
   showForest: true,
 
-  selectedDistricts: new Set(DISTRICTS.map(d => d.name)),
+  selectedDistricts: new Set(),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
   selectedDay: getCurrentDayAbbr(),
   selectedTime: getCurrentTimeStr(),
