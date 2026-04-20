@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useAppStore } from './store/appStore'
 import { useDistricts } from './hooks/useDistricts'
 import { useFilters } from './hooks/useFilters'
@@ -6,12 +6,20 @@ import FileUpload from './components/FileUpload'
 import Sidebar from './components/Sidebar'
 import MapView from './components/MapView'
 import VenuePopup from './components/VenuePopup'
-import { DAYS } from './constants'
 
 export default function App() {
-  useDistricts() // fetch OSM boundaries on startup
+  const {
+    activeBoundaries,
+    selected,
+    loading:  districtLoading,
+    progress: districtProgress,
+    error:    districtError,
+    toggleDistrict,
+    selectAll,
+    clearAll,
+  } = useDistricts()
 
-  const { fileUploaded, selectedDay, selectedTime, boundariesError } = useAppStore()
+  const { fileUploaded, selectedDay, selectedTime } = useAppStore()
   const { filteredVenues, openCount } = useFilters()
 
   const [selectedVenue, setSelectedVenue] = useState(null)
@@ -19,17 +27,25 @@ export default function App() {
 
   const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
 
-  const dayLabel  = selectedDay
-  const timeLabel = selectedTime
-
   if (!fileUploaded) return <FileUpload />
+
+  const sidebarProps = {
+    venueCount:       filteredVenues.length,
+    openCount,
+    districtSelected: selected,
+    districtLoading,
+    districtProgress,
+    districtError,
+    onToggleDistrict: toggleDistrict,
+    onSelectAll:      selectAll,
+    onClearAll:       clearAll,
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
       {/* ── Top bar ── */}
       <header className="h-12 flex items-center justify-between px-4 border-b border-gray-100 bg-white z-10 flex-shrink-0">
         <div className="flex items-center gap-3">
-          {/* Mobile sidebar toggle */}
           <button
             className="md:hidden text-gray-500 hover:text-gray-700"
             onClick={() => setSidebarOpen(o => !o)}
@@ -41,16 +57,14 @@ export default function App() {
           </span>
         </div>
         <div className="text-xs text-gray-400 hidden sm:block">
-          {filteredVenues.length} venues visible
-          &nbsp;·&nbsp;
-          {openCount} open
-          &nbsp;·&nbsp;
-          {dayLabel} {timeLabel}
+          {filteredVenues.length} venues visible &nbsp;·&nbsp;
+          {openCount} open &nbsp;·&nbsp;
+          {selectedDay} {selectedTime}
         </div>
       </header>
 
       {/* ── Boundary warning ── */}
-      {boundariesError && (
+      {districtError && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-xs text-amber-700 z-10">
           ⚠ District boundaries unavailable (Overpass API unreachable). Venue data is unaffected.
         </div>
@@ -58,16 +72,14 @@ export default function App() {
 
       {/* ── Main body ── */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Desktop sidebar */}
         <div className="hidden md:flex">
-          <Sidebar venueCount={filteredVenues.length} openCount={openCount} />
+          <Sidebar {...sidebarProps} />
         </div>
 
-        {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div className="md:hidden absolute inset-0 z-40 flex">
             <div className="flex-shrink-0">
-              <Sidebar venueCount={filteredVenues.length} openCount={openCount} />
+              <Sidebar {...sidebarProps} />
             </div>
             <div
               className="flex-1 bg-black bg-opacity-30"
@@ -76,16 +88,10 @@ export default function App() {
           </div>
         )}
 
-        {/* Map */}
         <div className="flex-1 relative">
-          <MapView onVenueClick={handleVenueClick} />
-
-          {/* Venue detail popup (React portal over the map) */}
+          <MapView activeBoundaries={activeBoundaries} onVenueClick={handleVenueClick} />
           {selectedVenue && (
-            <VenuePopup
-              venue={selectedVenue}
-              onClose={() => setSelectedVenue(null)}
-            />
+            <VenuePopup venue={selectedVenue} onClose={() => setSelectedVenue(null)} />
           )}
         </div>
       </div>

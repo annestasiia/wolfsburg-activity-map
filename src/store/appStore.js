@@ -7,10 +7,6 @@ export const useAppStore = create((set) => ({
   geocodingProgress: { current: 0, total: 0 },
   geocodingSkipped: 0,
 
-  districtBoundaries: {},
-  boundariesLoading: false,
-  boundariesError: null,
-
   selectedDistricts: new Set(DISTRICTS.map(d => d.name)),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
   selectedDay: getCurrentDayAbbr(),
@@ -21,10 +17,6 @@ export const useAppStore = create((set) => ({
   setGeocodingProgress: (progress) => set({ geocodingProgress: progress }),
   setGeocodingSkipped: (n) => set({ geocodingSkipped: n }),
   setFileUploaded: (val) => set({ fileUploaded: val }),
-
-  setDistrictBoundaries: (boundaries) => set({ districtBoundaries: boundaries }),
-  setBoundariesLoading: (val) => set({ boundariesLoading: val }),
-  setBoundariesError: (msg) => set({ boundariesError: msg }),
 
   toggleDistrict: (name) => set((s) => {
     const next = new Set(s.selectedDistricts)
