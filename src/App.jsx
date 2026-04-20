@@ -6,6 +6,10 @@ import FileUpload from './components/FileUpload'
 import Sidebar from './components/Sidebar'
 import MapView from './components/MapView'
 import VenuePopup from './components/VenuePopup'
+import { clearBoundaryCache } from './utils/fetchDistrict'
+
+// Expose cache-clearing helper in the browser console for debugging
+if (typeof window !== 'undefined') window.__clearBoundaryCache = clearBoundaryCache
 
 export default function App() {
   const {

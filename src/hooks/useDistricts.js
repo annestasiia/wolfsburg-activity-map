@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { DISTRICT_CONFIG } from '../utils/districtBoundaries'
 import { fetchAllDistrictBoundaries } from '../utils/fetchDistrict'
 import { useAppStore } from '../store/appStore'
@@ -37,9 +37,12 @@ export function useDistricts() {
     return () => { cancelled = true }
   }, [])
 
-  // Only the boundaries for currently selected districts
-  const activeBoundaries = Object.fromEntries(
-    Object.entries(boundaries).filter(([name]) => selectedDistricts.has(name))
+  // Stable reference — only recomputes when boundaries or selection actually changes
+  const activeBoundaries = useMemo(
+    () => Object.fromEntries(
+      Object.entries(boundaries).filter(([name]) => selectedDistricts.has(name))
+    ),
+    [boundaries, selectedDistricts]
   )
 
   return {
