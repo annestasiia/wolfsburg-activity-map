@@ -1,0 +1,27 @@
+{
+  "_note": "Map style configuration reference. The app uses OpenFreeMap's positron style (free, no API key). See MapView.jsx MAP_STYLE constant to change.",
+  "_styleUrl": "https://tiles.openfreemap.org/styles/positron",
+  "_palette": {
+    "background_land":     "#FFFFFF",
+    "building_fill":       "#E8E8E8",
+    "building_stroke":     "#CCCCCC",
+    "road_major":          "#D4D4D4",
+    "road_minor":          "#EBEBEB",
+    "water":               "#DDEEFF",
+    "labels":              "#888888"
+  },
+  "_districtColors": {
+    "Stadtmitte":         "#185FA5",
+    "Mitte-West":         "#534AB7",
+    "Kästorf-Sandkamp":   "#1D9E75",
+    "Nordstadt":          "#BA7517",
+    "Vorsfelde":          "#D85A30",
+    "Neuhaus-Reislingen": "#3B6D11"
+  },
+  "_categoryColors": {
+    "Schools":    "#185FA5",
+    "Culture":    "#534AB7",
+    "Leisure":    "#1D9E75",
+    "Commercial": "#BA7517"
+  }
+}
