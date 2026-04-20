@@ -45,7 +45,7 @@ export default function MapView({ onVenueClick }) {
   const tooltipRef   = useRef(null)
   const [mapReady, setMapReady] = useState(false)
 
-  const { districtBoundaries, selectedDistricts, showNotes, parks, water } = useAppStore()
+  const { districtBoundaries, selectedDistricts, showNotes, parks, water, forest } = useAppStore()
   const { filteredVenues } = useFilters()
 
   // ── Initialise map (once) ──────────────────────────────────────────────────
@@ -152,6 +152,25 @@ export default function MapView({ onVenueClick }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ── Forest / woodland deep-green fill layer ────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !forest) return
+    const map = mapRef.current
+    if (map.getSource('forest')) {
+      map.getSource('forest').setData(forest)
+      return
+    }
+    map.addSource('forest', { type: 'geojson', data: forest })
+    map.addLayer({
+      id: 'forest-fill', type: 'fill', source: 'forest',
+      paint: { 'fill-color': '#6B9E6E', 'fill-opacity': 0.55 },
+    }, 'venue-circles')
+    map.addLayer({
+      id: 'forest-outline', type: 'line', source: 'forest',
+      paint: { 'line-color': '#4a7a4d', 'line-width': 0.5, 'line-opacity': 0.5 },
+    }, 'venue-circles')
+  }, [mapReady, forest])
 
   // ── Water bodies blue fill layer ──────────────────────────────────────────
   useEffect(() => {

@@ -12,6 +12,7 @@ export const useAppStore = create((set) => ({
   boundariesError: null,
   parks: null,
   water: null,
+  forest: null,
 
   selectedDistricts: new Set(DISTRICTS.map(d => d.name)),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
@@ -29,6 +30,7 @@ export const useAppStore = create((set) => ({
   setBoundariesError: (msg) => set({ boundariesError: msg }),
   setParks: (parks) => set({ parks }),
   setWater: (water) => set({ water }),
+  setForest: (forest) => set({ forest }),
 
   toggleDistrict: (name) => set((s) => {
     const next = new Set(s.selectedDistricts)

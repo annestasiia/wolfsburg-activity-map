@@ -8,9 +8,10 @@ import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
 import waterData from './data/water.json'
+import forestData from './data/forest.json'
 
 export default function App() {
-  const { setVenues, setDistrictBoundaries, setParks, setWater, selectedDay, selectedTime, boundariesError } = useAppStore()
+  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, selectedDay, selectedTime, boundariesError } = useAppStore()
   const { filteredVenues, openCount } = useFilters()
 
   const [selectedVenue, setSelectedVenue] = useState(null)
@@ -21,7 +22,8 @@ export default function App() {
     setDistrictBoundaries(districtBoundariesData)
     setParks(parksData)
     setWater(waterData)
-  }, [setVenues, setDistrictBoundaries, setParks, setWater])
+    setForest(forestData)
+  }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest])
 
   const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
 
