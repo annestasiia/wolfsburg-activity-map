@@ -45,7 +45,7 @@ export default function MapView({ onVenueClick }) {
   const tooltipRef   = useRef(null)
   const [mapReady, setMapReady] = useState(false)
 
-  const { districtBoundaries, selectedDistricts, showNotes } = useAppStore()
+  const { districtBoundaries, selectedDistricts, showNotes, parks } = useAppStore()
   const { filteredVenues } = useFilters()
 
   // ── Initialise map (once) ──────────────────────────────────────────────────
@@ -152,6 +152,25 @@ export default function MapView({ onVenueClick }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ── Parks green fill layer ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !parks) return
+    const map = mapRef.current
+    if (map.getSource('parks')) {
+      map.getSource('parks').setData(parks)
+      return
+    }
+    map.addSource('parks', { type: 'geojson', data: parks })
+    map.addLayer({
+      id: 'parks-fill', type: 'fill', source: 'parks',
+      paint: { 'fill-color': '#4CAF50', 'fill-opacity': 0.25 },
+    }, 'venue-circles')
+    map.addLayer({
+      id: 'parks-outline', type: 'line', source: 'parks',
+      paint: { 'line-color': '#2e7d32', 'line-width': 1, 'line-opacity': 0.6 },
+    }, 'venue-circles')
+  }, [mapReady, parks])
 
   // ── Re-wire click handler when showNotes changes ───────────────────────────
   useEffect(() => {

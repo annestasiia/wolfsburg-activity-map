@@ -6,9 +6,10 @@ import MapView from './components/MapView'
 import VenuePopup from './components/VenuePopup'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
+import parksData from './data/parks.json'
 
 export default function App() {
-  const { setVenues, setDistrictBoundaries, selectedDay, selectedTime, boundariesError } = useAppStore()
+  const { setVenues, setDistrictBoundaries, setParks, selectedDay, selectedTime, boundariesError } = useAppStore()
   const { filteredVenues, openCount } = useFilters()
 
   const [selectedVenue, setSelectedVenue] = useState(null)
@@ -17,7 +18,8 @@ export default function App() {
   useEffect(() => {
     setVenues(venuesData.filter(v => v.lat !== null && v.lng !== null))
     setDistrictBoundaries(districtBoundariesData)
-  }, [setVenues, setDistrictBoundaries])
+    setParks(parksData)
+  }, [setVenues, setDistrictBoundaries, setParks])
 
   const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
 
