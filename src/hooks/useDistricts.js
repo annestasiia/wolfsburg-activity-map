@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DISTRICT_CONFIG } from '../utils/districtBoundaries'
-import { fetchAllDistrictBoundaries } from '../utils/fetchDistrict'
+import { fetchAllDistrictBoundaries, loadMissingDistricts } from '../utils/fetchDistrict'
 import { useAppStore } from '../store/appStore'
 
 export function useDistricts() {
@@ -18,12 +18,23 @@ export function useDistricts() {
     setLoading(true)
     setError(null)
 
-    fetchAllDistrictBoundaries(DISTRICT_CONFIG, (p) => {
-      if (!cancelled) setProgress(p)
-    })
-      .then((result) => {
+    Promise.all([
+      fetchAllDistrictBoundaries(DISTRICT_CONFIG, (p) => {
+        if (!cancelled) setProgress(p)
+      }),
+      loadMissingDistricts(DISTRICT_CONFIG).catch(() => []),
+    ])
+      .then(([primary, supplementary]) => {
         if (!cancelled) {
-          setBoundaries(result)
+          const merged = { ...primary }
+          for (const feature of supplementary) {
+            const name = feature.properties?.name
+            if (name && !merged[name]) {
+              merged[name] = feature
+              console.log(`[boundary] "${name}" filled from supplementary named query`)
+            }
+          }
+          setBoundaries(merged)
           setLoading(false)
         }
       })

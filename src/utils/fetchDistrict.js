@@ -158,6 +158,102 @@ export async function fetchAllDistrictBoundaries(districtConfig, onProgress) {
   return results
 }
 
+// ── Supplementary named-query fetch (out geom format) ───────────────────────
+// Uses bbox-filtered named queries instead of relation IDs — works even when
+// OSM relation IDs change or upstream data is restructured.
+
+const SUPPLEMENTARY_QUERIES = {
+  'Stadtmitte': `
+[out:json][timeout:30];
+(
+  relation["name"="Stadtmitte"]["place"~"suburb|neighbourhood|quarter"](52.35,10.60,52.55,10.95);
+  relation["name"="Stadtmitte"]["boundary"~"suburb|administrative"](52.35,10.60,52.55,10.95);
+);
+out geom;
+`,
+  'Mitte-West': `
+[out:json][timeout:30];
+(
+  relation["name"="Mitte-West"](52.35,10.60,52.55,10.95);
+  way["name"="Mitte-West"](52.35,10.60,52.55,10.95);
+);
+out geom;
+`,
+}
+
+function extractRingsFromGeom(element) {
+  const rings = []
+  if (element.type === 'relation') {
+    const members = element.members || []
+    let outer = members.filter(m => m.role === 'outer' && m.geometry)
+    if (!outer.length) outer = members.filter(m => m.geometry)
+    for (const member of outer) {
+      const ring = member.geometry.map(pt => [pt.lon, pt.lat])
+      if (ring.length && (ring[0][0] !== ring.at(-1)[0] || ring[0][1] !== ring.at(-1)[1])) {
+        ring.push(ring[0])
+      }
+      rings.push(ring)
+    }
+  } else if (element.type === 'way' && element.geometry) {
+    const ring = element.geometry.map(pt => [pt.lon, pt.lat])
+    if (ring.length && (ring[0][0] !== ring.at(-1)[0] || ring[0][1] !== ring.at(-1)[1])) {
+      ring.push(ring[0])
+    }
+    rings.push(ring)
+  }
+  return rings.length ? rings : null
+}
+
+export async function loadMissingDistricts(districtConfig) {
+  const results = []
+  for (const [name, query] of Object.entries(SUPPLEMENTARY_QUERIES)) {
+    const cacheKey = `geom_${name}`
+    const cached = getCached(cacheKey)
+    if (cached) {
+      console.log(`[boundary] "${name}" loaded from supplementary cache`)
+      results.push(cached)
+      continue
+    }
+    let fetched = false
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        const res = await fetch(endpoint, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body:    new URLSearchParams({ data: query }),
+          signal:  AbortSignal.timeout(20000),
+        })
+        if (!res.ok) continue
+        const data = await res.json()
+        const elements = data.elements || []
+        for (const el of elements) {
+          const rings = extractRingsFromGeom(el)
+          if (rings) {
+            const color = districtConfig[name]?.color ?? '#666666'
+            const feature = {
+              type: 'Feature',
+              properties: { name, color },
+              geometry: { type: 'MultiPolygon', coordinates: rings.map(r => [r]) },
+            }
+            setCache(cacheKey, feature)
+            results.push(feature)
+            fetched = true
+            console.log(`[boundary] "${name}" fetched via named geom query (${rings.length} ring(s))`)
+            break
+          }
+        }
+        if (fetched) break
+      } catch (err) {
+        console.warn(`[boundary] geom query failed for "${name}" on ${endpoint}:`, err.message)
+      }
+    }
+    if (!fetched) {
+      console.warn(`[boundary] loadMissingDistricts: no polygon found for "${name}"`)
+    }
+  }
+  return results
+}
+
 // ── Dev helper: clear the boundary cache ────────────────────────────────────
 
 export function clearBoundaryCache() {
