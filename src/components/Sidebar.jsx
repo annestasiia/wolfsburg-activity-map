@@ -1,85 +1,61 @@
+import React from 'react'
 import { useAppStore } from '../store/appStore'
-import { CATEGORIES } from '../constants'
-import { DISTRICT_CONFIG } from '../utils/districtBoundaries'
+import { DISTRICTS, CATEGORIES } from '../constants'
 import TimeFilter from './TimeFilter'
 
-export default function Sidebar({
-  venueCount,
-  openCount,
-  districtSelected,
-  districtLoading,
-  districtProgress,
-  districtError,
-  onToggleDistrict,
-  onSelectAll,
-  onClearAll,
-}) {
+export default function Sidebar({ venueCount, openCount }) {
   const {
+    selectedDistricts, toggleDistrict, selectAllDistricts, clearAllDistricts,
     selectedCategories, toggleCategory,
     showNotes, setShowNotes,
+    boundariesError,
     geocodingSkipped,
+    showParks, showWater, showForest,
+    toggleParks, toggleWater, toggleForest,
   } = useAppStore()
 
-  const allSelected = districtSelected?.size === Object.keys(DISTRICT_CONFIG).length
+  const allSelected = selectedDistricts.size === DISTRICTS.length
 
   return (
     <aside className="w-64 flex-shrink-0 h-full bg-white border-r border-gray-100 flex flex-col overflow-y-auto">
+      {/* App title (mobile only — desktop title is in TopBar) */}
       <div className="md:hidden px-4 py-3 border-b border-gray-100">
         <h1 className="text-sm font-semibold text-gray-800">Wolfsburg Activity Map</h1>
       </div>
 
-      {/* ── Districts ── */}
-      <Section title="Districts">
-        {districtLoading && (
-          <div className="mb-3">
-            <p className="text-xs text-gray-400 mb-1.5">
-              Loading boundaries… {districtProgress.current}/{districtProgress.total}
-              {districtProgress.name ? ` · ${districtProgress.name}` : ''}
-            </p>
-            <div className="w-full bg-gray-100 rounded-full h-1 overflow-hidden">
-              <div
-                className="h-1 rounded-full bg-blue-400 transition-all duration-300"
-                style={{
-                  width: districtProgress.total > 0
-                    ? `${(districtProgress.current / districtProgress.total) * 100}%`
-                    : '0%',
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {districtError && (
-          <p className="text-xs text-amber-500 mb-2">⚠ Boundaries unavailable</p>
-        )}
-
+      {/* ── District Borders ── */}
+      <Section title="District Borders">
         <div className="space-y-1.5">
-          {Object.entries(DISTRICT_CONFIG).map(([name, cfg]) => (
-            <label key={name} className="flex items-center gap-2 cursor-pointer group">
+          {DISTRICTS.map(d => (
+            <label key={d.name} className="flex items-center gap-2 cursor-pointer group">
               <input
                 type="checkbox"
-                checked={districtSelected?.has(name) ?? false}
-                onChange={() => onToggleDistrict(name)}
-                className="rounded border-gray-300 focus:ring-0 cursor-pointer"
+                checked={selectedDistricts.has(d.name)}
+                onChange={() => toggleDistrict(d.name)}
+                className="rounded border-gray-300 text-blue-500 focus:ring-0 cursor-pointer"
               />
               <span
                 className="text-xs text-gray-700 group-hover:text-gray-900"
-                style={{ borderLeft: `3px solid ${cfg.color}`, paddingLeft: 6 }}
+                style={{ borderLeft: `3px solid ${d.color}`, paddingLeft: 6 }}
               >
-                {name}
+                {d.name}
               </span>
             </label>
           ))}
         </div>
-
         <div className="flex gap-3 mt-2">
           <button
-            onClick={allSelected ? onClearAll : onSelectAll}
+            onClick={allSelected ? clearAllDistricts : selectAllDistricts}
             className="text-xs text-blue-500 hover:text-blue-700"
           >
             {allSelected ? 'Clear all' : 'Select all'}
           </button>
         </div>
+        {boundariesError && (
+          <p className="text-xs text-amber-500 mt-2">
+            ⚠ Boundary data unavailable — venues still shown
+          </p>
+        )}
       </Section>
 
       {/* ── Categories ── */}
@@ -95,8 +71,39 @@ export default function Sidebar({
                 style={{ accentColor: c.color }}
               />
               <span className="text-xs text-gray-700 group-hover:text-gray-900 flex items-center gap-1.5">
-                <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.color }} />
+                <span
+                  className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: c.color }}
+                />
                 {c.name}
+              </span>
+            </label>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── Natural Features ── */}
+      <Section title="Natural Features">
+        <div className="space-y-1.5">
+          {[
+            { label: 'Parks',   checked: showParks,  toggle: toggleParks,  fill: '#4CAF50', border: '#2e7d32' },
+            { label: 'Water',   checked: showWater,  toggle: toggleWater,  fill: '#5B9BD5', border: '#2563a8' },
+            { label: 'Forest',  checked: showForest, toggle: toggleForest, fill: '#6B9E6E', border: '#4a7a4d' },
+          ].map(({ label, checked, toggle, fill, border }) => (
+            <label key={label} className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={toggle}
+                className="rounded border-gray-300 focus:ring-0 cursor-pointer"
+                style={{ accentColor: fill }}
+              />
+              <span className="text-xs text-gray-700 group-hover:text-gray-900 flex items-center gap-1.5">
+                <span
+                  className="inline-block w-3 h-3 rounded-sm flex-shrink-0"
+                  style={{ background: fill, border: `1.5px solid ${border}` }}
+                />
+                {label}
               </span>
             </label>
           ))}
@@ -116,8 +123,10 @@ export default function Sidebar({
             className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0
               ${showNotes ? 'bg-blue-500' : 'bg-gray-200'}`}
           >
-            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform
-              ${showNotes ? 'translate-x-4' : 'translate-x-0'}`} />
+            <span
+              className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform
+                ${showNotes ? 'translate-x-4' : 'translate-x-0'}`}
+            />
           </div>
           <span className="text-xs text-gray-600">Show reviews &amp; notes</span>
         </label>
@@ -139,7 +148,9 @@ function Section({ title, children }) {
   return (
     <div className="px-4 py-4 border-b border-gray-100">
       {title && (
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{title}</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+          {title}
+        </p>
       )}
       {children}
     </div>

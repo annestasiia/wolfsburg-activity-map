@@ -1,55 +1,50 @@
-import { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useAppStore } from './store/appStore'
-import { useDistricts } from './hooks/useDistricts'
 import { useFilters } from './hooks/useFilters'
-import FileUpload from './components/FileUpload'
 import Sidebar from './components/Sidebar'
 import MapView from './components/MapView'
 import VenuePopup from './components/VenuePopup'
-import { clearBoundaryCache } from './utils/fetchDistrict'
-
-// Expose cache-clearing helper in the browser console for debugging
-if (typeof window !== 'undefined') window.__clearBoundaryCache = clearBoundaryCache
+import venuesData from './data/venues.json'
+import districtBoundariesData from './data/districtBoundaries.json'
+import parksData from './data/parks.json'
+import waterData from './data/water.json'
+import forestData from './data/forest.json'
+import { loadMissingDistricts } from './utils/osmBoundaries'
 
 export default function App() {
-  const {
-    activeBoundaries,
-    selected,
-    loading:  districtLoading,
-    progress: districtProgress,
-    error:    districtError,
-    toggleDistrict,
-    selectAll,
-    clearAll,
-  } = useDistricts()
-
-  const { fileUploaded, selectedDay, selectedTime } = useAppStore()
+  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, selectedDay, selectedTime, boundariesError } = useAppStore()
   const { filteredVenues, openCount } = useFilters()
 
   const [selectedVenue, setSelectedVenue] = useState(null)
   const [sidebarOpen,   setSidebarOpen]   = useState(false)
 
+  useEffect(() => {
+    setVenues(venuesData.filter(v => v.lat !== null && v.lng !== null))
+    setDistrictBoundaries(districtBoundariesData)
+    setParks(parksData)
+    setWater(waterData)
+    setForest(forestData)
+
+    // Dynamically fetch Stadtmitte and Mitte-West via named Overpass queries,
+    // then merge into the Zustand store (fills gaps not covered by the static JSON).
+    loadMissingDistricts().then(extra => {
+      if (Object.keys(extra).length) {
+        setDistrictBoundaries({ ...districtBoundariesData, ...extra })
+      }
+    })
+  }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest])
+
   const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
 
-  if (!fileUploaded) return <FileUpload />
-
-  const sidebarProps = {
-    venueCount:       filteredVenues.length,
-    openCount,
-    districtSelected: selected,
-    districtLoading,
-    districtProgress,
-    districtError,
-    onToggleDistrict: toggleDistrict,
-    onSelectAll:      selectAll,
-    onClearAll:       clearAll,
-  }
+  const dayLabel  = selectedDay
+  const timeLabel = selectedTime
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
       {/* ── Top bar ── */}
       <header className="h-12 flex items-center justify-between px-4 border-b border-gray-100 bg-white z-10 flex-shrink-0">
         <div className="flex items-center gap-3">
+          {/* Mobile sidebar toggle */}
           <button
             className="md:hidden text-gray-500 hover:text-gray-700"
             onClick={() => setSidebarOpen(o => !o)}
@@ -61,14 +56,16 @@ export default function App() {
           </span>
         </div>
         <div className="text-xs text-gray-400 hidden sm:block">
-          {filteredVenues.length} venues visible &nbsp;·&nbsp;
-          {openCount} open &nbsp;·&nbsp;
-          {selectedDay} {selectedTime}
+          {filteredVenues.length} venues visible
+          &nbsp;·&nbsp;
+          {openCount} open
+          &nbsp;·&nbsp;
+          {dayLabel} {timeLabel}
         </div>
       </header>
 
       {/* ── Boundary warning ── */}
-      {districtError && (
+      {boundariesError && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-1.5 text-xs text-amber-700 z-10">
           ⚠ District boundaries unavailable (Overpass API unreachable). Venue data is unaffected.
         </div>
@@ -76,14 +73,16 @@ export default function App() {
 
       {/* ── Main body ── */}
       <div className="flex flex-1 overflow-hidden relative">
+        {/* Desktop sidebar */}
         <div className="hidden md:flex">
-          <Sidebar {...sidebarProps} />
+          <Sidebar venueCount={filteredVenues.length} openCount={openCount} />
         </div>
 
+        {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div className="md:hidden absolute inset-0 z-40 flex">
             <div className="flex-shrink-0">
-              <Sidebar {...sidebarProps} />
+              <Sidebar venueCount={filteredVenues.length} openCount={openCount} />
             </div>
             <div
               className="flex-1 bg-black bg-opacity-30"
@@ -92,10 +91,16 @@ export default function App() {
           </div>
         )}
 
+        {/* Map */}
         <div className="flex-1 relative">
-          <MapView activeBoundaries={activeBoundaries} onVenueClick={handleVenueClick} />
+          <MapView onVenueClick={handleVenueClick} />
+
+          {/* Venue detail popup (React portal over the map) */}
           {selectedVenue && (
-            <VenuePopup venue={selectedVenue} onClose={() => setSelectedVenue(null)} />
+            <VenuePopup
+              venue={selectedVenue}
+              onClose={() => setSelectedVenue(null)}
+            />
           )}
         </div>
       </div>

@@ -1,10 +1,9 @@
 export const DISTRICTS = [
-  { name: 'Stadtmitte',         color: '#185FA5', relationId: '3879168' },
-  { name: 'Mitte-West',         color: '#534AB7', relationId: '3879170' },
-  { name: 'Kästorf-Sandkamp',   color: '#1D9E75', namedQuery: true },
-  { name: 'Nordstadt',          color: '#BA7517', relationId: '3879169' },
-  { name: 'Vorsfelde',          color: '#D85A30', relationId: '1263350' },
-  { name: 'Neuhaus-Reislingen', color: '#3B6D11', relationId: '3879173' },
+  { name: 'Stadtmitte',         color: '#185FA5', relationId: '288449'   },
+  { name: 'Mitte-West',         color: '#534AB7', relationId: '11042427' },
+  { name: 'Kästorf-Sandkamp',   color: '#1D9E75', relationId: '20064844' },
+  { name: 'Vorsfelde',          color: '#D85A30', relationId: '19800466' },
+  { name: 'Neuhaus-Reislingen', color: '#3B6D11', relationId: '20064820' },
 ]
 
 export const CATEGORIES = [

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useAppStore } from '../store/appStore'
 import { useFilters } from '../hooks/useFilters'
-import { DistrictLayer } from './DistrictLayer'
+import { DISTRICTS } from '../constants'
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron'
 const WOLFSBURG  = { center: [10.7865, 52.4227], zoom: 12 }
@@ -15,19 +15,19 @@ function buildGeoJSON(venues) {
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
       properties: {
-        id:            v.id,
-        name:          v.name,
-        type:          v.type,
-        category:      v.category,
-        district:      v.district,
-        address:       `${v.street}, ${v.city}`,
-        rating:        v.rating        || '',
-        openingHours:  v.openingHours  || '',
-        peakTimes:     v.peakTimes     || '',
-        notes:         v.notes         || '',
-        ageGroups:     v.ageGroups     || '',
-        street:        v.street        || '',
-        city:          v.city          || '',
+        id:           v.id,
+        name:         v.name,
+        type:         v.type,
+        category:     v.category,
+        district:     v.district,
+        address:      `${v.street}, ${v.city}`,
+        rating:       v.rating        || '',
+        openingHours: v.openingHours  || '',
+        peakTimes:    v.peakTimes     || '',
+        notes:        v.notes         || '',
+        ageGroups:    v.ageGroups     || '',
+        street:       v.street        || '',
+        city:         v.city          || '',
         activityLevel: v.activityLevel,
         openStatus:    v.openStatus,
         opacity:       v.opacity,
@@ -38,13 +38,14 @@ function buildGeoJSON(venues) {
   }
 }
 
-export default function MapView({ activeBoundaries = {}, onVenueClick }) {
+
+export default function MapView({ onVenueClick }) {
   const containerRef = useRef(null)
   const mapRef       = useRef(null)
   const tooltipRef   = useRef(null)
   const [mapReady, setMapReady] = useState(false)
 
-  const { showNotes } = useAppStore()
+  const { districtBoundaries, selectedDistricts, showNotes, parks, water, forest, showParks, showWater, showForest } = useAppStore()
   const { filteredVenues } = useFilters()
 
   // ── Initialise map (once) ──────────────────────────────────────────────────
@@ -62,13 +63,13 @@ export default function MapView({ activeBoundaries = {}, onVenueClick }) {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
 
     map.on('load', () => {
-      // ── Venue GeoJSON source ──
+      // Venue GeoJSON source (empty on load; filled below)
       map.addSource('venues', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
       })
 
-      // Active venues with activity data
+      // Circle layer for venues with activity
       map.addLayer({
         id:     'venue-circles',
         type:   'circle',
@@ -84,7 +85,7 @@ export default function MapView({ activeBoundaries = {}, onVenueClick }) {
         },
       })
 
-      // Faint grey dot for venues with no activity on selected day
+      // Faint dot for venues with no activity (radius === 0)
       map.addLayer({
         id:     'venue-dots-inactive',
         type:   'circle',
@@ -93,12 +94,12 @@ export default function MapView({ activeBoundaries = {}, onVenueClick }) {
         paint: {
           'circle-radius':       3,
           'circle-color':        '#CCCCCC',
-          'circle-opacity':      0.35,
+          'circle-opacity':      0.4,
           'circle-stroke-width': 0,
         },
       })
 
-      // ── Hover tooltip ──
+      // Hover tooltip
       map.on('mouseenter', 'venue-circles', (e) => {
         map.getCanvas().style.cursor = 'pointer'
         const feat  = e.features[0]
@@ -112,8 +113,8 @@ export default function MapView({ activeBoundaries = {}, onVenueClick }) {
         })
           .setLngLat(feat.geometry.coordinates)
           .setHTML(`
-            <div style="font-size:12px;line-height:1.5">
-              <strong>${props.name}</strong><br>
+            <div style="font-size:12px;line-height:1.4">
+              <strong style="display:block">${props.name}</strong>
               <span style="color:#888">${props.activityLevel} · ${props.category}</span>
             </div>`)
           .addTo(map)
@@ -123,6 +124,20 @@ export default function MapView({ activeBoundaries = {}, onVenueClick }) {
         map.getCanvas().style.cursor = ''
         tooltipRef.current?.remove()
         tooltipRef.current = null
+      })
+
+      // Click → open venue popup
+      map.on('click', 'venue-circles', (e) => {
+        if (!showNotes) return
+        const props = e.features[0].properties
+        onVenueClick?.(props)
+      })
+
+      // Inactive dots also clickable when notes on
+      map.on('click', 'venue-dots-inactive', (e) => {
+        if (!showNotes) return
+        const props = e.features[0].properties
+        onVenueClick?.(props)
       })
 
       setMapReady(true)
@@ -138,22 +153,59 @@ export default function MapView({ activeBoundaries = {}, onVenueClick }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── Click handler (re-bound when showNotes changes) ───────────────────────
+  // ── Natural feature layers (forest, water, parks) ─────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
 
-    const handler = (e) => {
+    const layers = [
+      {
+        id: 'forest', data: forest,
+        fill: { 'fill-color': '#6B9E6E', 'fill-opacity': 0.55 },
+        line: { 'line-color': '#4a7a4d', 'line-width': 0.5, 'line-opacity': 0.5 },
+        visible: showForest,
+      },
+      {
+        id: 'water', data: water,
+        fill: { 'fill-color': '#5B9BD5', 'fill-opacity': 0.55 },
+        line: { 'line-color': '#2563a8', 'line-width': 1, 'line-opacity': 0.7 },
+        visible: showWater,
+      },
+      {
+        id: 'parks', data: parks,
+        fill: { 'fill-color': '#4CAF50', 'fill-opacity': 0.25 },
+        line: { 'line-color': '#2e7d32', 'line-width': 1, 'line-opacity': 0.6 },
+        visible: showParks,
+      },
+    ]
+
+    for (const { id, data, fill, line, visible } of layers) {
+      if (!data) continue
+      const vis = visible ? 'visible' : 'none'
+      if (!map.getSource(id)) {
+        map.addSource(id, { type: 'geojson', data })
+        map.addLayer({ id: `${id}-fill`,    type: 'fill', source: id, paint: fill }, 'venue-circles')
+        map.addLayer({ id: `${id}-outline`, type: 'line', source: id, paint: line }, 'venue-circles')
+      }
+      if (map.getLayer(`${id}-fill`))    map.setLayoutProperty(`${id}-fill`,    'visibility', vis)
+      if (map.getLayer(`${id}-outline`)) map.setLayoutProperty(`${id}-outline`, 'visibility', vis)
+    }
+  }, [mapReady, forest, water, parks, showForest, showWater, showParks])
+
+  // ── Re-wire click handler when showNotes changes ───────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const handleClick = (e) => {
       if (!showNotes) return
       onVenueClick?.(e.features[0].properties)
     }
 
-    map.on('click', 'venue-circles',       handler)
-    map.on('click', 'venue-dots-inactive', handler)
-    return () => {
-      map.off('click', 'venue-circles',       handler)
-      map.off('click', 'venue-dots-inactive', handler)
-    }
+    map.off('click', 'venue-circles',      handleClick)
+    map.off('click', 'venue-dots-inactive', handleClick)
+    map.on('click',  'venue-circles',       handleClick)
+    map.on('click',  'venue-dots-inactive', handleClick)
   }, [mapReady, showNotes, onVenueClick])
 
   // ── Update venue GeoJSON when filters change ───────────────────────────────
@@ -163,14 +215,41 @@ export default function MapView({ activeBoundaries = {}, onVenueClick }) {
     if (src) src.setData(buildGeoJSON(filteredVenues))
   }, [filteredVenues, mapReady])
 
-  return (
-    <div className="relative w-full h-full">
-      <div ref={containerRef} className="w-full h-full" />
+  // ── Add / toggle district boundary layers + update outside mask ───────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
 
-      {/* District boundary polygons — rendered after map style loads */}
-      {mapReady && (
-        <DistrictLayer map={mapRef.current} activeBoundaries={activeBoundaries} />
-      )}
-    </div>
+    DISTRICTS.forEach(({ name, color }) => {
+      const srcId  = `boundary-${name}`
+      const fillId = `boundary-fill-${name}`
+      const lineId = `boundary-line-${name}`
+      const data   = districtBoundaries[name]
+      const vis    = selectedDistricts.has(name) ? 'visible' : 'none'
+
+      if (data && data.features?.length && !map.getSource(srcId)) {
+        map.addSource(srcId, { type: 'geojson', data })
+
+        // Subtle colour wash inside each district
+        map.addLayer({
+          id: fillId, type: 'fill', source: srcId,
+          paint: { 'fill-color': color, 'fill-opacity': 0.10 },
+        }, 'venue-circles')
+
+        // Bold district border
+        map.addLayer({
+          id: lineId, type: 'line', source: srcId,
+          paint: { 'line-color': color, 'line-width': 2.5, 'line-opacity': 0.9 },
+        }, 'venue-circles')
+      }
+
+      if (map.getLayer(fillId)) map.setLayoutProperty(fillId, 'visibility', vis)
+      if (map.getLayer(lineId)) map.setLayoutProperty(lineId, 'visibility', vis)
+    })
+
+  }, [mapReady, districtBoundaries, selectedDistricts])
+
+  return (
+    <div ref={containerRef} className="w-full h-full" />
   )
 }
