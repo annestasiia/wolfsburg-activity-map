@@ -10,8 +10,9 @@ export default function Sidebar({ venueCount, openCount }) {
     showNotes, setShowNotes,
     boundariesError,
     geocodingSkipped,
-    showParks, showWater, showForest,
-    toggleParks, toggleWater, toggleForest,
+    showParks, showWater, showForest, showTraffic,
+    toggleParks, toggleWater, toggleForest, toggleTraffic,
+    roads,
   } = useAppStore()
 
   const allSelected = selectedDistricts.size === DISTRICTS.length
@@ -86,16 +87,22 @@ export default function Sidebar({ venueCount, openCount }) {
       <Section title="Natural Features">
         <div className="space-y-1.5">
           {[
-            { label: 'Parks',   checked: showParks,  toggle: toggleParks,  fill: '#4CAF50', border: '#2e7d32' },
-            { label: 'Water',   checked: showWater,  toggle: toggleWater,  fill: '#5B9BD5', border: '#2563a8' },
-            { label: 'Forest',  checked: showForest, toggle: toggleForest, fill: '#6B9E6E', border: '#4a7a4d' },
-          ].map(({ label, checked, toggle, fill, border }) => (
-            <label key={label} className="flex items-center gap-2 cursor-pointer group">
+            { label: 'Parks',   checked: showParks,   toggle: toggleParks,   fill: '#4CAF50', border: '#2e7d32' },
+            { label: 'Water',   checked: showWater,   toggle: toggleWater,   fill: '#5B9BD5', border: '#2563a8' },
+            { label: 'Forest',  checked: showForest,  toggle: toggleForest,  fill: '#6B9E6E', border: '#4a7a4d' },
+            { label: 'Traffic', checked: showTraffic, toggle: toggleTraffic, fill: '#FF6B35', border: '#c94e1a', disabled: !roads },
+          ].map(({ label, checked, toggle, fill, border, disabled }) => (
+            <label
+              key={label}
+              className={`flex items-center gap-2 group ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+              title={disabled ? 'Run fetch_roads.py to enable traffic layer' : undefined}
+            >
               <input
                 type="checkbox"
                 checked={checked}
-                onChange={toggle}
-                className="rounded border-gray-300 focus:ring-0 cursor-pointer"
+                onChange={disabled ? undefined : toggle}
+                disabled={disabled}
+                className="rounded border-gray-300 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
                 style={{ accentColor: fill }}
               />
               <span className="text-xs text-gray-700 group-hover:text-gray-900 flex items-center gap-1.5">

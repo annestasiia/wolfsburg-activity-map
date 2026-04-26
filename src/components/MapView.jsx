@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { useAppStore } from '../store/appStore'
 import { useFilters } from '../hooks/useFilters'
 import { DISTRICTS } from '../constants'
+import { HIGHWAY_TYPES, ROAD_STYLE, getTrafficOpacity } from '../utils/trafficPatterns'
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron'
 const WOLFSBURG  = { center: [10.7865, 52.4227], zoom: 12 }
@@ -45,7 +46,13 @@ export default function MapView({ onVenueClick }) {
   const tooltipRef   = useRef(null)
   const [mapReady, setMapReady] = useState(false)
 
-  const { districtBoundaries, selectedDistricts, showNotes, parks, water, forest, showParks, showWater, showForest } = useAppStore()
+  const {
+    districtBoundaries, selectedDistricts,
+    showNotes,
+    parks, water, forest, showParks, showWater, showForest,
+    roads, showTraffic,
+    selectedDay, selectedTime,
+  } = useAppStore()
   const { filteredVenues } = useFilters()
 
   // ── Initialise map (once) ──────────────────────────────────────────────────
@@ -214,6 +221,46 @@ export default function MapView({ onVenueClick }) {
     const src = mapRef.current.getSource('venues')
     if (src) src.setData(buildGeoJSON(filteredVenues))
   }, [filteredVenues, mapReady])
+
+  // ── Traffic road layers — initialise once when GeoJSON data arrives ─────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !roads) return
+    const map = mapRef.current
+    if (map.getSource('roads')) return  // already added
+
+    map.addSource('roads', { type: 'geojson', data: roads })
+
+    HIGHWAY_TYPES.forEach(type => {
+      map.addLayer({
+        id:     `roads-${type}`,
+        type:   'line',
+        source: 'roads',
+        filter: ['==', ['get', 'highway'], type],
+        layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+        paint: {
+          'line-color':   ROAD_STYLE[type].color,
+          'line-width':   ROAD_STYLE[type].width,
+          'line-opacity': 0,
+        },
+      }, 'venue-circles')
+    })
+  }, [mapReady, roads])
+
+  // ── Traffic — update opacity on day/time change and toggle visibility ────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    HIGHWAY_TYPES.forEach(type => {
+      const layerId = `roads-${type}`
+      if (!map.getLayer(layerId)) return
+      map.setLayoutProperty(layerId, 'visibility', showTraffic ? 'visible' : 'none')
+      if (showTraffic) {
+        map.setPaintProperty(layerId, 'line-opacity',
+          getTrafficOpacity(type, selectedDay, selectedTime))
+      }
+    })
+  }, [mapReady, showTraffic, selectedDay, selectedTime])
 
   // ── Add / toggle district boundary layers + update outside mask ───────────
   useEffect(() => {

@@ -13,9 +13,11 @@ export const useAppStore = create((set) => ({
   parks: null,
   water: null,
   forest: null,
+  roads: null,
   showParks: true,
   showWater: true,
   showForest: true,
+  showTraffic: false,
 
   selectedDistricts: new Set(),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
@@ -31,12 +33,14 @@ export const useAppStore = create((set) => ({
   setDistrictBoundaries: (boundaries) => set({ districtBoundaries: boundaries }),
   setBoundariesLoading: (val) => set({ boundariesLoading: val }),
   setBoundariesError: (msg) => set({ boundariesError: msg }),
-  setParks: (parks) => set({ parks }),
-  setWater: (water) => set({ water }),
+  setParks:  (parks)  => set({ parks }),
+  setWater:  (water)  => set({ water }),
   setForest: (forest) => set({ forest }),
-  toggleParks:  () => set(s => ({ showParks:  !s.showParks  })),
-  toggleWater:  () => set(s => ({ showWater:  !s.showWater  })),
-  toggleForest: () => set(s => ({ showForest: !s.showForest })),
+  setRoads:  (roads)  => set({ roads }),
+  toggleParks:   () => set(s => ({ showParks:   !s.showParks   })),
+  toggleWater:   () => set(s => ({ showWater:   !s.showWater   })),
+  toggleForest:  () => set(s => ({ showForest:  !s.showForest  })),
+  toggleTraffic: () => set(s => ({ showTraffic: !s.showTraffic })),
 
   toggleDistrict: (name) => set((s) => {
     const next = new Set(s.selectedDistricts)
