@@ -9,8 +9,6 @@ import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
 import waterData from './data/water.json'
 import forestData from './data/forest.json'
-import { loadMissingDistricts } from './utils/osmBoundaries'
-
 export default function App() {
   const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, selectedDay, selectedTime, boundariesError } = useAppStore()
   const { filteredVenues, openCount } = useFilters()
@@ -24,14 +22,6 @@ export default function App() {
     setParks(parksData)
     setWater(waterData)
     setForest(forestData)
-
-    // Dynamically fetch Stadtmitte and Mitte-West via named Overpass queries,
-    // then merge into the Zustand store (fills gaps not covered by the static JSON).
-    loadMissingDistricts().then(extra => {
-      if (Object.keys(extra).length) {
-        setDistrictBoundaries({ ...districtBoundariesData, ...extra })
-      }
-    })
   }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest])
 
   const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
