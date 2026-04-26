@@ -23,9 +23,10 @@ export default function App() {
     setParks(parksData)
     setWater(waterData)
     setForest(forestData)
-    // Roads are optional — only available after running fetch_roads.py
-    import('./data/wolfsburg_roads.geojson')
-      .then(m => setRoads(m.default))
+    // Roads served from public/ — loaded lazily, not bundled
+    fetch(`${import.meta.env.BASE_URL}wolfsburg_roads.geojson`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setRoads(data) })
       .catch(() => {})
   }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setRoads])
 
