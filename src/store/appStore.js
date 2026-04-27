@@ -18,14 +18,16 @@ export const useAppStore = create((set) => ({
   showParks: true,
   showWater: true,
   showForest: true,
-  showTraffic: false,
-  showFootways: false,
+
+  // Multi-select mode system: 'pedestrian' | 'transport' | 'infrastructure'
+  activeModes: new Set(['infrastructure']),
+  activeBottomPanel: null,
 
   selectedDistricts: new Set(),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
   selectedDay: getCurrentDayAbbr(),
   selectedTime: getCurrentTimeStr(),
-  showNotes: false,
+  showNotes: true,
 
   setVenues: (venues) => set({ venues }),
   setGeocodingProgress: (progress) => set({ geocodingProgress: progress }),
@@ -35,16 +37,25 @@ export const useAppStore = create((set) => ({
   setDistrictBoundaries: (boundaries) => set({ districtBoundaries: boundaries }),
   setBoundariesLoading: (val) => set({ boundariesLoading: val }),
   setBoundariesError: (msg) => set({ boundariesError: msg }),
-  setParks:  (parks)  => set({ parks }),
-  setWater:  (water)  => set({ water }),
-  setForest: (forest) => set({ forest }),
-  setRoads:     (roads)    => set({ roads }),
-  setFootways:  (footways) => set({ footways }),
-  toggleParks:   () => set(s => ({ showParks:   !s.showParks   })),
-  toggleWater:   () => set(s => ({ showWater:   !s.showWater   })),
-  toggleForest:  () => set(s => ({ showForest:  !s.showForest  })),
-  toggleTraffic:  () => set(s => ({ showTraffic:  !s.showTraffic  })),
-  toggleFootways: () => set(s => ({ showFootways: !s.showFootways })),
+  setParks:    (parks)    => set({ parks }),
+  setWater:    (water)    => set({ water }),
+  setForest:   (forest)   => set({ forest }),
+  setRoads:    (roads)    => set({ roads }),
+  setFootways: (footways) => set({ footways }),
+
+  toggleMode: (mode) => set(s => {
+    const next = new Set(s.activeModes)
+    next.has(mode) ? next.delete(mode) : next.add(mode)
+    return { activeModes: next }
+  }),
+
+  setActiveBottomPanel: (panel) => set(s => ({
+    activeBottomPanel: s.activeBottomPanel === panel ? null : panel,
+  })),
+
+  toggleParks:  () => set(s => ({ showParks:  !s.showParks  })),
+  toggleWater:  () => set(s => ({ showWater:  !s.showWater  })),
+  toggleForest: () => set(s => ({ showForest: !s.showForest })),
 
   toggleDistrict: (name) => set((s) => {
     const next = new Set(s.selectedDistricts)
@@ -52,7 +63,7 @@ export const useAppStore = create((set) => ({
     return { selectedDistricts: next }
   }),
   selectAllDistricts: () => set({ selectedDistricts: new Set(DISTRICTS.map(d => d.name)) }),
-  clearAllDistricts: () => set({ selectedDistricts: new Set() }),
+  clearAllDistricts:  () => set({ selectedDistricts: new Set() }),
 
   toggleCategory: (name) => set((s) => {
     const next = new Set(s.selectedCategories)
@@ -60,7 +71,7 @@ export const useAppStore = create((set) => ({
     return { selectedCategories: next }
   }),
 
-  setSelectedDay: (day) => set({ selectedDay: day }),
+  setSelectedDay:  (day)  => set({ selectedDay: day }),
   setSelectedTime: (time) => set({ selectedTime: time }),
-  setShowNotes: (val) => set({ showNotes: val }),
+  setShowNotes:    (val)  => set({ showNotes: val }),
 }))
