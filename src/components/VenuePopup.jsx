@@ -2,15 +2,15 @@ import React from 'react'
 import { CATEGORY_COLORS } from '../constants'
 
 const STATUS = {
-  open:    { text: 'Open now', bg: 'rgba(74,222,128,0.15)', color: '#4ade80' },
-  closed:  { text: 'Closed',   bg: 'rgba(248,113,113,0.15)', color: '#f87171' },
-  unknown: { text: 'Hours N/A',bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' },
+  open:    { text: 'Open now', bg: 'rgba(52,199,89,0.12)',  color: '#1A7F37' },
+  closed:  { text: 'Closed',   bg: 'rgba(255,59,48,0.10)',  color: '#D70015' },
+  unknown: { text: 'Hours N/A',bg: 'rgba(0,0,0,0.05)',      color: '#6E6E73' },
 }
 
 export default function VenuePopup({ venue, onClose }) {
   if (!venue) return null
 
-  const catColor = CATEGORY_COLORS[venue.category] ?? '#888'
+  const catColor = CATEGORY_COLORS[venue.category] ?? '#0071E3'
   const status   = STATUS[venue.openStatus] ?? STATUS.unknown
 
   return (
@@ -19,80 +19,93 @@ export default function VenuePopup({ venue, onClose }) {
       top: 16,
       right: 16,
       zIndex: 50,
-      width: 280,
-      background: 'rgba(8, 14, 44, 0.95)',
-      backdropFilter: 'blur(24px)',
-      WebkitBackdropFilter: 'blur(24px)',
-      borderRadius: 14,
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+      width: 284,
+      background: 'rgba(255, 255, 255, 0.92)',
+      backdropFilter: 'blur(20px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      borderRadius: 16,
+      border: '1px solid rgba(0,0,0,0.08)',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08)',
       overflow: 'hidden',
       pointerEvents: 'auto',
     }}>
-      {/* colour accent bar */}
-      <div style={{ height: 2, background: `linear-gradient(90deg, ${catColor}, transparent)` }} />
+      {/* category colour bar */}
+      <div style={{ height: 3, background: catColor, opacity: 0.8 }} />
 
       <div style={{ padding: '14px 16px' }}>
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
           <div>
-            <h3 style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.92)', margin: 0, lineHeight: 1.3 }}>
+            <h3 style={{
+              fontSize: 16,
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+              color: '#1D1D1F',
+              margin: 0,
+              lineHeight: 1.3,
+            }}>
               {venue.name}
             </h3>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '3px 0 0' }}>{venue.type}</p>
+            <p style={{ fontSize: 13, color: '#6E6E73', margin: '3px 0 0', letterSpacing: '-0.01em' }}>
+              {venue.type}
+            </p>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: 'transparent',
+              background: 'rgba(0,0,0,0.06)',
               border: 'none',
-              color: 'rgba(255,255,255,0.3)',
-              fontSize: 20,
+              color: '#6E6E73',
+              fontSize: 16,
               lineHeight: 1,
               cursor: 'pointer',
-              padding: '0 0 0 8px',
+              padding: '4px 8px',
+              borderRadius: 980,
               flexShrink: 0,
-              marginTop: -2,
+              marginLeft: 8,
               fontFamily: 'inherit',
+              transition: 'background 0.15s',
             }}
           >×</button>
         </div>
 
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', marginBottom: 12 }}>
+        <p style={{ fontSize: 13, color: '#AEAEB2', marginBottom: 12, letterSpacing: '-0.01em' }}>
           {venue.street}, {venue.city}
         </p>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <span style={{
-            fontSize: 11,
-            fontWeight: 600,
-            padding: '3px 10px',
-            borderRadius: 999,
+            fontSize: 13,
+            fontWeight: 500,
+            padding: '4px 10px',
+            borderRadius: 980,
             background: status.bg,
             color: status.color,
+            letterSpacing: '-0.01em',
           }}>
             {status.text}
           </span>
           {venue.rating && venue.rating !== '—' && (
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>★ {venue.rating}</span>
+            <span style={{ fontSize: 13, color: '#6E6E73' }}>★ {venue.rating}</span>
           )}
         </div>
 
-        <dl style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
-          {venue.openingHours && <Row label="Hours"    value={venue.openingHours} color={catColor} />}
-          {venue.peakTimes    && <Row label="Peak"     value={venue.peakTimes}    color={catColor} />}
-          <Row label="Activity" value={venue.activityLevel || '—'} color={catColor} />
-          {venue.ageGroups    && <Row label="Ages"     value={venue.ageGroups}    color={catColor} />}
+        <dl style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {venue.openingHours && <Row label="Hours"    value={venue.openingHours} />}
+          {venue.peakTimes    && <Row label="Peak"     value={venue.peakTimes}    />}
+          <Row label="Activity" value={venue.activityLevel || '—'} />
+          {venue.ageGroups    && <Row label="Ages"     value={venue.ageGroups}    />}
         </dl>
 
         {venue.notes && (
           <p style={{
             marginTop: 12,
             paddingTop: 12,
-            borderTop: '1px solid rgba(255,255,255,0.07)',
-            fontSize: 11,
-            color: 'rgba(255,255,255,0.38)',
+            borderTop: '1px solid rgba(0,0,0,0.07)',
+            fontSize: 13,
+            color: '#6E6E73',
             lineHeight: 1.6,
+            letterSpacing: '-0.01em',
           }}>
             {venue.notes}
           </p>
@@ -102,13 +115,24 @@ export default function VenuePopup({ venue, onClose }) {
   )
 }
 
-function Row({ label, value, color }) {
+function Row({ label, value }) {
   return (
     <div style={{ display: 'flex', gap: 10 }}>
-      <dt style={{ width: 58, flexShrink: 0, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.25)', paddingTop: 1 }}>
+      <dt style={{
+        width: 56,
+        flexShrink: 0,
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.02em',
+        textTransform: 'uppercase',
+        color: '#AEAEB2',
+        paddingTop: 2,
+      }}>
         {label}
       </dt>
-      <dd style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>{value}</dd>
+      <dd style={{ fontSize: 13, color: '#1D1D1F', lineHeight: 1.5, letterSpacing: '-0.01em' }}>
+        {value}
+      </dd>
     </div>
   )
 }

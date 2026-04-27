@@ -13,7 +13,7 @@ export default function FacilitiesPanel() {
   return (
     <div>
       <p className="panel-label">Facility Categories</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
         {CATEGORIES.map(c => {
           const on = selectedCategories.has(c.name)
           return (
@@ -25,11 +25,11 @@ export default function FacilitiesPanel() {
                 alignItems: 'center',
                 gap: 12,
                 padding: '13px 16px',
-                borderRadius: 12,
-                background: on ? `${c.color}20` : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${on ? c.color + '50' : 'rgba(255,255,255,0.07)'}`,
+                borderRadius: 14,
+                background: on ? `${c.color}12` : '#F5F5F7',
+                border: `1px solid ${on ? c.color + '40' : 'rgba(0,0,0,0.08)'}`,
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 textAlign: 'left',
                 fontFamily: 'inherit',
               }}
@@ -38,15 +38,16 @@ export default function FacilitiesPanel() {
               <span style={{ flex: 1 }}>
                 <span style={{
                   display: 'block',
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: 600,
-                  color: on ? '#fff' : 'rgba(255,255,255,0.48)',
+                  letterSpacing: '-0.01em',
+                  color: on ? '#1D1D1F' : '#6E6E73',
                   marginBottom: 2,
                   transition: 'color 0.2s',
                 }}>
                   {c.name}
                 </span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)' }}>
+                <span style={{ fontSize: 13, color: '#AEAEB2', letterSpacing: '-0.01em' }}>
                   {counts[c.name]} venues
                 </span>
               </span>
@@ -54,9 +55,9 @@ export default function FacilitiesPanel() {
                 width: 10,
                 height: 10,
                 borderRadius: '50%',
-                background: on ? c.color : 'rgba(255,255,255,0.1)',
-                boxShadow: on ? `0 0 8px ${c.color}` : 'none',
-                transition: 'all 0.2s ease',
+                background: on ? c.color : '#E8E8ED',
+                boxShadow: on ? `0 0 6px ${c.color}60` : 'none',
+                transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 flexShrink: 0,
               }} />
             </button>
