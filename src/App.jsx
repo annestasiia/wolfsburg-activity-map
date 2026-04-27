@@ -11,7 +11,7 @@ import waterData from './data/water.json'
 import forestData from './data/forest.json'
 
 export default function App() {
-  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setRoads, selectedDay, selectedTime, boundariesError } = useAppStore()
+  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setRoads, setFootways, selectedDay, selectedTime, boundariesError } = useAppStore()
   const { filteredVenues, openCount } = useFilters()
 
   const [selectedVenue, setSelectedVenue] = useState(null)
@@ -28,7 +28,12 @@ export default function App() {
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setRoads(data) })
       .catch(() => {})
-  }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setRoads])
+    // Footways served from public/ — loaded lazily
+    fetch(`${import.meta.env.BASE_URL}wolfsburg_footways.geojson`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setFootways(data) })
+      .catch(() => {})
+  }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setRoads, setFootways])
 
   const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
 

@@ -5,6 +5,7 @@ import { useAppStore } from '../store/appStore'
 import { useFilters } from '../hooks/useFilters'
 import { DISTRICTS } from '../constants'
 import { HIGHWAY_TYPES, ROAD_STYLE, getTrafficOpacity } from '../utils/trafficPatterns'
+import { computeFootwayGeoJSON } from '../utils/footwayActivity'
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron'
 const WOLFSBURG  = { center: [10.7865, 52.4227], zoom: 12 }
@@ -51,6 +52,7 @@ export default function MapView({ onVenueClick }) {
     showNotes,
     parks, water, forest, showParks, showWater, showForest,
     roads, showTraffic,
+    footways, showFootways,
     selectedDay, selectedTime,
   } = useAppStore()
   const { filteredVenues } = useFilters()
@@ -295,6 +297,45 @@ export default function MapView({ onVenueClick }) {
     })
 
   }, [mapReady, districtBoundaries, selectedDistricts])
+
+  // ── Footway layer — initialise once when GeoJSON data arrives ────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !footways) return
+    const map = mapRef.current
+    if (map.getSource('footways')) return
+
+    const initial = computeFootwayGeoJSON(footways, [], 'Mon', '12:00')
+    map.addSource('footways', { type: 'geojson', data: initial })
+    map.addLayer({
+      id:     'footways-line',
+      type:   'line',
+      source: 'footways',
+      layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+      paint: {
+        'line-color':   '#FF9500',
+        'line-width':   2,
+        'line-opacity': ['get', 'opacity'],
+      },
+    }, 'venue-circles')
+  }, [mapReady, footways])
+
+  // ── Footway — recompute brightness when time/day/venues change ───────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !footways) return
+    const map = mapRef.current
+    if (!map.getSource('footways')) return
+
+    const updated = computeFootwayGeoJSON(footways, filteredVenues, selectedDay, selectedTime)
+    map.getSource('footways').setData(updated)
+  }, [mapReady, footways, filteredVenues, selectedDay, selectedTime])
+
+  // ── Footway — toggle visibility ───────────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    if (!map.getLayer('footways-line')) return
+    map.setLayoutProperty('footways-line', 'visibility', showFootways ? 'visible' : 'none')
+  }, [mapReady, showFootways])
 
   return (
     <div ref={containerRef} className="w-full h-full" />

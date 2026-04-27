@@ -10,9 +10,9 @@ export default function Sidebar({ venueCount, openCount }) {
     showNotes, setShowNotes,
     boundariesError,
     geocodingSkipped,
-    showParks, showWater, showForest, showTraffic,
-    toggleParks, toggleWater, toggleForest, toggleTraffic,
-    roads,
+    showParks, showWater, showForest, showTraffic, showFootways,
+    toggleParks, toggleWater, toggleForest, toggleTraffic, toggleFootways,
+    roads, footways,
   } = useAppStore()
 
   const allSelected = selectedDistricts.size === DISTRICTS.length
@@ -90,12 +90,13 @@ export default function Sidebar({ venueCount, openCount }) {
             { label: 'Parks',   checked: showParks,   toggle: toggleParks,   fill: '#4CAF50', border: '#2e7d32' },
             { label: 'Water',   checked: showWater,   toggle: toggleWater,   fill: '#5B9BD5', border: '#2563a8' },
             { label: 'Forest',  checked: showForest,  toggle: toggleForest,  fill: '#6B9E6E', border: '#4a7a4d' },
-            { label: 'Traffic', checked: showTraffic, toggle: toggleTraffic, fill: '#FF6B35', border: '#c94e1a', disabled: !roads },
+            { label: 'Traffic',             checked: showTraffic,   toggle: toggleTraffic,   fill: '#FF6B35', border: '#c94e1a', disabled: !roads },
+            { label: 'Pedestrian Activity', checked: showFootways,  toggle: toggleFootways,  fill: '#FF9500', border: '#c97200', disabled: !footways },
           ].map(({ label, checked, toggle, fill, border, disabled }) => (
             <label
               key={label}
               className={`flex items-center gap-2 group ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
-              title={disabled ? 'Run fetch_roads.py to enable traffic layer' : undefined}
+              title={disabled ? (label === 'Traffic' ? 'Run fetch_roads.py to enable traffic layer' : 'Run fetch_footways.py to enable pedestrian activity layer') : undefined}
             >
               <input
                 type="checkbox"
