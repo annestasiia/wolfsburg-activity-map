@@ -10,6 +10,12 @@ import { computeFootwayGeoJSON } from '../utils/footwayActivity'
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 const WOLFSBURG  = { center: [10.7865, 52.4227], zoom: 12 }
 
+// Districts considered "central" — always shown at maximum connectivity score.
+const CENTRAL_DISTRICTS = new Set([
+  'Schillerteich', 'Stadtmitte', 'Rothenfelde', 'Wohltberg',
+  'Volkswagenwerk', 'Alt-Wolfsburg', 'Hellwinkel', 'Heßlingen', 'Hohenstein',
+])
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function buildGeoJSON(venues) {
@@ -62,24 +68,24 @@ function inBbox(lng, lat, bbox) {
   return lng >= bbox.minLng && lng <= bbox.maxLng && lat >= bbox.minLat && lat <= bbox.maxLat
 }
 
-// Returns fill and line color/opacity for a normalized 0-10 score.
-// score 0 = always-visible gray; 1-10 = red gradient with 5 distinct shades.
+// 5-level gradient from the user's palette, all fills at 50% opacity so roads
+// underneath stay visible.  score 0 = least connected (faintest pink).
 function scoreToColorOpacity(score) {
-  if (score === 0) return { color: '#C7C7CC', fill: 0.38, line: 0.55 }
-  if (score <= 2)  return { color: '#FFCDD2', fill: 0.52, line: 0.68 }
-  if (score <= 4)  return { color: '#EF9A9A', fill: 0.63, line: 0.78 }
-  if (score <= 6)  return { color: '#E63946', fill: 0.74, line: 0.88 }
-  if (score <= 8)  return { color: '#C62828', fill: 0.83, line: 0.93 }
-  return           { color: '#7F0000',         fill: 0.91, line: 0.98 }
+  if (score <= 0) return { color: '#FFF0F3', fill: 0.50, line: 0.55 }
+  if (score <= 2) return { color: '#FFCCD5', fill: 0.50, line: 0.60 }
+  if (score <= 4) return { color: '#FF8FA3', fill: 0.50, line: 0.65 }
+  if (score <= 6) return { color: '#FF4D6D', fill: 0.50, line: 0.72 }
+  return          { color: '#FF1744',        fill: 0.50, line: 0.78 }
 }
 
-// Normalize a map of raw counts to a 0-10 scale (0 stays 0, max gets 10).
+// Normalize raw scores to 0-10. Central districts use sentinel 9999 → maps to 10.
+// Real scores (non-central) are scaled relative to the highest real count.
 function normalizeScores(raw, cap = 10) {
-  const vals = Object.values(raw).filter(v => v > 0)
-  if (!vals.length) return raw
-  const max = Math.max(...vals)
+  const realVals = Object.values(raw).filter(v => v > 0 && v < 9999)
+  const max = realVals.length ? Math.max(...realVals) : 1
   const out  = {}
   for (const [k, v] of Object.entries(raw)) {
+    if (v >= 9999)  { out[k] = cap; continue }
     out[k] = v === 0 ? 0 : Math.max(1, Math.round((v / max) * cap))
   }
   return out
@@ -92,50 +98,43 @@ function getCoordList(geometry) {
   return []
 }
 
-// Scores districts by how many features pass through BOTH the district bbox
-// AND the Stadtmitte bbox (connectivity metric — best for long linear features
-// like bus routes).
-function scoreDistricts(geoJSON, districtBoundaries) {
-  if (!districtBoundaries?.Stadtmitte) return {}
-  const stadtBbox = computeBbox(districtBoundaries.Stadtmitte)
-  const scores = {}
-
-  for (const { name } of DISTRICTS) {
-    const distGeoJSON = districtBoundaries[name]
-    if (!distGeoJSON) { scores[name] = 0; continue }
-    // For Stadtmitte itself: count features passing through its bbox twice
-    // (every feature inside Stadtmitte qualifies → naturally highest score).
-    const distBbox = name === 'Stadtmitte' ? stadtBbox : computeBbox(distGeoJSON)
-    let count = 0
-
-    for (const feature of geoJSON.features) {
-      const coords = getCoordList(feature.geometry)
-      let hitDist = false, hitStadt = false
-      for (const [lng, lat] of coords) {
-        if (!hitDist  && inBbox(lng, lat, distBbox))  hitDist  = true
-        if (!hitStadt && inBbox(lng, lat, stadtBbox)) hitStadt = true
-        if (hitDist && hitStadt) { count++; break }
-      }
-    }
-    scores[name] = count
-  }
-  return scores
+function expandBbox({ minLng, maxLng, minLat, maxLat }, pad) {
+  return { minLng: minLng - pad, maxLng: maxLng + pad, minLat: minLat - pad, maxLat: maxLat + pad }
 }
 
-// Scores districts by how many features have ANY point within the district bbox
-// (density metric — better for short road/path segments where cross-city
-// spanning is rare).
-function scoreDistrictsLocal(geoJSON, districtBoundaries) {
+// Unified connectivity scorer: central districts always get sentinel 9999.
+// For other districts, count features that have at least one point in the
+// district bbox AND at least one point in any (optionally expanded) central
+// district bbox.  `centralPadding` (degrees) widens the central zone so that
+// short road/path segments in adjacent districts still register — 0 is fine
+// for long transit routes that span the whole city.
+function scoreDistrictsToCenter(geoJSON, districtBoundaries, centralPadding = 0) {
+  const centralBboxes = []
+  for (const name of CENTRAL_DISTRICTS) {
+    const gj = districtBoundaries[name]
+    if (gj) centralBboxes.push(expandBbox(computeBbox(gj), centralPadding))
+  }
+  if (!centralBboxes.length) return {}
+
   const scores = {}
   for (const { name } of DISTRICTS) {
+    if (CENTRAL_DISTRICTS.has(name)) { scores[name] = 9999; continue }
     const distGeoJSON = districtBoundaries[name]
     if (!distGeoJSON) { scores[name] = 0; continue }
     const distBbox = computeBbox(distGeoJSON)
     let count = 0
+
     for (const feature of geoJSON.features) {
       const coords = getCoordList(feature.geometry)
+      let hitDist = false, hitCenter = false
       for (const [lng, lat] of coords) {
-        if (inBbox(lng, lat, distBbox)) { count++; break }
+        if (!hitDist && inBbox(lng, lat, distBbox)) hitDist = true
+        if (!hitCenter) {
+          for (const cb of centralBboxes) {
+            if (inBbox(lng, lat, cb)) { hitCenter = true; break }
+          }
+        }
+        if (hitDist && hitCenter) { count++; break }
       }
     }
     scores[name] = count
@@ -200,7 +199,8 @@ export default function MapView({ onVenueClick }) {
     roads, footways,
     activeModes, activeMode,
     selectedDay, selectedTime,
-    mobilitySubLayer, mobilityScores, mobilityOverlayGeoJSON, mobilityDataCache,
+    mobilitySubLayer, mobilityScores, mobilityOverlayGeoJSON,
+    mobilityHighlightRoute,
     setMobilityScores, setMobilityOverlayGeoJSON, setMobilityDataLoading, setMobilityDataCache,
   } = useAppStore()
   const { filteredVenues } = useFilters()
@@ -490,10 +490,19 @@ export default function MapView({ onVenueClick }) {
       transport: `[out:json][timeout:60];(relation["route"~"bus|tram|subway|light_rail|trolleybus|share_taxi"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
     }
 
+    // Padding (degrees) added to each central-district bbox before checking
+    // connectivity.  Transport routes are long → no padding needed.
+    // Road/path segments are short → expand central zone so adjacent districts score.
+    const CENTRAL_PADDING = {
+      transport:  0,
+      automobile: 0.025,
+      cycling:    0.020,
+      pedestrian: 0.020,
+    }
+
     const fetchAndScore = async () => {
       setMobilityDataLoading(true)
       try {
-        let geoJSON
         let raw = useAppStore.getState().mobilityDataCache[mobilitySubLayer]
 
         if (!raw) {
@@ -506,16 +515,12 @@ export default function MapView({ onVenueClick }) {
           if (!cancelled) setMobilityDataCache(mobilitySubLayer, raw)
         }
 
-        geoJSON = overpassToGeoJSON(raw)
+        const geoJSON = overpassToGeoJSON(raw)
+        if (cancelled || !geoJSON || !Object.keys(districtBoundaries).length) return
 
-        if (cancelled || !geoJSON || !districtBoundaries?.Stadtmitte) return
-
-        // Transport: connectivity metric (routes that span district + Stadtmitte)
-        // Road/path layers: density metric (segments within each district)
-        const rawScores = mobilitySubLayer === 'transport'
-          ? scoreDistricts(geoJSON, districtBoundaries)
-          : scoreDistrictsLocal(geoJSON, districtBoundaries)
-
+        const rawScores = scoreDistrictsToCenter(
+          geoJSON, districtBoundaries, CENTRAL_PADDING[mobilitySubLayer] ?? 0
+        )
         setMobilityOverlayGeoJSON(geoJSON)
         setMobilityScores(normalizeScores(rawScores))
       } catch (err) {
@@ -560,6 +565,43 @@ export default function MapView({ onVenueClick }) {
         map.setLayoutProperty('mobility-overlay', 'visibility', 'visible')
     }
   }, [mapReady, mobilityOverlayGeoJSON])
+
+  // ── Mobility — highlight a single selected transport route ───────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    if (!mobilityHighlightRoute || !mobilityOverlayGeoJSON) {
+      if (map.getLayer('mobility-highlight'))
+        map.setLayoutProperty('mobility-highlight', 'visibility', 'none')
+      return
+    }
+
+    const feature = mobilityOverlayGeoJSON.features.find(
+      f => f.properties._id === mobilityHighlightRoute
+    )
+    if (!feature) return
+
+    const hlGeoJSON = { type: 'FeatureCollection', features: [feature] }
+
+    if (!map.getSource('mobility-highlight')) {
+      map.addSource('mobility-highlight', { type: 'geojson', data: hlGeoJSON })
+      map.addLayer({
+        id:     'mobility-highlight',
+        type:   'line',
+        source: 'mobility-highlight',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-color':   '#FF6900',
+          'line-width':   4.5,
+          'line-opacity': 0.90,
+        },
+      })
+    } else {
+      map.getSource('mobility-highlight').setData(hlGeoJSON)
+      map.setLayoutProperty('mobility-highlight', 'visibility', 'visible')
+    }
+  }, [mapReady, mobilityHighlightRoute, mobilityOverlayGeoJSON])
 
   // ── Mobility — color districts by score (runs after boundary effect) ───────
   useEffect(() => {

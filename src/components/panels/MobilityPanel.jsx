@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../../store/appStore'
-import { DISTRICTS } from '../../constants'
 
 const SUB_LAYERS = [
   { id: 'transport',  label: 'Public Transport',         icon: '🚌' },
@@ -15,11 +14,11 @@ function parseRoutes(cache) {
   return data.elements
     .filter(el => el.type === 'relation' && el.tags)
     .map(r => ({
+      id:   r.id,
       ref:  r.tags.ref  || '',
       name: r.tags.name || r.tags.description || '',
       from: r.tags.from || '',
       to:   r.tags.to   || '',
-      type: r.tags.route || '',
     }))
     .filter(r => r.ref || r.name)
     .sort((a, b) => String(a.ref).localeCompare(String(b.ref), undefined, { numeric: true }))
@@ -29,6 +28,7 @@ export default function MobilityPanel() {
   const {
     mobilitySubLayer, setMobilitySubLayer,
     mobilityDataLoading, mobilityScores, mobilityDataCache,
+    mobilityHighlightRoute, setMobilityHighlightRoute,
   } = useAppStore()
 
   const [showStats, setShowStats] = useState(false)
@@ -37,7 +37,7 @@ export default function MobilityPanel() {
   const routes = parseRoutes(mobilityDataCache)
 
   const topDistricts = Object.entries(mobilityScores)
-    .filter(([, v]) => v > 0)
+    .filter(([, v]) => v > 0 && v < 10)   // exclude central (10) and zero
     .sort(([, a], [, b]) => b - a)
     .slice(0, 8)
 
@@ -61,13 +61,13 @@ export default function MobilityPanel() {
                 gap:            8,
                 padding:       '16px 10px',
                 borderRadius:   14,
-                background:     active ? '#E63946' : '#F5F5F7',
+                background:     active ? '#FF1744' : '#F5F5F7',
                 border:        `1px solid ${active ? 'transparent' : 'rgba(0,0,0,0.08)'}`,
                 cursor:        'pointer',
                 transition:    'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 fontFamily:    'inherit',
                 opacity:        loading ? 0.75 : 1,
-                boxShadow:      active ? '0 2px 10px rgba(230,57,70,0.28)' : 'none',
+                boxShadow:      active ? '0 2px 10px rgba(255,23,68,0.28)' : 'none',
               }}
             >
               <span style={{ fontSize: 26, lineHeight: 1 }}>{loading ? '⏳' : s.icon}</span>
@@ -120,7 +120,7 @@ export default function MobilityPanel() {
       {/* ── Status hint ── */}
       {!showStats && mobilitySubLayer && !mobilityDataLoading && (
         <p style={{ fontSize: 13, color: '#6E6E73', marginTop: 12, letterSpacing: '-0.01em' }}>
-          Districts colored by {activeLayerLabel.toLowerCase()} density · darker = more connected
+          Districts colored by connectivity to city center · darker = more connected
         </p>
       )}
       {!showStats && mobilityDataLoading && (
@@ -138,52 +138,75 @@ export default function MobilityPanel() {
             </p>
           ) : mobilitySubLayer === 'transport' && routes.length > 0 ? (
             <div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', marginBottom: 10 }}>
-                Public transport routes in Wolfsburg ({routes.length})
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', marginBottom: 6 }}>
+                Public transport routes · {routes.length} found
+              </p>
+              <p style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 10, letterSpacing: '-0.01em' }}>
+                Click a route to highlight it on the map
               </p>
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                gap: 6,
-                maxHeight: 220,
-                overflowY: 'auto',
+                display:        'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap:             6,
+                maxHeight:       220,
+                overflowY:       'auto',
+                paddingRight:    4,
               }}>
-                {routes.map((r, i) => (
-                  <div key={i} style={{
-                    background: '#F5F5F7',
-                    borderRadius: 10,
-                    padding: '8px 12px',
-                    fontSize: 13,
-                    display: 'flex',
-                    gap: 8,
-                    alignItems: 'flex-start',
-                  }}>
-                    {r.ref && (
-                      <span style={{
-                        background: '#E63946',
-                        color: '#fff',
-                        borderRadius: 6,
-                        padding: '1px 7px',
-                        fontWeight: 700,
-                        fontSize: 12,
-                        flexShrink: 0,
-                        alignSelf: 'center',
-                      }}>{r.ref}</span>
-                    )}
-                    <span style={{ color: '#3D3D3F', lineHeight: 1.3 }}>
-                      {r.from && r.to ? `${r.from} → ${r.to}` : r.name || 'Route'}
-                    </span>
-                  </div>
-                ))}
+                {routes.map(r => {
+                  const isSelected = mobilityHighlightRoute === r.id
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => setMobilityHighlightRoute(isSelected ? null : r.id)}
+                      style={{
+                        display:    'flex',
+                        gap:         8,
+                        alignItems: 'center',
+                        background:  isSelected ? '#FFF0F0' : '#F5F5F7',
+                        border:     `1px solid ${isSelected ? '#FF1744' : 'rgba(0,0,0,0.06)'}`,
+                        borderRadius: 10,
+                        padding:    '7px 11px',
+                        fontSize:    13,
+                        cursor:     'pointer',
+                        textAlign:  'left',
+                        fontFamily: 'inherit',
+                        transition: 'all 0.15s ease',
+                        boxShadow:   isSelected ? '0 1px 6px rgba(255,23,68,0.20)' : 'none',
+                      }}
+                    >
+                      {r.ref && (
+                        <span style={{
+                          background:  isSelected ? '#FF1744' : '#FF4D6D',
+                          color:       '#fff',
+                          borderRadius: 6,
+                          padding:    '1px 7px',
+                          fontWeight:  700,
+                          fontSize:    12,
+                          flexShrink:  0,
+                          minWidth:    28,
+                          textAlign:  'center',
+                        }}>{r.ref}</span>
+                      )}
+                      <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 12 }}>
+                        {r.from && r.to ? `${r.from} → ${r.to}` : r.name || 'Route'}
+                      </span>
+                      {isSelected && (
+                        <span style={{ marginLeft: 'auto', color: '#FF1744', fontSize: 11, flexShrink: 0 }}>
+                          on map ✓
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
               <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
-                Source: OpenStreetMap · Stop details coming soon
+                Source: OpenStreetMap · stop-by-stop details coming soon
               </p>
             </div>
           ) : topDistricts.length > 0 ? (
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', marginBottom: 10 }}>
-                Top districts by {activeLayerLabel.toLowerCase()}
+                Most connected districts · {activeLayerLabel.toLowerCase()}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {topDistricts.map(([name, score]) => (
@@ -191,19 +214,13 @@ export default function MobilityPanel() {
                     <div style={{ width: 130, fontSize: 13, color: '#1D1D1F', flexShrink: 0 }}>
                       {name}
                     </div>
-                    <div style={{
-                      flex: 1,
-                      height: 8,
-                      background: '#E8E8ED',
-                      borderRadius: 4,
-                      overflow: 'hidden',
-                    }}>
+                    <div style={{ flex: 1, height: 8, background: '#E8E8ED', borderRadius: 4, overflow: 'hidden' }}>
                       <div style={{
-                        width: `${score * 10}%`,
-                        height: '100%',
-                        background: score <= 4 ? '#EF9A9A' : score <= 7 ? '#E63946' : '#7F0000',
+                        width:      `${score * 10}%`,
+                        height:     '100%',
+                        background:  score <= 4 ? '#FF8FA3' : score <= 7 ? '#FF4D6D' : '#FF1744',
                         borderRadius: 4,
-                        transition: 'width 0.4s ease',
+                        transition:  'width 0.4s ease',
                       }} />
                     </div>
                     <span style={{ fontSize: 12, color: '#6E6E73', width: 24, textAlign: 'right' }}>
@@ -213,7 +230,7 @@ export default function MobilityPanel() {
                 ))}
               </div>
               <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
-                Score 1–10 (normalized) · Source: OpenStreetMap
+                Score 1–9 (normalized, excl. central districts) · Source: OpenStreetMap
               </p>
             </div>
           ) : (

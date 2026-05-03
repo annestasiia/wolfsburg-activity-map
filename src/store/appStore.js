@@ -28,10 +28,11 @@ export const useAppStore = create((set) => ({
 
   // ── Mobility sub-layer ────────────────────────────────────────────────────
   mobilitySubLayer: null,           // null | 'transport' | 'automobile' | 'cycling' | 'pedestrian'
-  mobilityScores: {},               // { districtName: number }
+  mobilityScores: {},               // { districtName: number 0-10 }
   mobilityOverlayGeoJSON: null,     // GeoJSON FeatureCollection for the line overlay
   mobilityDataCache: {},            // { layerKey: raw OSM elements array }
   mobilityDataLoading: false,
+  mobilityHighlightRoute: null,     // relation ID of the currently highlighted transport route
 
   selectedDistricts: new Set(),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
@@ -92,18 +93,21 @@ export const useAppStore = create((set) => ({
     mobilitySubLayer: null,
     mobilityScores: {},
     mobilityOverlayGeoJSON: null,
+    mobilityHighlightRoute: null,
   }),
 
   setMobilitySubLayer: (layer) => set(s => ({
     mobilitySubLayer: s.mobilitySubLayer === layer ? null : layer,
     mobilityScores: {},
     mobilityOverlayGeoJSON: null,
+    mobilityHighlightRoute: null,
   })),
 
-  setMobilityScores:        (scores) => set({ mobilityScores: scores }),
-  setMobilityOverlayGeoJSON: (gj)    => set({ mobilityOverlayGeoJSON: gj }),
-  setMobilityDataLoading:   (val)    => set({ mobilityDataLoading: val }),
-  setMobilityDataCache: (key, data)  => set(s => ({
+  setMobilityScores:         (scores) => set({ mobilityScores: scores }),
+  setMobilityOverlayGeoJSON: (gj)     => set({ mobilityOverlayGeoJSON: gj }),
+  setMobilityDataLoading:    (val)    => set({ mobilityDataLoading: val }),
+  setMobilityDataCache: (key, data)   => set(s => ({
     mobilityDataCache: { ...s.mobilityDataCache, [key]: data },
   })),
+  setMobilityHighlightRoute: (id) => set({ mobilityHighlightRoute: id }),
 }))
