@@ -546,6 +546,39 @@ export default function MapView({ onVenueClick }) {
       return
     }
 
+    // Automobile mode: style roads by hierarchy (motorway → residential).
+    // Other modes: uniform thin line.
+    const isAuto = mobilitySubLayer === 'automobile'
+
+    const lineColor = isAuto
+      ? ['match', ['get', 'highway'],
+          'motorway', '#1C1C1E',  'trunk', '#1C1C1E',
+          'primary',  '#3A3A3C',  'primary_link',  '#3A3A3C',
+          'motorway_link', '#3A3A3C', 'trunk_link', '#3A3A3C',
+          'secondary', '#636366', 'secondary_link', '#636366',
+          'tertiary',  '#8E8E93', 'tertiary_link',  '#8E8E93',
+          '#AEAEB2']
+      : '#E63946'
+
+    const lineWidth = isAuto
+      ? ['match', ['get', 'highway'],
+          'motorway', 7,   'trunk', 6,
+          'primary',  4.5, 'motorway_link', 4,   'trunk_link',     3.5,
+          'secondary', 3.5,'primary_link',  3,   'secondary_link', 2.5,
+          'tertiary',  2.5,'tertiary_link', 2,
+          'unclassified', 1.8, 'residential', 1.2,
+          1.0]
+      : 1.2
+
+    const lineOpacity = isAuto
+      ? ['match', ['get', 'highway'],
+          'motorway', 0.92, 'trunk', 0.92,
+          'primary', 0.85,  'motorway_link', 0.82, 'trunk_link', 0.82,
+          'secondary', 0.75,'primary_link',  0.75, 'secondary_link', 0.72,
+          'tertiary',  0.65,'tertiary_link', 0.65,
+          0.50]
+      : 0.30
+
     if (!map.getSource('mobility-overlay')) {
       map.addSource('mobility-overlay', { type: 'geojson', data: mobilityOverlayGeoJSON })
       map.addLayer({
@@ -553,18 +586,18 @@ export default function MapView({ onVenueClick }) {
         type:   'line',
         source: 'mobility-overlay',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: {
-          'line-color':   '#E63946',
-          'line-width':   1.2,
-          'line-opacity': 0.30,
-        },
+        paint: { 'line-color': lineColor, 'line-width': lineWidth, 'line-opacity': lineOpacity },
       }, 'venue-circles')
     } else {
       map.getSource('mobility-overlay').setData(mobilityOverlayGeoJSON)
-      if (map.getLayer('mobility-overlay'))
-        map.setLayoutProperty('mobility-overlay', 'visibility', 'visible')
+      if (map.getLayer('mobility-overlay')) {
+        map.setPaintProperty('mobility-overlay', 'line-color',   lineColor)
+        map.setPaintProperty('mobility-overlay', 'line-width',   lineWidth)
+        map.setPaintProperty('mobility-overlay', 'line-opacity', lineOpacity)
+        map.setLayoutProperty('mobility-overlay', 'visibility',  'visible')
+      }
     }
-  }, [mapReady, mobilityOverlayGeoJSON])
+  }, [mapReady, mobilityOverlayGeoJSON, mobilitySubLayer])
 
   // ── Mobility — highlight a single selected transport route ───────────────
   useEffect(() => {
