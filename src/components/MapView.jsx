@@ -62,12 +62,27 @@ function inBbox(lng, lat, bbox) {
   return lng >= bbox.minLng && lng <= bbox.maxLng && lat >= bbox.minLat && lat <= bbox.maxLat
 }
 
-function scoreToOpacity(count) {
-  if (count === 0)  return 0.0
-  if (count === 1)  return 0.12
-  if (count <= 3)   return 0.28
-  if (count <= 9)   return 0.45
-  return 0.65
+// Returns fill and line color/opacity for a normalized 0-10 score.
+// score 0 = always-visible gray; 1-10 = red gradient with 5 distinct shades.
+function scoreToColorOpacity(score) {
+  if (score === 0) return { color: '#C7C7CC', fill: 0.38, line: 0.55 }
+  if (score <= 2)  return { color: '#FFCDD2', fill: 0.52, line: 0.68 }
+  if (score <= 4)  return { color: '#EF9A9A', fill: 0.63, line: 0.78 }
+  if (score <= 6)  return { color: '#E63946', fill: 0.74, line: 0.88 }
+  if (score <= 8)  return { color: '#C62828', fill: 0.83, line: 0.93 }
+  return           { color: '#7F0000',         fill: 0.91, line: 0.98 }
+}
+
+// Normalize a map of raw counts to a 0-10 scale (0 stays 0, max gets 10).
+function normalizeScores(raw, cap = 10) {
+  const vals = Object.values(raw).filter(v => v > 0)
+  if (!vals.length) return raw
+  const max = Math.max(...vals)
+  const out  = {}
+  for (const [k, v] of Object.entries(raw)) {
+    out[k] = v === 0 ? 0 : Math.max(1, Math.round((v / max) * cap))
+  }
+  return out
 }
 
 function getCoordList(geometry) {
@@ -77,16 +92,20 @@ function getCoordList(geometry) {
   return []
 }
 
+// Scores districts by how many features pass through BOTH the district bbox
+// AND the Stadtmitte bbox (connectivity metric — best for long linear features
+// like bus routes).
 function scoreDistricts(geoJSON, districtBoundaries) {
   if (!districtBoundaries?.Stadtmitte) return {}
   const stadtBbox = computeBbox(districtBoundaries.Stadtmitte)
   const scores = {}
 
   for (const { name } of DISTRICTS) {
-    if (name === 'Stadtmitte') { scores[name] = 0; continue }
     const distGeoJSON = districtBoundaries[name]
     if (!distGeoJSON) { scores[name] = 0; continue }
-    const distBbox = computeBbox(distGeoJSON)
+    // For Stadtmitte itself: count features passing through its bbox twice
+    // (every feature inside Stadtmitte qualifies → naturally highest score).
+    const distBbox = name === 'Stadtmitte' ? stadtBbox : computeBbox(distGeoJSON)
     let count = 0
 
     for (const feature of geoJSON.features) {
@@ -96,6 +115,27 @@ function scoreDistricts(geoJSON, districtBoundaries) {
         if (!hitDist  && inBbox(lng, lat, distBbox))  hitDist  = true
         if (!hitStadt && inBbox(lng, lat, stadtBbox)) hitStadt = true
         if (hitDist && hitStadt) { count++; break }
+      }
+    }
+    scores[name] = count
+  }
+  return scores
+}
+
+// Scores districts by how many features have ANY point within the district bbox
+// (density metric — better for short road/path segments where cross-city
+// spanning is rare).
+function scoreDistrictsLocal(geoJSON, districtBoundaries) {
+  const scores = {}
+  for (const { name } of DISTRICTS) {
+    const distGeoJSON = districtBoundaries[name]
+    if (!distGeoJSON) { scores[name] = 0; continue }
+    const distBbox = computeBbox(distGeoJSON)
+    let count = 0
+    for (const feature of geoJSON.features) {
+      const coords = getCoordList(feature.geometry)
+      for (const [lng, lat] of coords) {
+        if (inBbox(lng, lat, distBbox)) { count++; break }
       }
     }
     scores[name] = count
@@ -292,7 +332,8 @@ export default function MapView({ onVenueClick }) {
 
     for (const { id, data, fill, line, visible } of layers) {
       if (!data) continue
-      const vis = visible ? 'visible' : 'none'
+      // Hide all natural features in Mobility mode (clean white base needed)
+      const vis = (activeMode !== 'mobility' && visible) ? 'visible' : 'none'
       if (!map.getSource(id)) {
         map.addSource(id, { type: 'geojson', data })
         map.addLayer({ id: `${id}-fill`,    type: 'fill', source: id, paint: fill }, 'venue-circles')
@@ -301,7 +342,7 @@ export default function MapView({ onVenueClick }) {
       if (map.getLayer(`${id}-fill`))    map.setLayoutProperty(`${id}-fill`,    'visibility', vis)
       if (map.getLayer(`${id}-outline`)) map.setLayoutProperty(`${id}-outline`, 'visibility', vis)
     }
-  }, [mapReady, forest, water, parks, showForest, showWater, showParks])
+  }, [mapReady, forest, water, parks, showForest, showWater, showParks, activeMode])
 
   // ── Update venue GeoJSON when filters change ───────────────────────────────
   useEffect(() => {
@@ -438,42 +479,45 @@ export default function MapView({ onVenueClick }) {
 
     let cancelled = false
 
+    const OVERPASS_QUERIES = {
+      // All main motor-vehicle road types in Wolfsburg
+      automobile: `[out:json][timeout:60];(way["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
+      // Dedicated cycling infrastructure + cycle lanes + designated paths
+      cycling: `[out:json][timeout:30];(way["highway"="cycleway"](52.35,10.68,52.52,10.93);way["cycleway"~"lane|track|shared_lane|opposite_lane|opposite_track"](52.35,10.68,52.52,10.93);way["bicycle"="designated"]["highway"~"path|track|footway"](52.35,10.68,52.52,10.93);way["bicycle"="yes"]["highway"~"path|track"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
+      // All footways, paths, pedestrian areas
+      pedestrian: `[out:json][timeout:30];(way["highway"~"footway|path|pedestrian|steps|living_street"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
+      // Bus, tram, and other public transit route relations
+      transport: `[out:json][timeout:60];(relation["route"~"bus|tram|subway|light_rail|trolleybus|share_taxi"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
+    }
+
     const fetchAndScore = async () => {
       setMobilityDataLoading(true)
       try {
         let geoJSON
+        let raw = useAppStore.getState().mobilityDataCache[mobilitySubLayer]
 
-        if (mobilitySubLayer === 'automobile') {
-          if (!roads) return
-          geoJSON = roads
-        } else if (mobilitySubLayer === 'pedestrian') {
-          if (!footways) return
-          geoJSON = footways
-        } else {
-          const cached = useAppStore.getState().mobilityDataCache[mobilitySubLayer]
-          let raw = cached
-
-          if (!raw) {
-            const query = mobilitySubLayer === 'cycling'
-              ? `[out:json][timeout:30];(way["highway"="cycleway"](52.35,10.68,52.52,10.93);way["cycleway"~"lane|track|shared_lane"](52.35,10.68,52.52,10.93);way["bicycle"="designated"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`
-              : `[out:json][timeout:60];(relation["route"~"bus|tram"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`
-            const res = await fetch('https://overpass-api.de/api/interpreter', {
-              method:  'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body:    `data=${encodeURIComponent(query)}`,
-            })
-            raw = await res.json()
-            if (!cancelled) setMobilityDataCache(mobilitySubLayer, raw)
-          }
-
-          geoJSON = overpassToGeoJSON(raw)
+        if (!raw) {
+          const res = await fetch('https://overpass-api.de/api/interpreter', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body:    `data=${encodeURIComponent(OVERPASS_QUERIES[mobilitySubLayer])}`,
+          })
+          raw = await res.json()
+          if (!cancelled) setMobilityDataCache(mobilitySubLayer, raw)
         }
+
+        geoJSON = overpassToGeoJSON(raw)
 
         if (cancelled || !geoJSON || !districtBoundaries?.Stadtmitte) return
 
+        // Transport: connectivity metric (routes that span district + Stadtmitte)
+        // Road/path layers: density metric (segments within each district)
+        const rawScores = mobilitySubLayer === 'transport'
+          ? scoreDistricts(geoJSON, districtBoundaries)
+          : scoreDistrictsLocal(geoJSON, districtBoundaries)
+
         setMobilityOverlayGeoJSON(geoJSON)
-        const scores = scoreDistricts(geoJSON, districtBoundaries)
-        setMobilityScores(scores)
+        setMobilityScores(normalizeScores(rawScores))
       } catch (err) {
         console.error('Mobility fetch error:', err)
       } finally {
@@ -484,7 +528,7 @@ export default function MapView({ onVenueClick }) {
     fetchAndScore()
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapReady, mobilitySubLayer, roads, footways, districtBoundaries])
+  }, [mapReady, mobilitySubLayer, districtBoundaries])
 
   // ── Mobility — render overlay lines ───────────────────────────────────────
   useEffect(() => {
@@ -529,14 +573,15 @@ export default function MapView({ onVenueClick }) {
       if (!map.getLayer(fillId)) return
 
       if (hasMobilityScores) {
-        const count   = mobilityScores[name] ?? 0
-        const opacity = scoreToOpacity(count)
+        // Always visible in mobility mode — gray for 0, red gradient for 1-10
+        const normScore = mobilityScores[name] ?? 0
+        const { color: dc, fill, line } = scoreToColorOpacity(normScore)
         map.setLayoutProperty(fillId, 'visibility', 'visible')
         map.setLayoutProperty(lineId, 'visibility', 'visible')
-        map.setPaintProperty(fillId, 'fill-color',   '#E63946')
-        map.setPaintProperty(fillId, 'fill-opacity',  opacity)
-        map.setPaintProperty(lineId, 'line-color',   '#E63946')
-        map.setPaintProperty(lineId, 'line-opacity',  opacity > 0 ? 0.6 : 0)
+        map.setPaintProperty(fillId, 'fill-color',   dc)
+        map.setPaintProperty(fillId, 'fill-opacity',  fill)
+        map.setPaintProperty(lineId, 'line-color',   dc)
+        map.setPaintProperty(lineId, 'line-opacity',  line)
       } else {
         const vis = selectedDistricts.has(name) ? 'visible' : 'none'
         map.setLayoutProperty(fillId, 'visibility', vis)
