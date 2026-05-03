@@ -3,13 +3,13 @@ import { useAppStore } from '../store/appStore'
 import { useFilters } from '../hooks/useFilters'
 
 const MODES = [
-  { id: 'pedestrian',     label: 'Pedestrian'     },
-  { id: 'transport',      label: 'Transport'      },
-  { id: 'infrastructure', label: 'Infrastructure' },
+  { id: 'mobility',   label: 'Mobility'   },
+  { id: 'facilities', label: 'Facilities' },
+  { id: 'greenery',   label: 'Greenery'   },
 ]
 
 export default function TopBar() {
-  const { activeModes, toggleMode, selectedDay, selectedTime } = useAppStore()
+  const { activeMode, setActiveMode, selectedDay, selectedTime } = useAppStore()
   const { filteredVenues } = useFilters()
 
   return (
@@ -22,8 +22,8 @@ export default function TopBar() {
         {MODES.map(m => (
           <button
             key={m.id}
-            className={`mode-btn ${m.id} ${activeModes.has(m.id) ? 'active' : ''}`}
-            onClick={() => toggleMode(m.id)}
+            className={`mode-btn ${m.id} ${activeMode === m.id ? 'active' : ''}`}
+            onClick={() => setActiveMode(m.id)}
           >
             {m.label}
           </button>
@@ -32,7 +32,7 @@ export default function TopBar() {
 
       <div className="top-bar-meta">
         <div>{selectedDay} · {selectedTime}</div>
-        <div style={{ fontSize: 11, marginTop: 2, color: 'rgba(255,255,255,0.18)' }}>
+        <div style={{ fontSize: 11, marginTop: 2, color: 'var(--text-tertiary)' }}>
           {filteredVenues.length} venues
         </div>
       </div>

@@ -19,9 +19,19 @@ export const useAppStore = create((set) => ({
   showWater: true,
   showForest: true,
 
-  // Multi-select mode system: 'pedestrian' | 'transport' | 'infrastructure'
+  // ── Legacy multi-mode (kept for internal use) ─────────────────────────────
   activeModes: new Set(['infrastructure']),
   activeBottomPanel: null,
+
+  // ── New top-level analysis mode ───────────────────────────────────────────
+  activeMode: 'mobility',           // 'mobility' | 'facilities' | 'greenery'
+
+  // ── Mobility sub-layer ────────────────────────────────────────────────────
+  mobilitySubLayer: null,           // null | 'transport' | 'automobile' | 'cycling' | 'pedestrian'
+  mobilityScores: {},               // { districtName: number }
+  mobilityOverlayGeoJSON: null,     // GeoJSON FeatureCollection for the line overlay
+  mobilityDataCache: {},            // { layerKey: raw OSM elements array }
+  mobilityDataLoading: false,
 
   selectedDistricts: new Set(),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
@@ -29,6 +39,7 @@ export const useAppStore = create((set) => ({
   selectedTime: getCurrentTimeStr(),
   showNotes: true,
 
+  // ── Setters (existing) ────────────────────────────────────────────────────
   setVenues: (venues) => set({ venues }),
   setGeocodingProgress: (progress) => set({ geocodingProgress: progress }),
   setGeocodingSkipped: (n) => set({ geocodingSkipped: n }),
@@ -74,4 +85,25 @@ export const useAppStore = create((set) => ({
   setSelectedDay:  (day)  => set({ selectedDay: day }),
   setSelectedTime: (time) => set({ selectedTime: time }),
   setShowNotes:    (val)  => set({ showNotes: val }),
+
+  // ── New mode setters ──────────────────────────────────────────────────────
+  setActiveMode: (mode) => set({
+    activeMode: mode,
+    mobilitySubLayer: null,
+    mobilityScores: {},
+    mobilityOverlayGeoJSON: null,
+  }),
+
+  setMobilitySubLayer: (layer) => set(s => ({
+    mobilitySubLayer: s.mobilitySubLayer === layer ? null : layer,
+    mobilityScores: {},
+    mobilityOverlayGeoJSON: null,
+  })),
+
+  setMobilityScores:        (scores) => set({ mobilityScores: scores }),
+  setMobilityOverlayGeoJSON: (gj)    => set({ mobilityOverlayGeoJSON: gj }),
+  setMobilityDataLoading:   (val)    => set({ mobilityDataLoading: val }),
+  setMobilityDataCache: (key, data)  => set(s => ({
+    mobilityDataCache: { ...s.mobilityDataCache, [key]: data },
+  })),
 }))

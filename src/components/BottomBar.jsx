@@ -4,6 +4,7 @@ import DistrictsPanel from './panels/DistrictsPanel'
 import FacilitiesPanel from './panels/FacilitiesPanel'
 import TimePanel from './panels/TimePanel'
 import StatsPanel from './panels/StatsPanel'
+import MobilityPanel from './panels/MobilityPanel'
 
 const TABS = [
   { id: 'districts',  label: 'Districts',  icon: '⬡' },
@@ -20,8 +21,20 @@ const PANELS = {
 }
 
 export default function BottomBar() {
-  const { activeBottomPanel, setActiveBottomPanel } = useAppStore()
+  const { activeMode, activeBottomPanel, setActiveBottomPanel } = useAppStore()
   const ActivePanel = activeBottomPanel ? PANELS[activeBottomPanel] : null
+
+  if (activeMode === 'mobility') {
+    return (
+      <div className="bottom-bar">
+        <div className="bottom-panel-wrap open">
+          <div className="bottom-panel-inner">
+            <MobilityPanel />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="bottom-bar">
