@@ -38,6 +38,10 @@ export const useAppStore = create((set) => ({
   transitStopsGeoJSON: null,        // GeoJSON FeatureCollection of bus stop nodes
   showTransitStops: false,          // toggle visibility of stop markers
 
+  // ── Cycling parking ───────────────────────────────────────────────────────
+  cyclingParkingGeoJSON: null,      // GeoJSON FeatureCollection of bicycle_parking nodes
+  showCyclingParking: false,        // toggle visibility of parking markers
+
   // ── District selection in mobility mode ───────────────────────────────────
   selectedMobilityDistrict: null,   // district name clicked on the map
 
@@ -102,6 +106,7 @@ export const useAppStore = create((set) => ({
     mobilityOverlayGeoJSON: null,
     mobilityHighlightRoute: null,
     showTransitStops: false,
+    showCyclingParking: false,
     selectedMobilityDistrict: null,
   }),
 
@@ -110,6 +115,7 @@ export const useAppStore = create((set) => ({
     mobilityScores: {},
     mobilityOverlayGeoJSON: null,
     mobilityHighlightRoute: null,
+    showCyclingParking: false,
     selectedMobilityDistrict: null,
   })),
 
@@ -124,6 +130,10 @@ export const useAppStore = create((set) => ({
   // ── Transit stops setters ─────────────────────────────────────────────────
   setTransitStopsGeoJSON: (gj)  => set({ transitStopsGeoJSON: gj }),
   toggleTransitStops:     ()    => set(s => ({ showTransitStops: !s.showTransitStops })),
+
+  // ── Cycling parking setters ───────────────────────────────────────────────
+  setCyclingParkingGeoJSON: (gj) => set({ cyclingParkingGeoJSON: gj }),
+  toggleCyclingParking:     ()   => set(s => ({ showCyclingParking: !s.showCyclingParking })),
 
   // ── District selection setter ─────────────────────────────────────────────
   setSelectedMobilityDistrict: (name) => set(s => ({

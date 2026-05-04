@@ -32,6 +32,7 @@ export default function MobilityPanel() {
     mobilityHighlightRoute, setMobilityHighlightRoute,
     mobilityOverlayGeoJSON,
     transitStopsGeoJSON, showTransitStops, toggleTransitStops,
+    cyclingParkingGeoJSON, showCyclingParking, toggleCyclingParking,
     selectedMobilityDistrict, setSelectedMobilityDistrict,
     districtBoundaries,
   } = useAppStore()
@@ -51,32 +52,47 @@ export default function MobilityPanel() {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 8)
 
-  // Compute stats for the selected district (transport mode)
+  // Compute stats for the selected district (transport + cycling modes)
   const districtStats = useMemo(() => {
-    if (!selectedMobilityDistrict || mobilitySubLayer !== 'transport') return null
+    if (!selectedMobilityDistrict) return null
+    if (mobilitySubLayer !== 'transport' && mobilitySubLayer !== 'cycling') return null
     const distGeoJSON = districtBoundaries[selectedMobilityDistrict]
     if (!distGeoJSON) return null
     const bbox = computeBbox(distGeoJSON)
 
-    const stopCount = (transitStopsGeoJSON?.features || []).filter(f => {
-      if (!f.geometry?.coordinates) return false
-      const [lng, lat] = f.geometry.coordinates
-      return inBbox(lng, lat, bbox)
-    }).length
+    if (mobilitySubLayer === 'transport') {
+      const stopCount = (transitStopsGeoJSON?.features || []).filter(f => {
+        if (!f.geometry?.coordinates) return false
+        const [lng, lat] = f.geometry.coordinates
+        return inBbox(lng, lat, bbox)
+      }).length
 
-    const allRoutes = parseRoutes(mobilityDataCache)
-    const routeIds = new Set(
-      (mobilityOverlayGeoJSON?.features || [])
-        .filter(f => {
-          const coords = getCoordList(f.geometry)
-          return coords.some(([lng, lat]) => inBbox(lng, lat, bbox))
-        })
-        .map(f => f.properties._id)
-    )
-    const districtRoutes = allRoutes.filter(r => routeIds.has(r.id))
+      const allRoutes = parseRoutes(mobilityDataCache)
+      const routeIds = new Set(
+        (mobilityOverlayGeoJSON?.features || [])
+          .filter(f => {
+            const coords = getCoordList(f.geometry)
+            return coords.some(([lng, lat]) => inBbox(lng, lat, bbox))
+          })
+          .map(f => f.properties._id)
+      )
+      const districtRoutes = allRoutes.filter(r => routeIds.has(r.id))
+      return { mode: 'transport', district: selectedMobilityDistrict, stopCount, routes: districtRoutes }
+    }
 
-    return { district: selectedMobilityDistrict, stopCount, routes: districtRoutes }
-  }, [selectedMobilityDistrict, mobilitySubLayer, districtBoundaries, transitStopsGeoJSON, mobilityOverlayGeoJSON, mobilityDataCache])
+    if (mobilitySubLayer === 'cycling') {
+      const spots = (cyclingParkingGeoJSON?.features || []).filter(f => {
+        if (!f.geometry?.coordinates) return false
+        const [lng, lat] = f.geometry.coordinates
+        return inBbox(lng, lat, bbox)
+      })
+      const totalCapacity = spots.reduce((sum, f) => sum + (f.properties?.capacity || 1), 0)
+      return { mode: 'cycling', district: selectedMobilityDistrict, parkingCount: spots.length, totalCapacity }
+    }
+
+    return null
+  }, [selectedMobilityDistrict, mobilitySubLayer, districtBoundaries,
+      transitStopsGeoJSON, mobilityOverlayGeoJSON, mobilityDataCache, cyclingParkingGeoJSON])
 
   return (
     <div>
@@ -190,6 +206,30 @@ export default function MobilityPanel() {
         </button>
       )}
 
+      {/* ── Cycling parking toggle ── */}
+      {mobilitySubLayer === 'cycling' && !mobilityDataLoading && (
+        <button
+          onClick={toggleCyclingParking}
+          style={{
+            display:    'flex', alignItems: 'center', gap: 8,
+            marginTop:  12, padding: '8px 14px', borderRadius: 10,
+            background:  showCyclingParking ? '#E8FFF0' : '#F5F5F7',
+            border:     `1px solid ${showCyclingParking ? '#00C853' : 'rgba(0,0,0,0.08)'}`,
+            cursor:     'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>🅿️</span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: showCyclingParking ? '#007A33' : '#3D3D3F' }}>
+            {showCyclingParking ? 'Hide bike parking' : 'Show bike parking'}
+          </span>
+          {cyclingParkingGeoJSON && (
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: '#AEAEB2' }}>
+              {cyclingParkingGeoJSON.features.length} total
+            </span>
+          )}
+        </button>
+      )}
+
       {/* ── Status hint ── */}
       {!showStats && mobilitySubLayer && !mobilityDataLoading && (
         <p style={{ fontSize: 13, color: '#6E6E73', marginTop: 12, letterSpacing: '-0.01em' }}>
@@ -210,8 +250,8 @@ export default function MobilityPanel() {
               Select a mobility layer first to see statistics.
             </p>
 
-          ) : mobilitySubLayer === 'transport' && districtStats ? (
-            /* ── District detail view ── */
+          ) : districtStats?.mode === 'transport' ? (
+            /* ── Transport district detail ── */
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <button
@@ -229,7 +269,6 @@ export default function MobilityPanel() {
                 </span>
               </div>
 
-              {/* Stop count */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 background: '#E8F4FF', borderRadius: 10, padding: '10px 14px', marginBottom: 12,
@@ -239,13 +278,10 @@ export default function MobilityPanel() {
                   <div style={{ fontSize: 20, fontWeight: 700, color: '#0055CC', lineHeight: 1 }}>
                     {districtStats.stopCount}
                   </div>
-                  <div style={{ fontSize: 12, color: '#5588AA', marginTop: 2 }}>
-                    bus stops in district
-                  </div>
+                  <div style={{ fontSize: 12, color: '#5588AA', marginTop: 2 }}>bus stops in district</div>
                 </div>
               </div>
 
-              {/* Routes through district */}
               <p style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F', marginBottom: 6 }}>
                 Routes through district · {districtStats.routes.length}
               </p>
@@ -253,12 +289,8 @@ export default function MobilityPanel() {
                 <p style={{ fontSize: 12, color: '#AEAEB2' }}>No routes found in this district.</p>
               ) : (
                 <div style={{
-                  display:             'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-                  gap:                  6,
-                  maxHeight:            200,
-                  overflowY:           'auto',
-                  paddingRight:         4,
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap: 6, maxHeight: 200, overflowY: 'auto', paddingRight: 4,
                 }}>
                   {districtStats.routes.map(r => {
                     const isSelected = mobilityHighlightRoute === r.id
@@ -267,9 +299,9 @@ export default function MobilityPanel() {
                         key={r.id}
                         onClick={() => setMobilityHighlightRoute(isSelected ? null : r.id)}
                         style={{
-                          display:    'flex', gap: 8, alignItems: 'center',
-                          background:  isSelected ? '#FFF0F0' : '#F5F5F7',
-                          border:     `1px solid ${isSelected ? '#FF1744' : 'rgba(0,0,0,0.06)'}`,
+                          display: 'flex', gap: 8, alignItems: 'center',
+                          background: isSelected ? '#FFF0F0' : '#F5F5F7',
+                          border: `1px solid ${isSelected ? '#FF1744' : 'rgba(0,0,0,0.06)'}`,
                           borderRadius: 10, padding: '7px 11px',
                           fontSize: 13, cursor: 'pointer', textAlign: 'left',
                           fontFamily: 'inherit', transition: 'all 0.15s ease',
@@ -297,8 +329,57 @@ export default function MobilityPanel() {
                   })}
                 </div>
               )}
+              <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>Source: OpenStreetMap</p>
+            </div>
+
+          ) : districtStats?.mode === 'cycling' ? (
+            /* ── Cycling district detail ── */
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <button
+                  onClick={() => setSelectedMobilityDistrict(null)}
+                  style={{
+                    background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer',
+                    fontFamily: 'inherit', color: '#3D3D3F',
+                  }}
+                >
+                  ← Districts
+                </button>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F' }}>
+                  {districtStats.district}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+                <div style={{
+                  flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+                  background: '#E8FFF0', borderRadius: 10, padding: '10px 14px',
+                }}>
+                  <span style={{ fontSize: 22 }}>🅿️</span>
+                  <div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#007A33', lineHeight: 1 }}>
+                      {districtStats.parkingCount}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#2E7D53', marginTop: 2 }}>parking spots</div>
+                  </div>
+                </div>
+                <div style={{
+                  flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+                  background: '#F0FFF4', borderRadius: 10, padding: '10px 14px',
+                }}>
+                  <span style={{ fontSize: 22 }}>🚲</span>
+                  <div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#007A33', lineHeight: 1 }}>
+                      {districtStats.totalCapacity}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#2E7D53', marginTop: 2 }}>total capacity</div>
+                  </div>
+                </div>
+              </div>
+
               <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
-                Source: OpenStreetMap
+                Source: OpenStreetMap · capacity based on tagged values
               </p>
             </div>
 

@@ -160,6 +160,32 @@ function stopsToGeoJSON(data) {
   return { type: 'FeatureCollection', features }
 }
 
+// Bike parking: nodes + ways with center coords (use `out center` in Overpass)
+function parkingToGeoJSON(data) {
+  const features = data.elements
+    .filter(el => {
+      if (el.type === 'node') return el.lat != null
+      if (el.type === 'way')  return el.center?.lat != null
+      return false
+    })
+    .map(el => {
+      const coords = el.type === 'node'
+        ? [el.lon, el.lat]
+        : [el.center.lon, el.center.lat]
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: coords },
+        properties: {
+          _id:      el.id,
+          capacity: el.tags?.capacity ? (parseInt(el.tags.capacity, 10) || 1) : 1,
+          covered:  el.tags?.covered === 'yes',
+          name:     el.tags?.name || '',
+        },
+      }
+    })
+  return { type: 'FeatureCollection', features }
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function MapView({ onVenueClick }) {
@@ -183,6 +209,8 @@ export default function MapView({ onVenueClick }) {
     setMobilityScores, setMobilityOverlayGeoJSON, setMobilityDataLoading, setMobilityDataCache,
     transitStopsGeoJSON, showTransitStops,
     setTransitStopsGeoJSON,
+    cyclingParkingGeoJSON, showCyclingParking,
+    setCyclingParkingGeoJSON,
     selectedMobilityDistrict, setSelectedMobilityDistrict,
   } = useAppStore()
   const { filteredVenues } = useFilters()
@@ -295,8 +323,11 @@ export default function MapView({ onVenueClick }) {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
 
+    const CLICKABLE_SUBLAYERS = ['transport', 'cycling']
+
     const handleClick = (e) => {
-      if (activeModeRef.current !== 'mobility' || mobilitySubLayerRef.current !== 'transport') return
+      const sub = mobilitySubLayerRef.current
+      if (activeModeRef.current !== 'mobility' || !CLICKABLE_SUBLAYERS.includes(sub)) return
       const layers = DISTRICTS.map(d => `boundary-fill-${d.name}`).filter(id => map.getLayer(id))
       const features = map.queryRenderedFeatures(e.point, { layers })
       if (!features.length) {
@@ -308,7 +339,8 @@ export default function MapView({ onVenueClick }) {
     }
 
     const handleMouseMove = (e) => {
-      if (activeModeRef.current !== 'mobility' || mobilitySubLayerRef.current !== 'transport') {
+      const sub = mobilitySubLayerRef.current
+      if (activeModeRef.current !== 'mobility' || !CLICKABLE_SUBLAYERS.includes(sub)) {
         map.getCanvas().style.cursor = ''
         return
       }
@@ -579,6 +611,34 @@ export default function MapView({ onVenueClick }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, mobilitySubLayer])
 
+  // ── Cycling — fetch bike parking when cycling sublayer is selected ─────────
+  useEffect(() => {
+    if (!mapReady || mobilitySubLayer !== 'cycling') return
+    if (useAppStore.getState().cyclingParkingGeoJSON) return
+
+    let cancelled = false
+    // `out center` so ways also get a representative lat/lon
+    const PARKING_QUERY = `[out:json][timeout:30];(node["amenity"="bicycle_parking"](52.35,10.68,52.52,10.93);way["amenity"="bicycle_parking"](52.35,10.68,52.52,10.93););out center;`
+
+    const fetchParking = async () => {
+      try {
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body:    `data=${encodeURIComponent(PARKING_QUERY)}`,
+        })
+        const raw = await res.json()
+        if (!cancelled) setCyclingParkingGeoJSON(parkingToGeoJSON(raw))
+      } catch (err) {
+        console.error('Cycling parking fetch error:', err)
+      }
+    }
+
+    fetchParking()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady, mobilitySubLayer])
+
   // ── Mobility — render overlay lines ───────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -733,6 +793,39 @@ export default function MapView({ onVenueClick }) {
         map.setLayoutProperty('transit-stops-circles', 'visibility', vis)
     }
   }, [mapReady, transitStopsGeoJSON, showTransitStops, mobilitySubLayer])
+
+  // ── Cycling parking — render / update ─────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const vis = (mobilitySubLayer === 'cycling' && showCyclingParking && cyclingParkingGeoJSON)
+      ? 'visible' : 'none'
+
+    if (!cyclingParkingGeoJSON) return
+
+    if (!map.getSource('cycling-parking')) {
+      map.addSource('cycling-parking', { type: 'geojson', data: cyclingParkingGeoJSON })
+      map.addLayer({
+        id:     'cycling-parking-circles',
+        type:   'circle',
+        source: 'cycling-parking',
+        layout: { visibility: vis },
+        paint: {
+          'circle-radius':         5,
+          'circle-color':          '#00C853',
+          'circle-opacity':        0.88,
+          'circle-stroke-width':   1.5,
+          'circle-stroke-color':   '#FFFFFF',
+          'circle-stroke-opacity': 0.9,
+        },
+      }, 'venue-circles')
+    } else {
+      map.getSource('cycling-parking').setData(cyclingParkingGeoJSON)
+      if (map.getLayer('cycling-parking-circles'))
+        map.setLayoutProperty('cycling-parking-circles', 'visibility', vis)
+    }
+  }, [mapReady, cyclingParkingGeoJSON, showCyclingParking, mobilitySubLayer])
 
   // ── Mobility — color districts by score ───────────────────────────────────
   useEffect(() => {
