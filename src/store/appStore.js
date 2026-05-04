@@ -34,6 +34,13 @@ export const useAppStore = create((set) => ({
   mobilityDataLoading: false,
   mobilityHighlightRoute: null,     // relation ID of the currently highlighted transport route
 
+  // ── Transit stops ─────────────────────────────────────────────────────────
+  transitStopsGeoJSON: null,        // GeoJSON FeatureCollection of bus stop nodes
+  showTransitStops: false,          // toggle visibility of stop markers
+
+  // ── District selection in mobility mode ───────────────────────────────────
+  selectedMobilityDistrict: null,   // district name clicked on the map
+
   selectedDistricts: new Set(),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
   selectedDay: getCurrentDayAbbr(),
@@ -94,6 +101,8 @@ export const useAppStore = create((set) => ({
     mobilityScores: {},
     mobilityOverlayGeoJSON: null,
     mobilityHighlightRoute: null,
+    showTransitStops: false,
+    selectedMobilityDistrict: null,
   }),
 
   setMobilitySubLayer: (layer) => set(s => ({
@@ -101,6 +110,7 @@ export const useAppStore = create((set) => ({
     mobilityScores: {},
     mobilityOverlayGeoJSON: null,
     mobilityHighlightRoute: null,
+    selectedMobilityDistrict: null,
   })),
 
   setMobilityScores:         (scores) => set({ mobilityScores: scores }),
@@ -110,4 +120,13 @@ export const useAppStore = create((set) => ({
     mobilityDataCache: { ...s.mobilityDataCache, [key]: data },
   })),
   setMobilityHighlightRoute: (id) => set({ mobilityHighlightRoute: id }),
+
+  // ── Transit stops setters ─────────────────────────────────────────────────
+  setTransitStopsGeoJSON: (gj)  => set({ transitStopsGeoJSON: gj }),
+  toggleTransitStops:     ()    => set(s => ({ showTransitStops: !s.showTransitStops })),
+
+  // ── District selection setter ─────────────────────────────────────────────
+  setSelectedMobilityDistrict: (name) => set(s => ({
+    selectedMobilityDistrict: s.selectedMobilityDistrict === name ? null : name,
+  })),
 }))

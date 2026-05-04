@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useAppStore } from '../../store/appStore'
+import { computeBbox, inBbox, getCoordList } from '../../utils/geoUtils'
 
 const SUB_LAYERS = [
   { id: 'transport',  label: 'Public Transport',         icon: '🚌' },
@@ -29,17 +30,53 @@ export default function MobilityPanel() {
     mobilitySubLayer, setMobilitySubLayer,
     mobilityDataLoading, mobilityScores, mobilityDataCache,
     mobilityHighlightRoute, setMobilityHighlightRoute,
+    mobilityOverlayGeoJSON,
+    transitStopsGeoJSON, showTransitStops, toggleTransitStops,
+    selectedMobilityDistrict, setSelectedMobilityDistrict,
+    districtBoundaries,
   } = useAppStore()
 
   const [showStats, setShowStats] = useState(false)
+
+  // Auto-open stats panel when a district is clicked on the map
+  useEffect(() => {
+    if (selectedMobilityDistrict) setShowStats(true)
+  }, [selectedMobilityDistrict])
 
   const activeLayerLabel = SUB_LAYERS.find(s => s.id === mobilitySubLayer)?.label ?? ''
   const routes = parseRoutes(mobilityDataCache)
 
   const topDistricts = Object.entries(mobilityScores)
-    .filter(([, v]) => v > 0 && v < 10)   // exclude central (10) and zero
+    .filter(([, v]) => v > 0 && v < 10)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 8)
+
+  // Compute stats for the selected district (transport mode)
+  const districtStats = useMemo(() => {
+    if (!selectedMobilityDistrict || mobilitySubLayer !== 'transport') return null
+    const distGeoJSON = districtBoundaries[selectedMobilityDistrict]
+    if (!distGeoJSON) return null
+    const bbox = computeBbox(distGeoJSON)
+
+    const stopCount = (transitStopsGeoJSON?.features || []).filter(f => {
+      if (!f.geometry?.coordinates) return false
+      const [lng, lat] = f.geometry.coordinates
+      return inBbox(lng, lat, bbox)
+    }).length
+
+    const allRoutes = parseRoutes(mobilityDataCache)
+    const routeIds = new Set(
+      (mobilityOverlayGeoJSON?.features || [])
+        .filter(f => {
+          const coords = getCoordList(f.geometry)
+          return coords.some(([lng, lat]) => inBbox(lng, lat, bbox))
+        })
+        .map(f => f.properties._id)
+    )
+    const districtRoutes = allRoutes.filter(r => routeIds.has(r.id))
+
+    return { district: selectedMobilityDistrict, stopCount, routes: districtRoutes }
+  }, [selectedMobilityDistrict, mobilitySubLayer, districtBoundaries, transitStopsGeoJSON, mobilityOverlayGeoJSON, mobilityDataCache])
 
   return (
     <div>
@@ -53,7 +90,10 @@ export default function MobilityPanel() {
           return (
             <button
               key={s.id}
-              onClick={() => { setMobilitySubLayer(s.id); setShowStats(false) }}
+              onClick={() => {
+                setMobilitySubLayer(s.id)
+                setShowStats(false)
+              }}
               style={{
                 display:       'flex',
                 flexDirection: 'column',
@@ -87,7 +127,10 @@ export default function MobilityPanel() {
 
         {/* ── Statistics column ── */}
         <button
-          onClick={() => setShowStats(v => !v)}
+          onClick={() => {
+            setShowStats(v => !v)
+            if (showStats) setSelectedMobilityDistrict(null)
+          }}
           style={{
             display:       'flex',
             flexDirection: 'column',
@@ -117,10 +160,40 @@ export default function MobilityPanel() {
         </button>
       </div>
 
+      {/* ── Transit stops toggle (transport mode only) ── */}
+      {mobilitySubLayer === 'transport' && !mobilityDataLoading && (
+        <button
+          onClick={toggleTransitStops}
+          style={{
+            display:      'flex',
+            alignItems:   'center',
+            gap:           8,
+            marginTop:    12,
+            padding:      '8px 14px',
+            borderRadius:  10,
+            background:    showTransitStops ? '#E8F4FF' : '#F5F5F7',
+            border:       `1px solid ${showTransitStops ? '#0077FF' : 'rgba(0,0,0,0.08)'}`,
+            cursor:       'pointer',
+            fontFamily:   'inherit',
+            transition:   'all 0.15s ease',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>🚏</span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: showTransitStops ? '#0055CC' : '#3D3D3F' }}>
+            {showTransitStops ? 'Hide stops' : 'Show stops'}
+          </span>
+          {transitStopsGeoJSON && (
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: '#AEAEB2' }}>
+              {transitStopsGeoJSON.features.length} total
+            </span>
+          )}
+        </button>
+      )}
+
       {/* ── Status hint ── */}
       {!showStats && mobilitySubLayer && !mobilityDataLoading && (
         <p style={{ fontSize: 13, color: '#6E6E73', marginTop: 12, letterSpacing: '-0.01em' }}>
-          Districts colored by connectivity to city center · darker = more connected
+          Districts colored by connectivity to city center · click a district for details
         </p>
       )}
       {!showStats && mobilityDataLoading && (
@@ -136,21 +209,115 @@ export default function MobilityPanel() {
             <p style={{ fontSize: 13, color: '#6E6E73' }}>
               Select a mobility layer first to see statistics.
             </p>
+
+          ) : mobilitySubLayer === 'transport' && districtStats ? (
+            /* ── District detail view ── */
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <button
+                  onClick={() => setSelectedMobilityDistrict(null)}
+                  style={{
+                    background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer',
+                    fontFamily: 'inherit', color: '#3D3D3F',
+                  }}
+                >
+                  ← All routes
+                </button>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F' }}>
+                  {districtStats.district}
+                </span>
+              </div>
+
+              {/* Stop count */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: '#E8F4FF', borderRadius: 10, padding: '10px 14px', marginBottom: 12,
+              }}>
+                <span style={{ fontSize: 22 }}>🚏</span>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#0055CC', lineHeight: 1 }}>
+                    {districtStats.stopCount}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#5588AA', marginTop: 2 }}>
+                    bus stops in district
+                  </div>
+                </div>
+              </div>
+
+              {/* Routes through district */}
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F', marginBottom: 6 }}>
+                Routes through district · {districtStats.routes.length}
+              </p>
+              {districtStats.routes.length === 0 ? (
+                <p style={{ fontSize: 12, color: '#AEAEB2' }}>No routes found in this district.</p>
+              ) : (
+                <div style={{
+                  display:             'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap:                  6,
+                  maxHeight:            200,
+                  overflowY:           'auto',
+                  paddingRight:         4,
+                }}>
+                  {districtStats.routes.map(r => {
+                    const isSelected = mobilityHighlightRoute === r.id
+                    return (
+                      <button
+                        key={r.id}
+                        onClick={() => setMobilityHighlightRoute(isSelected ? null : r.id)}
+                        style={{
+                          display:    'flex', gap: 8, alignItems: 'center',
+                          background:  isSelected ? '#FFF0F0' : '#F5F5F7',
+                          border:     `1px solid ${isSelected ? '#FF1744' : 'rgba(0,0,0,0.06)'}`,
+                          borderRadius: 10, padding: '7px 11px',
+                          fontSize: 13, cursor: 'pointer', textAlign: 'left',
+                          fontFamily: 'inherit', transition: 'all 0.15s ease',
+                          boxShadow: isSelected ? '0 1px 6px rgba(255,23,68,0.20)' : 'none',
+                        }}
+                      >
+                        {r.ref && (
+                          <span style={{
+                            background: isSelected ? '#FF1744' : '#FF4D6D',
+                            color: '#fff', borderRadius: 6, padding: '1px 7px',
+                            fontWeight: 700, fontSize: 12, flexShrink: 0,
+                            minWidth: 28, textAlign: 'center',
+                          }}>{r.ref}</span>
+                        )}
+                        <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 12 }}>
+                          {r.from && r.to ? `${r.from} → ${r.to}` : r.name || 'Route'}
+                        </span>
+                        {isSelected && (
+                          <span style={{ marginLeft: 'auto', color: '#FF1744', fontSize: 11, flexShrink: 0 }}>
+                            on map ✓
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
+                Source: OpenStreetMap
+              </p>
+            </div>
+
           ) : mobilitySubLayer === 'transport' && routes.length > 0 ? (
+            /* ── All routes list ── */
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', marginBottom: 6 }}>
                 Public transport routes · {routes.length} found
               </p>
               <p style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 10, letterSpacing: '-0.01em' }}>
-                Click a route to highlight it on the map
+                Click a route to highlight · click a district on the map for details
               </p>
               <div style={{
-                display:        'grid',
+                display:             'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                gap:             6,
-                maxHeight:       220,
-                overflowY:       'auto',
-                paddingRight:    4,
+                gap:                  6,
+                maxHeight:            220,
+                overflowY:           'auto',
+                paddingRight:         4,
               }}>
                 {routes.map(r => {
                   const isSelected = mobilityHighlightRoute === r.id
@@ -159,32 +326,21 @@ export default function MobilityPanel() {
                       key={r.id}
                       onClick={() => setMobilityHighlightRoute(isSelected ? null : r.id)}
                       style={{
-                        display:    'flex',
-                        gap:         8,
-                        alignItems: 'center',
+                        display:    'flex', gap: 8, alignItems: 'center',
                         background:  isSelected ? '#FFF0F0' : '#F5F5F7',
                         border:     `1px solid ${isSelected ? '#FF1744' : 'rgba(0,0,0,0.06)'}`,
-                        borderRadius: 10,
-                        padding:    '7px 11px',
-                        fontSize:    13,
-                        cursor:     'pointer',
-                        textAlign:  'left',
-                        fontFamily: 'inherit',
-                        transition: 'all 0.15s ease',
-                        boxShadow:   isSelected ? '0 1px 6px rgba(255,23,68,0.20)' : 'none',
+                        borderRadius: 10, padding: '7px 11px',
+                        fontSize: 13, cursor: 'pointer', textAlign: 'left',
+                        fontFamily: 'inherit', transition: 'all 0.15s ease',
+                        boxShadow: isSelected ? '0 1px 6px rgba(255,23,68,0.20)' : 'none',
                       }}
                     >
                       {r.ref && (
                         <span style={{
-                          background:  isSelected ? '#FF1744' : '#FF4D6D',
-                          color:       '#fff',
-                          borderRadius: 6,
-                          padding:    '1px 7px',
-                          fontWeight:  700,
-                          fontSize:    12,
-                          flexShrink:  0,
-                          minWidth:    28,
-                          textAlign:  'center',
+                          background: isSelected ? '#FF1744' : '#FF4D6D',
+                          color: '#fff', borderRadius: 6, padding: '1px 7px',
+                          fontWeight: 700, fontSize: 12, flexShrink: 0,
+                          minWidth: 28, textAlign: 'center',
                         }}>{r.ref}</span>
                       )}
                       <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 12 }}>
@@ -200,10 +356,12 @@ export default function MobilityPanel() {
                 })}
               </div>
               <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
-                Source: OpenStreetMap · stop-by-stop details coming soon
+                Source: OpenStreetMap
               </p>
             </div>
+
           ) : topDistricts.length > 0 ? (
+            /* ── Top districts bar chart ── */
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', marginBottom: 10 }}>
                 Most connected districts · {activeLayerLabel.toLowerCase()}
@@ -233,6 +391,7 @@ export default function MobilityPanel() {
                 Score 1–9 (normalized, excl. central districts) · Source: OpenStreetMap
               </p>
             </div>
+
           ) : (
             <p style={{ fontSize: 13, color: '#AEAEB2' }}>
               {mobilityDataLoading ? 'Loading…' : 'No data loaded yet. Select a layer above.'}

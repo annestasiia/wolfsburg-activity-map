@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useAppStore } from '../store/appStore'
@@ -6,11 +6,11 @@ import { useFilters } from '../hooks/useFilters'
 import { DISTRICTS } from '../constants'
 import { HIGHWAY_TYPES, ROAD_STYLE, getTrafficOpacity } from '../utils/trafficPatterns'
 import { computeFootwayGeoJSON } from '../utils/footwayActivity'
+import { computeBbox, inBbox, expandBbox, getCoordList } from '../utils/geoUtils'
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 const WOLFSBURG  = { center: [10.7865, 52.4227], zoom: 12 }
 
-// Districts considered "central" — always shown at maximum connectivity score.
 const CENTRAL_DISTRICTS = new Set([
   'Schillerteich', 'Stadtmitte', 'Rothenfelde', 'Wohltberg',
   'Volkswagenwerk', 'Alt-Wolfsburg', 'Hellwinkel', 'Heßlingen', 'Hohenstein',
@@ -48,28 +48,7 @@ function buildGeoJSON(venues) {
   }
 }
 
-function computeBbox(geojson) {
-  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity
-  const visit = (coords) => {
-    if (typeof coords[0] === 'number') {
-      if (coords[0] < minLng) minLng = coords[0]
-      if (coords[0] > maxLng) maxLng = coords[0]
-      if (coords[1] < minLat) minLat = coords[1]
-      if (coords[1] > maxLat) maxLat = coords[1]
-    } else {
-      coords.forEach(visit)
-    }
-  }
-  geojson.features?.forEach(f => { if (f.geometry) visit(f.geometry.coordinates) })
-  return { minLng, maxLng, minLat, maxLat }
-}
-
-function inBbox(lng, lat, bbox) {
-  return lng >= bbox.minLng && lng <= bbox.maxLng && lat >= bbox.minLat && lat <= bbox.maxLat
-}
-
-// 5-level gradient from the user's palette, all fills at 50% opacity so roads
-// underneath stay visible.  score 0 = least connected (faintest pink).
+// 5-level gradient: score 0 = least connected (faintest pink)
 function scoreToColorOpacity(score) {
   if (score <= 0) return { color: '#FFF0F3', fill: 0.50, line: 0.55 }
   if (score <= 2) return { color: '#FFCCD5', fill: 0.50, line: 0.60 }
@@ -78,8 +57,6 @@ function scoreToColorOpacity(score) {
   return          { color: '#FF1744',        fill: 0.50, line: 0.78 }
 }
 
-// Normalize raw scores to 0-10. Central districts use sentinel 9999 → maps to 10.
-// Real scores (non-central) are scaled relative to the highest real count.
 function normalizeScores(raw, cap = 10) {
   const realVals = Object.values(raw).filter(v => v > 0 && v < 9999)
   const max = realVals.length ? Math.max(...realVals) : 1
@@ -91,23 +68,6 @@ function normalizeScores(raw, cap = 10) {
   return out
 }
 
-function getCoordList(geometry) {
-  if (!geometry) return []
-  if (geometry.type === 'LineString')      return geometry.coordinates
-  if (geometry.type === 'MultiLineString') return geometry.coordinates.flat()
-  return []
-}
-
-function expandBbox({ minLng, maxLng, minLat, maxLat }, pad) {
-  return { minLng: minLng - pad, maxLng: maxLng + pad, minLat: minLat - pad, maxLat: maxLat + pad }
-}
-
-// Unified connectivity scorer: central districts always get sentinel 9999.
-// For other districts, count features that have at least one point in the
-// district bbox AND at least one point in any (optionally expanded) central
-// district bbox.  `centralPadding` (degrees) widens the central zone so that
-// short road/path segments in adjacent districts still register — 0 is fine
-// for long transit routes that span the whole city.
 function scoreDistrictsToCenter(geoJSON, districtBoundaries, centralPadding = 0) {
   const centralBboxes = []
   for (const name of CENTRAL_DISTRICTS) {
@@ -185,6 +145,21 @@ function overpassToGeoJSON(data) {
   return { type: 'FeatureCollection', features }
 }
 
+function stopsToGeoJSON(data) {
+  const features = data.elements
+    .filter(el => el.type === 'node' && el.lat != null)
+    .map(el => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [el.lon, el.lat] },
+      properties: {
+        _id:  el.id,
+        name: el.tags?.name || el.tags?.['name:de'] || '',
+        ref:  el.tags?.ref  || '',
+      },
+    }))
+  return { type: 'FeatureCollection', features }
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function MapView({ onVenueClick }) {
@@ -193,6 +168,10 @@ export default function MapView({ onVenueClick }) {
   const tooltipRef   = useRef(null)
   const [mapReady, setMapReady] = useState(false)
 
+  // Refs to avoid stale closures in persistent event handlers
+  const mobilitySubLayerRef = useRef(null)
+  const activeModeRef       = useRef('mobility')
+
   const {
     districtBoundaries, selectedDistricts,
     parks, water, forest, showParks, showWater, showForest,
@@ -200,10 +179,17 @@ export default function MapView({ onVenueClick }) {
     activeModes, activeMode,
     selectedDay, selectedTime,
     mobilitySubLayer, mobilityScores, mobilityOverlayGeoJSON,
-    mobilityHighlightRoute,
+    mobilityHighlightRoute, mobilityDataCache,
     setMobilityScores, setMobilityOverlayGeoJSON, setMobilityDataLoading, setMobilityDataCache,
+    transitStopsGeoJSON, showTransitStops,
+    setTransitStopsGeoJSON,
+    selectedMobilityDistrict, setSelectedMobilityDistrict,
   } = useAppStore()
   const { filteredVenues } = useFilters()
+
+  // Keep refs in sync
+  useEffect(() => { mobilitySubLayerRef.current = mobilitySubLayer }, [mobilitySubLayer])
+  useEffect(() => { activeModeRef.current = activeMode }, [activeMode])
 
   // ── Initialise map (once) ──────────────────────────────────────────────────
   useEffect(() => {
@@ -304,6 +290,41 @@ export default function MapView({ onVenueClick }) {
     map.on('click',  'venue-dots-inactive', handler)
   }, [mapReady, onVenueClick])
 
+  // ── District click + cursor in mobility mode (registered once) ────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const handleClick = (e) => {
+      if (activeModeRef.current !== 'mobility' || mobilitySubLayerRef.current !== 'transport') return
+      const layers = DISTRICTS.map(d => `boundary-fill-${d.name}`).filter(id => map.getLayer(id))
+      const features = map.queryRenderedFeatures(e.point, { layers })
+      if (!features.length) {
+        useAppStore.getState().setSelectedMobilityDistrict(null)
+        return
+      }
+      const name = features[0].layer.id.replace('boundary-fill-', '')
+      useAppStore.getState().setSelectedMobilityDistrict(name)
+    }
+
+    const handleMouseMove = (e) => {
+      if (activeModeRef.current !== 'mobility' || mobilitySubLayerRef.current !== 'transport') {
+        map.getCanvas().style.cursor = ''
+        return
+      }
+      const layers = DISTRICTS.map(d => `boundary-fill-${d.name}`).filter(id => map.getLayer(id))
+      const features = map.queryRenderedFeatures(e.point, { layers })
+      map.getCanvas().style.cursor = features.length ? 'pointer' : ''
+    }
+
+    map.on('click',     handleClick)
+    map.on('mousemove', handleMouseMove)
+    return () => {
+      map.off('click',     handleClick)
+      map.off('mousemove', handleMouseMove)
+    }
+  }, [mapReady])
+
   // ── Natural feature layers ─────────────────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -332,7 +353,6 @@ export default function MapView({ onVenueClick }) {
 
     for (const { id, data, fill, line, visible } of layers) {
       if (!data) continue
-      // Hide all natural features in Mobility mode (clean white base needed)
       const vis = (activeMode !== 'mobility' && visible) ? 'visible' : 'none'
       if (!map.getSource(id)) {
         map.addSource(id, { type: 'geojson', data })
@@ -458,7 +478,8 @@ export default function MapView({ onVenueClick }) {
         }, 'venue-circles')
         map.addLayer({
           id: lineId, type: 'line', source: srcId,
-          paint: { 'line-color': color, 'line-width': 2, 'line-opacity': 0.85 },
+          // line-width 3 for a clearly visible boundary
+          paint: { 'line-color': color, 'line-width': 3, 'line-opacity': 0.85 },
         }, 'venue-circles')
       }
 
@@ -479,20 +500,14 @@ export default function MapView({ onVenueClick }) {
 
     let cancelled = false
 
+    // Extended bbox for automobile covers surrounding towns (Gifhorn S, Weyhausen N, etc.)
     const OVERPASS_QUERIES = {
-      // All main motor-vehicle road types in Wolfsburg
-      automobile: `[out:json][timeout:60];(way["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
-      // Dedicated cycling infrastructure + cycle lanes + designated paths
-      cycling: `[out:json][timeout:30];(way["highway"="cycleway"](52.35,10.68,52.52,10.93);way["cycleway"~"lane|track|shared_lane|opposite_lane|opposite_track"](52.35,10.68,52.52,10.93);way["bicycle"="designated"]["highway"~"path|track|footway"](52.35,10.68,52.52,10.93);way["bicycle"="yes"]["highway"~"path|track"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
-      // All footways, paths, pedestrian areas
+      automobile: `[out:json][timeout:90];(way["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street"](52.22,10.55,52.62,11.08););out body;>;out skel qt;`,
+      cycling:    `[out:json][timeout:30];(way["highway"="cycleway"](52.35,10.68,52.52,10.93);way["cycleway"~"lane|track|shared_lane|opposite_lane|opposite_track"](52.35,10.68,52.52,10.93);way["bicycle"="designated"]["highway"~"path|track|footway"](52.35,10.68,52.52,10.93);way["bicycle"="yes"]["highway"~"path|track"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
       pedestrian: `[out:json][timeout:30];(way["highway"~"footway|path|pedestrian|steps|living_street"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
-      // Bus, tram, and other public transit route relations
-      transport: `[out:json][timeout:60];(relation["route"~"bus|tram|subway|light_rail|trolleybus|share_taxi"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
+      transport:  `[out:json][timeout:60];(relation["route"~"bus|tram|subway|light_rail|trolleybus|share_taxi"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
     }
 
-    // Padding (degrees) added to each central-district bbox before checking
-    // connectivity.  Transport routes are long → no padding needed.
-    // Road/path segments are short → expand central zone so adjacent districts score.
     const CENTRAL_PADDING = {
       transport:  0,
       automobile: 0.025,
@@ -535,6 +550,35 @@ export default function MapView({ onVenueClick }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, mobilitySubLayer, districtBoundaries])
 
+  // ── Mobility — fetch transit stops when transport sublayer is selected ─────
+  useEffect(() => {
+    if (!mapReady || mobilitySubLayer !== 'transport') return
+
+    // Already fetched
+    if (useAppStore.getState().transitStopsGeoJSON) return
+
+    let cancelled = false
+    const STOPS_QUERY = `[out:json][timeout:30];(node["highway"="bus_stop"](52.35,10.68,52.52,10.93);node["public_transport"="platform"]["bus"="yes"](52.35,10.68,52.52,10.93););out body;`
+
+    const fetchStops = async () => {
+      try {
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body:    `data=${encodeURIComponent(STOPS_QUERY)}`,
+        })
+        const raw = await res.json()
+        if (!cancelled) setTransitStopsGeoJSON(stopsToGeoJSON(raw))
+      } catch (err) {
+        console.error('Stops fetch error:', err)
+      }
+    }
+
+    fetchStops()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady, mobilitySubLayer])
+
   // ── Mobility — render overlay lines ───────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -546,18 +590,24 @@ export default function MapView({ onVenueClick }) {
       return
     }
 
-    // Automobile mode: style roads by hierarchy (motorway → residential).
-    // Other modes: uniform thin line.
     const isAuto = mobilitySubLayer === 'automobile'
 
+    // Red shades for automobile roads by hierarchy (dark → light = major → minor)
     const lineColor = isAuto
       ? ['match', ['get', 'highway'],
-          'motorway', '#1C1C1E',  'trunk', '#1C1C1E',
-          'primary',  '#3A3A3C',  'primary_link',  '#3A3A3C',
-          'motorway_link', '#3A3A3C', 'trunk_link', '#3A3A3C',
-          'secondary', '#636366', 'secondary_link', '#636366',
-          'tertiary',  '#8E8E93', 'tertiary_link',  '#8E8E93',
-          '#AEAEB2']
+          'motorway',       '#8B0000',
+          'trunk',          '#B71C1C',
+          'motorway_link',  '#B71C1C',
+          'trunk_link',     '#B71C1C',
+          'primary',        '#C62828',
+          'primary_link',   '#C62828',
+          'secondary',      '#D32F2F',
+          'secondary_link', '#D32F2F',
+          'tertiary',       '#E53935',
+          'tertiary_link',  '#EF5350',
+          'unclassified',   '#EF5350',
+          'residential',    '#EF9A9A',
+          '#FFCDD2']
       : '#E63946'
 
     const lineWidth = isAuto
@@ -570,14 +620,25 @@ export default function MapView({ onVenueClick }) {
           1.0]
       : 1.2
 
+    // Automobile roads are placed UNDER district fills → keep high opacity so
+    // they stay visible through the 50% transparent fills.
     const lineOpacity = isAuto
       ? ['match', ['get', 'highway'],
-          'motorway', 0.92, 'trunk', 0.92,
-          'primary', 0.85,  'motorway_link', 0.82, 'trunk_link', 0.82,
-          'secondary', 0.75,'primary_link',  0.75, 'secondary_link', 0.72,
-          'tertiary',  0.65,'tertiary_link', 0.65,
-          0.50]
+          'motorway', 1.0,  'trunk', 1.0,
+          'primary', 0.95,  'motorway_link', 0.95, 'trunk_link', 0.95,
+          'secondary', 0.90,'primary_link',  0.90, 'secondary_link', 0.88,
+          'tertiary',  0.82,'tertiary_link', 0.80,
+          'unclassified', 0.75, 'residential', 0.70,
+          0.60]
       : 0.30
+
+    // Insert automobile overlay BELOW district fills so they show through
+    // the 50%-transparent region colours.  Other modes stay above fills.
+    const getBeforeLayer = () => {
+      if (!isAuto) return 'venue-circles'
+      const firstFill = DISTRICTS.map(d => `boundary-fill-${d.name}`).find(id => map.getLayer(id))
+      return firstFill || 'venue-circles'
+    }
 
     if (!map.getSource('mobility-overlay')) {
       map.addSource('mobility-overlay', { type: 'geojson', data: mobilityOverlayGeoJSON })
@@ -587,7 +648,7 @@ export default function MapView({ onVenueClick }) {
         source: 'mobility-overlay',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': lineColor, 'line-width': lineWidth, 'line-opacity': lineOpacity },
-      }, 'venue-circles')
+      }, getBeforeLayer())
     } else {
       map.getSource('mobility-overlay').setData(mobilityOverlayGeoJSON)
       if (map.getLayer('mobility-overlay')) {
@@ -595,6 +656,10 @@ export default function MapView({ onVenueClick }) {
         map.setPaintProperty('mobility-overlay', 'line-width',   lineWidth)
         map.setPaintProperty('mobility-overlay', 'line-opacity', lineOpacity)
         map.setLayoutProperty('mobility-overlay', 'visibility',  'visible')
+
+        // Re-order the layer when switching between auto (under fills) and others (above)
+        const target = getBeforeLayer()
+        try { map.moveLayer('mobility-overlay', target) } catch (_) {}
       }
     }
   }, [mapReady, mobilityOverlayGeoJSON, mobilitySubLayer])
@@ -636,7 +701,40 @@ export default function MapView({ onVenueClick }) {
     }
   }, [mapReady, mobilityHighlightRoute, mobilityOverlayGeoJSON])
 
-  // ── Mobility — color districts by score (runs after boundary effect) ───────
+  // ── Transit stops — render / update ───────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const vis = (mobilitySubLayer === 'transport' && showTransitStops && transitStopsGeoJSON)
+      ? 'visible' : 'none'
+
+    if (!transitStopsGeoJSON) return
+
+    if (!map.getSource('transit-stops')) {
+      map.addSource('transit-stops', { type: 'geojson', data: transitStopsGeoJSON })
+      map.addLayer({
+        id:     'transit-stops-circles',
+        type:   'circle',
+        source: 'transit-stops',
+        layout: { visibility: vis },
+        paint: {
+          'circle-radius':         5,
+          'circle-color':          '#0077FF',
+          'circle-opacity':        0.85,
+          'circle-stroke-width':   1.5,
+          'circle-stroke-color':   '#FFFFFF',
+          'circle-stroke-opacity': 0.9,
+        },
+      }, 'venue-circles')
+    } else {
+      map.getSource('transit-stops').setData(transitStopsGeoJSON)
+      if (map.getLayer('transit-stops-circles'))
+        map.setLayoutProperty('transit-stops-circles', 'visibility', vis)
+    }
+  }, [mapReady, transitStopsGeoJSON, showTransitStops, mobilitySubLayer])
+
+  // ── Mobility — color districts by score ───────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
@@ -648,7 +746,6 @@ export default function MapView({ onVenueClick }) {
       if (!map.getLayer(fillId)) return
 
       if (hasMobilityScores) {
-        // Always visible in mobility mode — gray for 0, red gradient for 1-10
         const normScore = mobilityScores[name] ?? 0
         const { color: dc, fill, line } = scoreToColorOpacity(normScore)
         map.setLayoutProperty(fillId, 'visibility', 'visible')
@@ -657,6 +754,7 @@ export default function MapView({ onVenueClick }) {
         map.setPaintProperty(fillId, 'fill-opacity',  fill)
         map.setPaintProperty(lineId, 'line-color',   dc)
         map.setPaintProperty(lineId, 'line-opacity',  line)
+        map.setPaintProperty(lineId, 'line-width',    3)
       } else {
         const vis = selectedDistricts.has(name) ? 'visible' : 'none'
         map.setLayoutProperty(fillId, 'visibility', vis)
@@ -665,6 +763,7 @@ export default function MapView({ onVenueClick }) {
         map.setPaintProperty(fillId, 'fill-opacity',  0.12)
         map.setPaintProperty(lineId, 'line-color',   color)
         map.setPaintProperty(lineId, 'line-opacity',  0.85)
+        map.setPaintProperty(lineId, 'line-width',    3)
       }
     })
   }, [mapReady, mobilityScores, selectedDistricts])
