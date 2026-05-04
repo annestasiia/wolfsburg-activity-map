@@ -135,6 +135,10 @@ export const useAppStore = create((set) => ({
   setCyclingParkingGeoJSON: (gj) => set({ cyclingParkingGeoJSON: gj }),
   toggleCyclingParking:     ()   => set(s => ({ showCyclingParking: !s.showCyclingParking })),
 
+  // ── City boundary (fetched once, cached) ──────────────────────────────────
+  cityBoundaryGeoJSON: null,
+  setCityBoundaryGeoJSON: (gj) => set({ cityBoundaryGeoJSON: gj }),
+
   // ── District selection setter ─────────────────────────────────────────────
   setSelectedMobilityDistrict: (name) => set(s => ({
     selectedMobilityDistrict: s.selectedMobilityDistrict === name ? null : name,

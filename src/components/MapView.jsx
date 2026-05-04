@@ -186,6 +186,17 @@ function parkingToGeoJSON(data) {
   return { type: 'FeatureCollection', features }
 }
 
+// Extract all line vertices as Point features for heatmap density
+function linesToPoints(geoJSON) {
+  const features = []
+  for (const f of geoJSON.features) {
+    for (const [lng, lat] of getCoordList(f.geometry)) {
+      features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] }, properties: {} })
+    }
+  }
+  return { type: 'FeatureCollection', features }
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function MapView({ onVenueClick }) {
@@ -211,6 +222,7 @@ export default function MapView({ onVenueClick }) {
     setTransitStopsGeoJSON,
     cyclingParkingGeoJSON, showCyclingParking,
     setCyclingParkingGeoJSON,
+    cityBoundaryGeoJSON, setCityBoundaryGeoJSON,
     selectedMobilityDistrict, setSelectedMobilityDistrict,
   } = useAppStore()
   const { filteredVenues } = useFilters()
@@ -640,6 +652,49 @@ export default function MapView({ onVenueClick }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, mobilitySubLayer])
 
+  // ── City boundary — fetch Wolfsburg admin boundary once (used in cycling mode) ─
+  useEffect(() => {
+    if (!mapReady || mobilitySubLayer !== 'cycling') return
+    if (useAppStore.getState().cityBoundaryGeoJSON) return
+
+    let cancelled = false
+    const Q = `[out:json][timeout:30];relation["name"="Wolfsburg"]["boundary"="administrative"]["admin_level"="6"];out body;>;out skel qt;`
+
+    fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(Q)}`,
+    })
+      .then(r => r.json())
+      .then(raw => { if (!cancelled) setCityBoundaryGeoJSON(overpassToGeoJSON(raw)) })
+      .catch(err => console.error('City boundary fetch error:', err))
+
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady, mobilitySubLayer])
+
+  // ── City boundary — render ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !cityBoundaryGeoJSON) return
+    const map = mapRef.current
+    const vis = mobilitySubLayer === 'cycling' ? 'visible' : 'none'
+
+    if (!map.getSource('city-boundary')) {
+      map.addSource('city-boundary', { type: 'geojson', data: cityBoundaryGeoJSON })
+      map.addLayer({
+        id:     'city-boundary-line',
+        type:   'line',
+        source: 'city-boundary',
+        layout: { 'line-cap': 'round', 'line-join': 'round', visibility: vis },
+        paint:  { 'line-color': '#1A1A2E', 'line-width': 2.5, 'line-opacity': 0.80 },
+      }, 'venue-circles')
+    } else {
+      map.getSource('city-boundary').setData(cityBoundaryGeoJSON)
+      if (map.getLayer('city-boundary-line'))
+        map.setLayoutProperty('city-boundary-line', 'visibility', vis)
+    }
+  }, [mapReady, cityBoundaryGeoJSON, mobilitySubLayer])
+
   // ── Mobility — render overlay lines ───────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -651,7 +706,8 @@ export default function MapView({ onVenueClick }) {
       return
     }
 
-    const isAuto = mobilitySubLayer === 'automobile'
+    const isAuto    = mobilitySubLayer === 'automobile'
+    const isCycling = mobilitySubLayer === 'cycling'
 
     // Red shades for automobile roads by hierarchy (dark → light = major → minor)
     const lineColor = isAuto
@@ -669,7 +725,8 @@ export default function MapView({ onVenueClick }) {
           'unclassified',   '#EF5350',
           'residential',    '#EF9A9A',
           '#FFCDD2']
-      : '#E63946'
+      : isCycling ? '#00E676'   // bright green for cycling paths
+      : '#E63946'               // red for other modes
 
     const lineWidth = isAuto
       ? ['match', ['get', 'highway'],
@@ -679,6 +736,7 @@ export default function MapView({ onVenueClick }) {
           'tertiary',  2.5,'tertiary_link', 2,
           'unclassified', 1.8, 'residential', 1.2,
           1.0]
+      : isCycling ? 2.5         // wider for cycling paths
       : 1.2
 
     // Automobile roads are placed UNDER district fills → keep high opacity so
@@ -691,6 +749,7 @@ export default function MapView({ onVenueClick }) {
           'tertiary',  0.82,'tertiary_link', 0.80,
           'unclassified', 0.75, 'residential', 0.70,
           0.60]
+      : isCycling ? 0.88        // well visible cycling lines
       : 0.30
 
     // Insert automobile overlay BELOW district fills so they show through
@@ -762,6 +821,54 @@ export default function MapView({ onVenueClick }) {
     }
   }, [mapReady, mobilityHighlightRoute, mobilityOverlayGeoJSON])
 
+  // ── Cycling heatmap — density glow from path vertices ─────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const isCycling = mobilitySubLayer === 'cycling'
+
+    if (!mobilityOverlayGeoJSON || !isCycling) {
+      if (map.getLayer('cycling-heatmap'))
+        map.setLayoutProperty('cycling-heatmap', 'visibility', 'none')
+      return
+    }
+
+    const heatPoints = linesToPoints(mobilityOverlayGeoJSON)
+
+    if (!map.getSource('cycling-heat')) {
+      map.addSource('cycling-heat', { type: 'geojson', data: heatPoints })
+      // Insert BELOW the path-line layer so paths remain sharp on top of the glow
+      const beforeId = map.getLayer('mobility-overlay') ? 'mobility-overlay' : 'venue-circles'
+      map.addLayer({
+        id:     'cycling-heatmap',
+        type:   'heatmap',
+        source: 'cycling-heat',
+        layout: { visibility: 'visible' },
+        paint: {
+          // Radius scales up with zoom so glow spreads appropriately
+          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 10, 10, 14, 25],
+          // Intensity increases with zoom to keep hotspots sharp at close range
+          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 10, 0.8, 14, 2.2],
+          'heatmap-weight': 1,
+          'heatmap-color': [
+            'interpolate', ['linear'], ['heatmap-density'],
+            0,   'rgba(0,0,0,0)',
+            0.2, 'rgba(0,200,100,0.15)',
+            0.4, 'rgba(0,225,100,0.38)',
+            0.6, 'rgba(30,245,110,0.58)',
+            0.8, 'rgba(80,255,130,0.74)',
+            1.0, 'rgba(140,255,160,0.88)',
+          ],
+          'heatmap-opacity': 0.82,
+        },
+      }, beforeId)
+    } else {
+      map.getSource('cycling-heat').setData(heatPoints)
+      if (map.getLayer('cycling-heatmap'))
+        map.setLayoutProperty('cycling-heatmap', 'visibility', 'visible')
+    }
+  }, [mapReady, mobilityOverlayGeoJSON, mobilitySubLayer])
+
   // ── Transit stops — render / update ───────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -814,7 +921,7 @@ export default function MapView({ onVenueClick }) {
         layout: { visibility: vis },
         paint: {
           'circle-radius':         5,
-          'circle-color':          '#00C853',
+          'circle-color':          '#FF1744',
           'circle-opacity':        0.88,
           'circle-stroke-width':   1.5,
           'circle-stroke-color':   '#FFFFFF',
@@ -839,6 +946,13 @@ export default function MapView({ onVenueClick }) {
       const lineId = `boundary-line-${name}`
       if (!map.getLayer(fillId)) return
 
+      // Cycling mode: suppress all district fills/lines; city boundary shown separately
+      if (mobilitySubLayer === 'cycling') {
+        map.setLayoutProperty(fillId, 'visibility', 'none')
+        map.setLayoutProperty(lineId, 'visibility', 'none')
+        return
+      }
+
       if (hasMobilityScores) {
         const normScore = mobilityScores[name] ?? 0
         const { color: dc, fill, line } = scoreToColorOpacity(normScore)
@@ -860,7 +974,7 @@ export default function MapView({ onVenueClick }) {
         map.setPaintProperty(lineId, 'line-width',    3)
       }
     })
-  }, [mapReady, mobilityScores, selectedDistricts])
+  }, [mapReady, mobilityScores, selectedDistricts, mobilitySubLayer])
 
   return (
     <div ref={containerRef} className="w-full h-full" />
