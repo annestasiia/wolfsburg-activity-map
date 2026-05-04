@@ -617,8 +617,9 @@ export default function MapView({ onVenueClick }) {
     if (useAppStore.getState().cyclingParkingGeoJSON) return
 
     let cancelled = false
-    // `out center` so ways also get a representative lat/lon
-    const PARKING_QUERY = `[out:json][timeout:30];(node["amenity"="bicycle_parking"](52.35,10.68,52.52,10.93);way["amenity"="bicycle_parking"](52.35,10.68,52.52,10.93););out center;`
+    // Only public parking: exclude access=private/customers/no
+    // Untagged access defaults to public in OSM convention
+    const PARKING_QUERY = `[out:json][timeout:30];(node["amenity"="bicycle_parking"]["access"!="private"]["access"!="customers"]["access"!="no"](52.35,10.68,52.52,10.93);way["amenity"="bicycle_parking"]["access"!="private"]["access"!="customers"]["access"!="no"](52.35,10.68,52.52,10.93););out center;`
 
     const fetchParking = async () => {
       try {
