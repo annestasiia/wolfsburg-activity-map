@@ -9,6 +9,22 @@ const SUB_LAYERS = [
   { id: 'pedestrian', label: 'Pedestrian Accessibility', icon: '🚶' },
 ]
 
+function parseLeisureRoutes(geoJSON) {
+  if (!geoJSON?.features) return []
+  return geoJSON.features
+    .map(f => ({
+      id:      f.properties._id,
+      name:    f.properties.name || f.properties.description || '',
+      ref:     f.properties.ref  || '',
+      from:    f.properties.from || '',
+      to:      f.properties.to   || '',
+      network: f.properties.network || '',
+      route:   f.properties.route   || 'bicycle',
+    }))
+    .filter(r => r.name || r.ref)
+    .sort((a, b) => (a.name || a.ref).localeCompare(b.name || b.ref))
+}
+
 function parseRoutes(cache) {
   const data = cache?.transport
   if (!data?.elements) return []
@@ -33,6 +49,8 @@ export default function MobilityPanel() {
     mobilityOverlayGeoJSON,
     transitStopsGeoJSON, showTransitStops, toggleTransitStops,
     cyclingParkingGeoJSON, showCyclingParking, toggleCyclingParking,
+    cyclingRoutesGeoJSON, showCyclingRoutes, toggleCyclingRoutes,
+    cyclingHighlightLeisureRoute, setCyclingHighlightLeisureRoute,
     selectedMobilityDistrict, setSelectedMobilityDistrict,
     districtBoundaries,
   } = useAppStore()
@@ -45,7 +63,8 @@ export default function MobilityPanel() {
   }, [selectedMobilityDistrict])
 
   const activeLayerLabel = SUB_LAYERS.find(s => s.id === mobilitySubLayer)?.label ?? ''
-  const routes = parseRoutes(mobilityDataCache)
+  const routes        = parseRoutes(mobilityDataCache)
+  const leisureRoutes = parseLeisureRoutes(cyclingRoutesGeoJSON)
 
   const topDistricts = Object.entries(mobilityScores)
     .filter(([, v]) => v > 0 && v < 10)
@@ -87,12 +106,24 @@ export default function MobilityPanel() {
         return inBbox(lng, lat, bbox)
       })
       const totalCapacity = spots.reduce((sum, f) => sum + (f.properties?.capacity || 1), 0)
-      return { mode: 'cycling', district: selectedMobilityDistrict, parkingCount: spots.length, totalCapacity }
+
+      const routeIds = new Set(
+        (cyclingRoutesGeoJSON?.features || [])
+          .filter(f => {
+            const coords = getCoordList(f.geometry)
+            return coords.some(([lng, lat]) => inBbox(lng, lat, bbox))
+          })
+          .map(f => f.properties._id)
+      )
+      const districtLeisureRoutes = leisureRoutes.filter(r => routeIds.has(r.id))
+
+      return { mode: 'cycling', district: selectedMobilityDistrict, parkingCount: spots.length, totalCapacity, districtLeisureRoutes }
     }
 
     return null
   }, [selectedMobilityDistrict, mobilitySubLayer, districtBoundaries,
-      transitStopsGeoJSON, mobilityOverlayGeoJSON, mobilityDataCache, cyclingParkingGeoJSON])
+      transitStopsGeoJSON, mobilityOverlayGeoJSON, mobilityDataCache,
+      cyclingParkingGeoJSON, cyclingRoutesGeoJSON, leisureRoutes])
 
   return (
     <div>
@@ -230,6 +261,30 @@ export default function MobilityPanel() {
         </button>
       )}
 
+      {/* ── Leisure routes toggle ── */}
+      {mobilitySubLayer === 'cycling' && !mobilityDataLoading && (
+        <button
+          onClick={toggleCyclingRoutes}
+          style={{
+            display:    'flex', alignItems: 'center', gap: 8,
+            marginTop:  8, padding: '8px 14px', borderRadius: 10,
+            background:  showCyclingRoutes ? '#FFF4EC' : '#F5F5F7',
+            border:     `1px solid ${showCyclingRoutes ? '#FF6900' : 'rgba(0,0,0,0.08)'}`,
+            cursor:     'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>🗺️</span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: showCyclingRoutes ? '#C04A00' : '#3D3D3F' }}>
+            {showCyclingRoutes ? 'Hide leisure routes' : 'Show leisure routes'}
+          </span>
+          {cyclingRoutesGeoJSON && (
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: '#AEAEB2' }}>
+              {leisureRoutes.length} routes
+            </span>
+          )}
+        </button>
+      )}
+
       {/* ── Status hint ── */}
       {!showStats && mobilitySubLayer && !mobilityDataLoading && (
         <p style={{ fontSize: 13, color: '#6E6E73', marginTop: 12, letterSpacing: '-0.01em' }}>
@@ -351,7 +406,7 @@ export default function MobilityPanel() {
                 </span>
               </div>
 
-              <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                 <div style={{
                   flex: 1, display: 'flex', alignItems: 'center', gap: 10,
                   background: '#E8FFF0', borderRadius: 10, padding: '10px 14px',
@@ -378,8 +433,113 @@ export default function MobilityPanel() {
                 </div>
               </div>
 
+              {districtStats.districtLeisureRoutes?.length > 0 && (
+                <>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F', marginBottom: 6 }}>
+                    Leisure routes through district · {districtStats.districtLeisureRoutes.length}
+                  </p>
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', gap: 5,
+                    maxHeight: 160, overflowY: 'auto', paddingRight: 4,
+                  }}>
+                    {districtStats.districtLeisureRoutes.map(r => {
+                      const isSelected = cyclingHighlightLeisureRoute === r.id
+                      return (
+                        <button
+                          key={r.id}
+                          onClick={() => setCyclingHighlightLeisureRoute(isSelected ? null : r.id)}
+                          style={{
+                            display: 'flex', gap: 8, alignItems: 'center',
+                            background: isSelected ? '#FFF4EC' : '#F5F5F7',
+                            border: `1px solid ${isSelected ? '#FF6900' : 'rgba(0,0,0,0.06)'}`,
+                            borderRadius: 10, padding: '7px 11px',
+                            fontSize: 13, cursor: 'pointer', textAlign: 'left',
+                            fontFamily: 'inherit', transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {r.ref && (
+                            <span style={{
+                              background: isSelected ? '#FF6900' : '#FF8C42',
+                              color: '#fff', borderRadius: 6, padding: '1px 7px',
+                              fontWeight: 700, fontSize: 12, flexShrink: 0,
+                            }}>{r.ref}</span>
+                          )}
+                          <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 12 }}>
+                            {r.from && r.to ? `${r.from} → ${r.to}` : r.name || 'Route'}
+                          </span>
+                          {isSelected && (
+                            <span style={{ marginLeft: 'auto', color: '#FF6900', fontSize: 11, flexShrink: 0 }}>
+                              on map ✓
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
               <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
                 Source: OpenStreetMap · capacity based on tagged values
+              </p>
+            </div>
+
+          ) : mobilitySubLayer === 'cycling' && leisureRoutes.length > 0 ? (
+            /* ── Cycling: all leisure routes list ── */
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', marginBottom: 6 }}>
+                Leisure cycling routes · {leisureRoutes.length} found
+              </p>
+              <p style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 10, letterSpacing: '-0.01em' }}>
+                Click a route to highlight on map · click a district for local stats
+              </p>
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: 5,
+                maxHeight: 240, overflowY: 'auto', paddingRight: 4,
+              }}>
+                {leisureRoutes.map(r => {
+                  const isSelected = cyclingHighlightLeisureRoute === r.id
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => setCyclingHighlightLeisureRoute(isSelected ? null : r.id)}
+                      style={{
+                        display: 'flex', gap: 8, alignItems: 'center',
+                        background: isSelected ? '#FFF4EC' : '#F5F5F7',
+                        border: `1px solid ${isSelected ? '#FF6900' : 'rgba(0,0,0,0.06)'}`,
+                        borderRadius: 10, padding: '7px 11px',
+                        fontSize: 13, cursor: 'pointer', textAlign: 'left',
+                        fontFamily: 'inherit', transition: 'all 0.15s ease',
+                        boxShadow: isSelected ? '0 1px 6px rgba(255,105,0,0.20)' : 'none',
+                      }}
+                    >
+                      {r.ref && (
+                        <span style={{
+                          background: isSelected ? '#FF6900' : '#FF8C42',
+                          color: '#fff', borderRadius: 6, padding: '1px 7px',
+                          fontWeight: 700, fontSize: 12, flexShrink: 0,
+                          minWidth: 28, textAlign: 'center',
+                        }}>{r.ref}</span>
+                      )}
+                      <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 12 }}>
+                        {r.from && r.to ? `${r.from} → ${r.to}` : r.name || 'Route'}
+                      </span>
+                      {r.network && (
+                        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#AEAEB2', flexShrink: 0 }}>
+                          {r.network}
+                        </span>
+                      )}
+                      {isSelected && (
+                        <span style={{ marginLeft: r.network ? 4 : 'auto', color: '#FF6900', fontSize: 11, flexShrink: 0 }}>
+                          on map ✓
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
+                Source: OpenStreetMap · official routes from wolfsburg.de/radfahren
               </p>
             </div>
 

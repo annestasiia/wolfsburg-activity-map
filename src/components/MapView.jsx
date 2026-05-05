@@ -211,6 +211,9 @@ export default function MapView({ onVenueClick }) {
     setTransitStopsGeoJSON,
     cyclingParkingGeoJSON, showCyclingParking,
     setCyclingParkingGeoJSON,
+    cyclingRoutesGeoJSON, showCyclingRoutes,
+    setCyclingRoutesGeoJSON,
+    cyclingHighlightLeisureRoute,
     selectedMobilityDistrict, setSelectedMobilityDistrict,
   } = useAppStore()
   const { filteredVenues } = useFilters()
@@ -535,7 +538,7 @@ export default function MapView({ onVenueClick }) {
     // Extended bbox for automobile covers surrounding towns (Gifhorn S, Weyhausen N, etc.)
     const OVERPASS_QUERIES = {
       automobile: `[out:json][timeout:90];(way["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street"](52.22,10.55,52.62,11.08););out body;>;out skel qt;`,
-      cycling:    `[out:json][timeout:30];(way["highway"="cycleway"](52.35,10.68,52.52,10.93);way["cycleway"~"lane|track|shared_lane|opposite_lane|opposite_track"](52.35,10.68,52.52,10.93);way["bicycle"="designated"]["highway"~"path|track|footway"](52.35,10.68,52.52,10.93);way["bicycle"="yes"]["highway"~"path|track"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
+      cycling:    `[out:json][timeout:30];(way["highway"="cycleway"](52.35,10.68,52.52,10.93);way["cycleway"~"lane|track|shared_lane|opposite_lane|opposite_track"](52.35,10.68,52.52,10.93);way["cycleway:right"~"lane|track"](52.35,10.68,52.52,10.93);way["cycleway:left"~"lane|track"](52.35,10.68,52.52,10.93);way["cycleway:both"~"lane|track"](52.35,10.68,52.52,10.93);way["bicycle"="designated"]["highway"~"path|track|footway"](52.35,10.68,52.52,10.93);way["bicycle"="yes"]["highway"~"path|track"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
       pedestrian: `[out:json][timeout:30];(way["highway"~"footway|path|pedestrian|steps|living_street"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
       transport:  `[out:json][timeout:60];(relation["route"~"bus|tram|subway|light_rail|trolleybus|share_taxi"](52.35,10.68,52.52,10.93););out body;>;out skel qt;`,
     }
@@ -640,6 +643,34 @@ export default function MapView({ onVenueClick }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, mobilitySubLayer])
 
+  // ── Cycling — fetch leisure route relations when cycling sublayer selected ─
+  useEffect(() => {
+    if (!mapReady || mobilitySubLayer !== 'cycling') return
+    if (useAppStore.getState().cyclingRoutesGeoJSON) return
+
+    let cancelled = false
+    // Named cycling route relations (leisure routes, regional/local bike routes)
+    const ROUTES_QUERY = `[out:json][timeout:60];(relation["route"="bicycle"](52.30,10.60,52.55,11.00);relation["route"="mtb"](52.30,10.60,52.55,11.00););out body;>;out skel qt;`
+
+    const fetchRoutes = async () => {
+      try {
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body:    `data=${encodeURIComponent(ROUTES_QUERY)}`,
+        })
+        const raw = await res.json()
+        if (!cancelled) setCyclingRoutesGeoJSON(overpassToGeoJSON(raw))
+      } catch (err) {
+        console.error('Cycling routes fetch error:', err)
+      }
+    }
+
+    fetchRoutes()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady, mobilitySubLayer])
+
   // ── Mobility — render overlay lines ───────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -651,7 +682,8 @@ export default function MapView({ onVenueClick }) {
       return
     }
 
-    const isAuto = mobilitySubLayer === 'automobile'
+    const isAuto    = mobilitySubLayer === 'automobile'
+    const isCycling = mobilitySubLayer === 'cycling'
 
     // Red shades for automobile roads by hierarchy (dark → light = major → minor)
     const lineColor = isAuto
@@ -669,7 +701,7 @@ export default function MapView({ onVenueClick }) {
           'unclassified',   '#EF5350',
           'residential',    '#EF9A9A',
           '#FFCDD2']
-      : '#E63946'
+      : isCycling ? '#FF1744' : '#E63946'
 
     const lineWidth = isAuto
       ? ['match', ['get', 'highway'],
@@ -679,7 +711,7 @@ export default function MapView({ onVenueClick }) {
           'tertiary',  2.5,'tertiary_link', 2,
           'unclassified', 1.8, 'residential', 1.2,
           1.0]
-      : 1.2
+      : isCycling ? 4.0 : 1.2
 
     // Automobile roads are placed UNDER district fills → keep high opacity so
     // they stay visible through the 50% transparent fills.
@@ -691,7 +723,7 @@ export default function MapView({ onVenueClick }) {
           'tertiary',  0.82,'tertiary_link', 0.80,
           'unclassified', 0.75, 'residential', 0.70,
           0.60]
-      : 0.30
+      : isCycling ? 0.88 : 0.30
 
     // Insert automobile overlay BELOW district fills so they show through
     // the 50%-transparent region colours.  Other modes stay above fills.
@@ -828,6 +860,74 @@ export default function MapView({ onVenueClick }) {
     }
   }, [mapReady, cyclingParkingGeoJSON, showCyclingParking, mobilitySubLayer])
 
+  // ── Cycling leisure routes — render / update ──────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const vis = (mobilitySubLayer === 'cycling' && showCyclingRoutes && cyclingRoutesGeoJSON)
+      ? 'visible' : 'none'
+
+    if (!cyclingRoutesGeoJSON) return
+
+    if (!map.getSource('cycling-routes')) {
+      map.addSource('cycling-routes', { type: 'geojson', data: cyclingRoutesGeoJSON })
+      map.addLayer({
+        id:     'cycling-routes-line',
+        type:   'line',
+        source: 'cycling-routes',
+        layout: { 'line-cap': 'round', 'line-join': 'round', visibility: vis },
+        paint: {
+          'line-color':   '#FF6900',
+          'line-width':   3.5,
+          'line-opacity': 0.80,
+          'line-dasharray': [4, 3],
+        },
+      }, 'venue-circles')
+    } else {
+      map.getSource('cycling-routes').setData(cyclingRoutesGeoJSON)
+      if (map.getLayer('cycling-routes-line'))
+        map.setLayoutProperty('cycling-routes-line', 'visibility', vis)
+    }
+  }, [mapReady, cyclingRoutesGeoJSON, showCyclingRoutes, mobilitySubLayer])
+
+  // ── Cycling leisure routes — highlight selected route ─────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    if (!cyclingHighlightLeisureRoute || !cyclingRoutesGeoJSON) {
+      if (map.getLayer('cycling-route-highlight'))
+        map.setLayoutProperty('cycling-route-highlight', 'visibility', 'none')
+      return
+    }
+
+    const feature = cyclingRoutesGeoJSON.features.find(
+      f => f.properties._id === cyclingHighlightLeisureRoute
+    )
+    if (!feature) return
+
+    const hlGeoJSON = { type: 'FeatureCollection', features: [feature] }
+
+    if (!map.getSource('cycling-route-highlight')) {
+      map.addSource('cycling-route-highlight', { type: 'geojson', data: hlGeoJSON })
+      map.addLayer({
+        id:     'cycling-route-highlight',
+        type:   'line',
+        source: 'cycling-route-highlight',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-color':   '#FF6900',
+          'line-width':   7,
+          'line-opacity': 0.92,
+        },
+      })
+    } else {
+      map.getSource('cycling-route-highlight').setData(hlGeoJSON)
+      map.setLayoutProperty('cycling-route-highlight', 'visibility', 'visible')
+    }
+  }, [mapReady, cyclingHighlightLeisureRoute, cyclingRoutesGeoJSON])
+
   // ── Mobility — color districts by score ───────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -846,9 +946,13 @@ export default function MapView({ onVenueClick }) {
         map.setLayoutProperty(lineId, 'visibility', 'visible')
         map.setPaintProperty(fillId, 'fill-color',   dc)
         map.setPaintProperty(fillId, 'fill-opacity',  fill)
-        map.setPaintProperty(lineId, 'line-color',   dc)
-        map.setPaintProperty(lineId, 'line-opacity',  line)
-        map.setPaintProperty(lineId, 'line-width',    3)
+        // Cycling mode: neutral pink border so red cycle paths are clearly visible
+        const borderColor   = mobilitySubLayer === 'cycling' ? '#E8B4C0' : dc
+        const borderOpacity = mobilitySubLayer === 'cycling' ? 0.45      : line
+        const borderWidth   = mobilitySubLayer === 'cycling' ? 1.5       : 3
+        map.setPaintProperty(lineId, 'line-color',   borderColor)
+        map.setPaintProperty(lineId, 'line-opacity',  borderOpacity)
+        map.setPaintProperty(lineId, 'line-width',    borderWidth)
       } else {
         const vis = selectedDistricts.has(name) ? 'visible' : 'none'
         map.setLayoutProperty(fillId, 'visibility', vis)
@@ -860,7 +964,7 @@ export default function MapView({ onVenueClick }) {
         map.setPaintProperty(lineId, 'line-width',    3)
       }
     })
-  }, [mapReady, mobilityScores, selectedDistricts])
+  }, [mapReady, mobilityScores, selectedDistricts, mobilitySubLayer])
 
   return (
     <div ref={containerRef} className="w-full h-full" />

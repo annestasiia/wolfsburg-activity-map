@@ -42,6 +42,11 @@ export const useAppStore = create((set) => ({
   cyclingParkingGeoJSON: null,      // GeoJSON FeatureCollection of bicycle_parking nodes
   showCyclingParking: false,        // toggle visibility of parking markers
 
+  // ── Cycling leisure routes (named route relations from OSM) ───────────────
+  cyclingRoutesGeoJSON: null,       // GeoJSON FeatureCollection of route relations
+  showCyclingRoutes: true,          // toggle visibility of leisure route lines
+  cyclingHighlightLeisureRoute: null, // relation ID of highlighted leisure route
+
   // ── District selection in mobility mode ───────────────────────────────────
   selectedMobilityDistrict: null,   // district name clicked on the map
 
@@ -116,6 +121,7 @@ export const useAppStore = create((set) => ({
     mobilityOverlayGeoJSON: null,
     mobilityHighlightRoute: null,
     showCyclingParking: false,
+    cyclingHighlightLeisureRoute: null,
     selectedMobilityDistrict: null,
   })),
 
@@ -134,6 +140,11 @@ export const useAppStore = create((set) => ({
   // ── Cycling parking setters ───────────────────────────────────────────────
   setCyclingParkingGeoJSON: (gj) => set({ cyclingParkingGeoJSON: gj }),
   toggleCyclingParking:     ()   => set(s => ({ showCyclingParking: !s.showCyclingParking })),
+
+  // ── Cycling leisure routes setters ────────────────────────────────────────
+  setCyclingRoutesGeoJSON:          (gj) => set({ cyclingRoutesGeoJSON: gj }),
+  toggleCyclingRoutes:              ()   => set(s => ({ showCyclingRoutes: !s.showCyclingRoutes })),
+  setCyclingHighlightLeisureRoute:  (id) => set({ cyclingHighlightLeisureRoute: id }),
 
   // ── District selection setter ─────────────────────────────────────────────
   setSelectedMobilityDistrict: (name) => set(s => ({
