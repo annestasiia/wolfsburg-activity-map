@@ -10,8 +10,8 @@ export default function Sidebar({ venueCount, openCount }) {
     showNotes, setShowNotes,
     boundariesError,
     geocodingSkipped,
-    showParks, showWater, showForest, showTraffic, showFootways,
-    toggleParks, toggleWater, toggleForest, toggleTraffic, toggleFootways,
+    showTraffic, showFootways,
+    toggleTraffic, toggleFootways,
     roads, footways,
   } = useAppStore()
 
@@ -83,15 +83,12 @@ export default function Sidebar({ venueCount, openCount }) {
         </div>
       </Section>
 
-      {/* ── Natural Features ── */}
-      <Section title="Natural Features">
+      {/* ── Overlays ── */}
+      <Section title="Overlays">
         <div className="space-y-1.5">
           {[
-            { label: 'Parks',   checked: showParks,   toggle: toggleParks,   fill: '#4CAF50', border: '#2e7d32' },
-            { label: 'Water',   checked: showWater,   toggle: toggleWater,   fill: '#5B9BD5', border: '#2563a8' },
-            { label: 'Forest',  checked: showForest,  toggle: toggleForest,  fill: '#6B9E6E', border: '#4a7a4d' },
-            { label: 'Traffic',             checked: showTraffic,   toggle: toggleTraffic,   fill: '#FF6B35', border: '#c94e1a', disabled: !roads },
-            { label: 'Pedestrian Activity', checked: showFootways,  toggle: toggleFootways,  fill: '#FF9500', border: '#c97200', disabled: !footways },
+            { label: 'Traffic',             checked: showTraffic,  toggle: toggleTraffic,  fill: '#FF6B35', border: '#c94e1a', disabled: !roads },
+            { label: 'Pedestrian Activity', checked: showFootways, toggle: toggleFootways, fill: '#FF9500', border: '#c97200', disabled: !footways },
           ].map(({ label, checked, toggle, fill, border, disabled }) => (
             <label
               key={label}
