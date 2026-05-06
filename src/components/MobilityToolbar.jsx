@@ -140,22 +140,23 @@ function TimeControls({ color, selectedDay, setSelectedDay, selectedTime, setSel
 export default function MobilityToolbar() {
   const {
     activeMobilityModes,
-    showDistrictNames,        toggleDistrictNames,
+    showDistrictNames,          toggleDistrictNames,
+    showFacilitiesInMobility,
     // Automobile
-    autoShowRegional,         toggleAutoShowRegional,
-    autoShowHeatmap,          toggleAutoShowHeatmap,
-    autoShowParking,          toggleAutoShowParking,
+    autoShowRegional,           toggleAutoShowRegional,
+    autoShowHeatmap,            toggleAutoShowHeatmap,
+    autoShowParking,            toggleAutoShowParking,
     autoParkingGeoJSON,
     // Transit
-    transitShowRegional,      toggleTransitShowRegional,
-    transitShowHeatmap,       toggleTransitShowHeatmap,
-    transitShowBusStops,      toggleTransitShowBusStops,
+    transitShowRegional,        toggleTransitShowRegional,
+    transitShowHeatmap,         toggleTransitShowHeatmap,
+    transitShowBusStops,        toggleTransitShowBusStops,
     transitStopsGeoJSON,
     // Cycling
-    cyclingShowRegional,      toggleCyclingShowRegional,
-    cyclingShowRoutes,        toggleCyclingShowRoutes,
-    cyclingShowLeisureRoutes, toggleCyclingShowLeisureRoutes,
-    cyclingShowBikeParking,   toggleCyclingShowBikeParking,
+    cyclingShowRegional,        toggleCyclingShowRegional,
+    cyclingShowRoutes,          toggleCyclingShowRoutes,
+    cyclingShowLeisureRoutes,   toggleCyclingShowLeisureRoutes,
+    cyclingShowBikeParking,     toggleCyclingShowBikeParking,
     cyclingParkingGeoJSON,
     cyclingRoutesGeoJSON,
     // Shared time selectors
@@ -313,6 +314,19 @@ export default function MobilityToolbar() {
           }}>
             Regional activity unavailable in multi-mode
           </p>
+        </>
+      )}
+
+      {/* ── Facilities overlay ─────────────────────────────────── */}
+      {showFacilitiesInMobility && (
+        <>
+          <Divider />
+          <SectionLabel color="#FF6900">Facilities</SectionLabel>
+          <TimeControls
+            color="#FF6900"
+            selectedDay={selectedDay}   setSelectedDay={setSelectedDay}
+            selectedTime={selectedTime} setSelectedTime={setSelectedTime}
+          />
         </>
       )}
     </div>

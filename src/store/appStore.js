@@ -62,6 +62,9 @@ export const useAppStore = create((set) => ({
   // ── District selection (mobility map click) ───────────────────────────────
   selectedMobilityDistrict: null,
 
+  // ── Facilities overlay in Mobility mode ──────────────────────────────────
+  showFacilitiesInMobility: false,
+
   // ── Global map overlays ───────────────────────────────────────────────────
   showAllBorders: false,
   showDistrictNames: false,
@@ -135,6 +138,7 @@ export const useAppStore = create((set) => ({
     cyclingShowLeisureRoutes: true, cyclingShowBikeParking: false,
     cyclingHighlightLeisureRoute: null,
     selectedMobilityDistrict: null,
+    showFacilitiesInMobility: false,
   }),
 
   // ── Mobility multi-mode toggle ────────────────────────────────────────────
@@ -224,6 +228,8 @@ export const useAppStore = create((set) => ({
       },
     }
   }),
+
+  toggleFacilitiesInMobility: () => set(s => ({ showFacilitiesInMobility: !s.showFacilitiesInMobility })),
 
   // ── Global overlays ───────────────────────────────────────────────────────
   toggleShowAllBorders: () => set(s => ({ showAllBorders: !s.showAllBorders })),

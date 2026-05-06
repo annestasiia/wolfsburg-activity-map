@@ -294,6 +294,7 @@ export default function MapView({ onVenueClick }) {
     districtBoundaries, selectedDistricts,
     parks, water, forest, showParks, showWater, showForest,
     buildings, showBuildingPlots,
+    showFacilitiesInMobility,
     roads, footways,
     activeModes, activeMode,
     selectedDay, selectedTime,
@@ -510,14 +511,17 @@ export default function MapView({ onVenueClick }) {
     if (src) src.setData(buildGeoJSON(filteredVenues))
   }, [filteredVenues, mapReady])
 
-  // ── Venue circles: hide when building plots are active or not in facilities
+  // ── Venue circles: show in facilities mode or when facilities overlay active in mobility
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
-    const vis = activeMode === 'facilities' && !showBuildingPlots ? 'visible' : 'none'
+    const vis = (
+      (activeMode === 'facilities' && !showBuildingPlots) ||
+      (activeMode === 'mobility'   &&  showFacilitiesInMobility)
+    ) ? 'visible' : 'none'
     if (map.getLayer('venue-circles'))       map.setLayoutProperty('venue-circles',       'visibility', vis)
     if (map.getLayer('venue-dots-inactive')) map.setLayoutProperty('venue-dots-inactive', 'visibility', vis)
-  }, [mapReady, activeMode, showBuildingPlots])
+  }, [mapReady, activeMode, showBuildingPlots, showFacilitiesInMobility])
 
   // ── Building plots: enrich with activity scores and push to map ───────────
   useEffect(() => {
