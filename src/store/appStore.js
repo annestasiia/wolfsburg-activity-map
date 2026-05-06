@@ -187,6 +187,27 @@ export const useAppStore = create((set) => ({
     selectedMobilityDistrict: s.selectedMobilityDistrict === name ? null : name,
   })),
 
+  // ── Green Social Infrastructure Analysis state ────────────────────────────
+  greenSocialActiveAnalysis: null,  // 'coverage' | 'social' | 'encounter' | 'accessibility'
+  greenSocialScores:         {},
+  greenSocialError:          null,
+  socialAmenitiesGeoJSON:    null,
+  socialAmenitiesLoading:    false,
+  showSocialAmenities:       false,
+  showGreenSocialMap:        true,
+
+  setGreenSocialActiveAnalysis: (type) => set({
+    greenSocialActiveAnalysis: type,
+    greenSocialScores: {},
+    greenSocialError: null,
+  }),
+  setGreenSocialScores:      (scores) => set({ greenSocialScores: scores }),
+  setGreenSocialError:       (msg)    => set({ greenSocialError: msg }),
+  setSocialAmenitiesGeoJSON: (gj)     => set({ socialAmenitiesGeoJSON: gj }),
+  setSocialAmenitiesLoading: (val)    => set({ socialAmenitiesLoading: val }),
+  toggleShowSocialAmenities: ()       => set(s => ({ showSocialAmenities: !s.showSocialAmenities })),
+  toggleShowGreenSocialMap:  ()       => set(s => ({ showGreenSocialMap:  !s.showGreenSocialMap  })),
+
   // ── Greenery state ────────────────────────────────────────────────────────
   greeneryGeoJSON:              null,
   greeneryQueryVersion:         0,

@@ -1,13 +1,20 @@
 import React, { useState, useRef } from 'react'
 import GreeneryPanel from './panels/GreeneryPanel'
+import GreenSocialPanel from './panels/GreenSocialPanel'
+
+const TABS = [
+  { id: 'layers',   label: '🌿 Layers'   },
+  { id: 'analysis', label: '📊 Analysis' },
+]
 
 const MIN_WIDTH     = 220
 const MAX_WIDTH     = 540
 const DEFAULT_WIDTH = 300
 
 export default function GreenerySidebar() {
-  const [isOpen, setIsOpen] = useState(true)
-  const [width, setWidth]   = useState(DEFAULT_WIDTH)
+  const [isOpen,   setIsOpen]   = useState(true)
+  const [width,    setWidth]    = useState(DEFAULT_WIDTH)
+  const [panelTab, setPanelTab] = useState('layers')
 
   const handleResizeStart = (e) => {
     e.preventDefault()
@@ -105,7 +112,7 @@ export default function GreenerySidebar() {
           display:        'flex',
           alignItems:     'center',
           justifyContent: 'space-between',
-          padding:        '16px 18px 13px',
+          padding:        '14px 18px 12px',
           borderBottom:   '1px solid rgba(0,0,0,0.06)',
           flexShrink:      0,
         }}>
@@ -115,7 +122,7 @@ export default function GreenerySidebar() {
             color:         '#1D1D1F',
             letterSpacing: '-0.02em',
           }}>
-            🌿 Greenery Layers
+            🌿 Greenery
           </span>
           <button
             onClick={() => setIsOpen(false)}
@@ -136,9 +143,39 @@ export default function GreenerySidebar() {
           </button>
         </div>
 
+        {/* Tab row */}
+        <div style={{
+          display:      'flex',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          flexShrink:    0,
+        }}>
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setPanelTab(tab.id)}
+              style={{
+                flex:        1,
+                padding:    '9px 0',
+                background: 'none',
+                border:     'none',
+                borderBottom: `2px solid ${panelTab === tab.id ? '#2D6A4F' : 'transparent'}`,
+                cursor:     'pointer',
+                fontSize:    12,
+                fontWeight:  panelTab === tab.id ? 600 : 400,
+                color:       panelTab === tab.id ? '#2D6A4F' : '#6E6E73',
+                fontFamily: 'inherit',
+                transition: 'all 0.15s ease',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Scrollable content */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 20px' }}>
-          <GreeneryPanel noTitle />
+          {panelTab === 'layers' ? <GreeneryPanel noTitle /> : <GreenSocialPanel />}
         </div>
       </div>
 

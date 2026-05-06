@@ -16,6 +16,7 @@ import {
   networkOsmToGeoJSON,
   computeVisibleGeoJSON,
 } from '../utils/greeneryConfig'
+import { scoreToGSAColor } from '../utils/greenSocialAnalysis'
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 const WOLFSBURG  = { center: [10.7865, 52.4227], zoom: 12 }
@@ -324,6 +325,9 @@ export default function MapView({ onVenueClick }) {
     setGreeneryGeoJSON, setGreeneryDataLoading, setGreeneryDataError,
     // Global
     showAllBorders, showDistrictNames,
+    // Green Social Analysis
+    greenSocialActiveAnalysis, greenSocialScores, showGreenSocialMap,
+    socialAmenitiesGeoJSON,    showSocialAmenities,
   } = useAppStore()
   const { filteredVenues } = useFilters()
 
@@ -1337,6 +1341,145 @@ export default function MapView({ onVenueClick }) {
         map.setLayoutProperty('greenery-district-borders-line', 'visibility', vis)
     }
   }, [mapReady, districtBoundaries, activeMode, showGreeneryDistrictBorders])
+
+  // ── Green Social Analysis — district heatmap ──────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const hasScores = Object.keys(greenSocialScores).length > 0
+    const isActive  = activeMode === 'greenery' && showGreenSocialMap &&
+                      greenSocialActiveAnalysis && hasScores
+
+    if (!isActive) {
+      if (map.getLayer('gsa-district-fill')) map.setLayoutProperty('gsa-district-fill', 'visibility', 'none')
+      if (map.getLayer('gsa-district-line')) map.setLayoutProperty('gsa-district-line', 'visibility', 'none')
+      return
+    }
+
+    const features = Object.entries(districtBoundaries).flatMap(([name, gj]) =>
+      (gj?.features || []).map(f => ({
+        ...f,
+        properties: {
+          ...(f.properties || {}),
+          _districtName: name,
+          _fillColor:    scoreToGSAColor(greenSocialScores[name] ?? 0, greenSocialActiveAnalysis),
+          _score:        greenSocialScores[name] ?? 0,
+        },
+      }))
+    )
+    const data = { type: 'FeatureCollection', features }
+
+    if (!map.getSource('gsa-districts')) {
+      map.addSource('gsa-districts', { type: 'geojson', data })
+      map.addLayer({
+        id:     'gsa-district-fill',
+        type:   'fill',
+        source: 'gsa-districts',
+        paint: {
+          'fill-color':   ['get', '_fillColor'],
+          'fill-opacity':  0.55,
+        },
+      }, 'venue-circles')
+      map.addLayer({
+        id:     'gsa-district-line',
+        type:   'line',
+        source: 'gsa-districts',
+        paint: {
+          'line-color':   ['get', '_fillColor'],
+          'line-width':    1.5,
+          'line-opacity':  0.80,
+        },
+      }, 'venue-circles')
+
+      // Hover tooltip showing district name + score
+      map.on('mouseenter', 'gsa-district-fill', (e) => {
+        map.getCanvas().style.cursor = 'default'
+        const props = e.features[0].properties
+        tooltipRef.current?.remove()
+        tooltipRef.current = new maplibregl.Popup({
+          closeButton: false, closeOnClick: false, offset: 8, className: 'venue-tooltip',
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="font-size:12px;line-height:1.4;color:#1D1D1F">
+              <strong style="display:block;margin-bottom:3px">${props._districtName}</strong>
+              <span style="color:#6E6E73">Score: ${Number(props._score).toFixed(1)} / 10</span>
+            </div>`)
+          .addTo(map)
+      })
+      map.on('mouseleave', 'gsa-district-fill', () => {
+        map.getCanvas().style.cursor = ''
+        tooltipRef.current?.remove()
+        tooltipRef.current = null
+      })
+    } else {
+      map.getSource('gsa-districts').setData(data)
+      map.setLayoutProperty('gsa-district-fill', 'visibility', 'visible')
+      map.setLayoutProperty('gsa-district-line', 'visibility', 'visible')
+    }
+  }, [mapReady, activeMode, greenSocialActiveAnalysis, greenSocialScores, showGreenSocialMap, districtBoundaries])
+
+  // ── Green Social Analysis — social amenity POI points ────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const vis = (activeMode === 'greenery' && showSocialAmenities && socialAmenitiesGeoJSON)
+      ? 'visible' : 'none'
+
+    if (!socialAmenitiesGeoJSON) return
+
+    if (!map.getSource('gsa-social-pois')) {
+      map.addSource('gsa-social-pois', { type: 'geojson', data: socialAmenitiesGeoJSON })
+      map.addLayer({
+        id:     'gsa-social-pois-circles',
+        type:   'circle',
+        source: 'gsa-social-pois',
+        layout: { visibility: vis },
+        paint: {
+          'circle-radius': ['match', ['get', '_category'],
+            'active',  6,
+            'social',  5,
+            'passive', 4,
+            'comfort', 3,
+            4,
+          ],
+          'circle-color':          ['get', '_color'],
+          'circle-opacity':        0.85,
+          'circle-stroke-width':   1.5,
+          'circle-stroke-color':   '#FFFFFF',
+          'circle-stroke-opacity': 0.9,
+        },
+      }, 'venue-circles')
+
+      map.on('mouseenter', 'gsa-social-pois-circles', (e) => {
+        map.getCanvas().style.cursor = 'pointer'
+        const props = e.features[0].properties
+        tooltipRef.current?.remove()
+        tooltipRef.current = new maplibregl.Popup({
+          closeButton: false, closeOnClick: false, offset: 10, className: 'venue-tooltip',
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="font-size:12px;line-height:1.5;color:#1D1D1F">
+              ${props.name ? `<strong style="display:block;margin-bottom:2px">${props.name}</strong>` : ''}
+              <span style="display:block;font-weight:500">${props._icon || ''} ${props._label}</span>
+              <span style="color:#AEAEB2;font-size:11px">social weight: ${props._weight}</span>
+            </div>`)
+          .addTo(map)
+      })
+      map.on('mouseleave', 'gsa-social-pois-circles', () => {
+        map.getCanvas().style.cursor = ''
+        tooltipRef.current?.remove()
+        tooltipRef.current = null
+      })
+    } else {
+      map.getSource('gsa-social-pois').setData(socialAmenitiesGeoJSON)
+      if (map.getLayer('gsa-social-pois-circles'))
+        map.setLayoutProperty('gsa-social-pois-circles', 'visibility', vis)
+    }
+  }, [mapReady, socialAmenitiesGeoJSON, showSocialAmenities, activeMode])
 
   return (
     <div ref={containerRef} className="w-full h-full" />
