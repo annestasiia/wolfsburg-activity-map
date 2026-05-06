@@ -36,6 +36,8 @@ export default function BottomBar() {
     )
   }
 
+  if (activeMode === 'greenery') return null
+
   return (
     <div className="bottom-bar">
       <div className={`bottom-panel-wrap ${activeBottomPanel ? 'open' : ''}`}>

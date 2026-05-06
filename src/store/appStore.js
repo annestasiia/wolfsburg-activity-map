@@ -129,4 +129,48 @@ export const useAppStore = create((set) => ({
   setSelectedMobilityDistrict: (name) => set(s => ({
     selectedMobilityDistrict: s.selectedMobilityDistrict === name ? null : name,
   })),
+
+  // ── Greenery state ────────────────────────────────────────────────────────
+  // greeneryGeoJSON: full classified dataset — never deleted, only used for
+  //   visibility filtering. null until first fetch.
+  greeneryGeoJSON:              null,
+  greeneryQueryVersion:         0,
+  greeneryDataLoading:          false,
+  greeneryDataError:            null,
+  showGreeneryDistrictBorders:  false,
+  greeneryCategoryToggles:      {},
+  greeneryTagToggles:           {},
+  greeneryOthersTagToggles:     {},
+
+  setGreeneryGeoJSON:            (gj, version) => set({ greeneryGeoJSON: gj, greeneryQueryVersion: version }),
+  setGreeneryDataLoading:        (val) => set({ greeneryDataLoading: val }),
+  setGreeneryDataError:          (msg) => set({ greeneryDataError: msg }),
+  toggleGreeneryDistrictBorders: ()    => set(s => ({ showGreeneryDistrictBorders: !s.showGreeneryDistrictBorders })),
+
+  toggleGreeneryCategory: (id) => set(s => ({
+    greeneryCategoryToggles: {
+      ...s.greeneryCategoryToggles,
+      [id]: s.greeneryCategoryToggles[id] === false ? true : false,
+    },
+  })),
+
+  toggleGreeneryTag: (catId, key, value) => set(s => {
+    const k = `${catId}__${key}__${value}`
+    return {
+      greeneryTagToggles: {
+        ...s.greeneryTagToggles,
+        [k]: s.greeneryTagToggles[k] === false ? true : false,
+      },
+    }
+  }),
+
+  toggleGreeneryOthersTag: (key, value) => set(s => {
+    const k = `${key}__${value}`
+    return {
+      greeneryOthersTagToggles: {
+        ...s.greeneryOthersTagToggles,
+        [k]: s.greeneryOthersTagToggles[k] === false ? true : false,
+      },
+    }
+  }),
 }))
