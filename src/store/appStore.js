@@ -15,9 +15,11 @@ export const useAppStore = create((set) => ({
   forest: null,
   roads: null,
   footways: null,
-  showParks: true,
-  showWater: true,
-  showForest: true,
+  showParks: false,
+  showWater: false,
+  showForest: false,
+  buildings: null,
+  showBuildingPlots: false,
 
   // ── Legacy multi-mode (kept for internal use) ─────────────────────────────
   activeModes: new Set(['infrastructure']),
@@ -80,11 +82,12 @@ export const useAppStore = create((set) => ({
   setDistrictBoundaries: (b)   => set({ districtBoundaries: b }),
   setBoundariesLoading:  (val) => set({ boundariesLoading: val }),
   setBoundariesError:    (msg) => set({ boundariesError: msg }),
-  setParks:    (parks)    => set({ parks }),
-  setWater:    (water)    => set({ water }),
-  setForest:   (forest)   => set({ forest }),
-  setRoads:    (roads)    => set({ roads }),
-  setFootways: (footways) => set({ footways }),
+  setParks:      (parks)      => set({ parks }),
+  setWater:      (water)      => set({ water }),
+  setForest:     (forest)     => set({ forest }),
+  setBuildings:  (buildings)  => set({ buildings }),
+  setRoads:      (roads)      => set({ roads }),
+  setFootways:   (footways)   => set({ footways }),
 
   toggleMode: (mode) => set(s => {
     const next = new Set(s.activeModes)
@@ -96,9 +99,10 @@ export const useAppStore = create((set) => ({
     activeBottomPanel: s.activeBottomPanel === panel ? null : panel,
   })),
 
-  toggleParks:  () => set(s => ({ showParks:  !s.showParks  })),
-  toggleWater:  () => set(s => ({ showWater:  !s.showWater  })),
-  toggleForest: () => set(s => ({ showForest: !s.showForest })),
+  toggleParks:         () => set(s => ({ showParks:         !s.showParks         })),
+  toggleWater:         () => set(s => ({ showWater:         !s.showWater         })),
+  toggleForest:        () => set(s => ({ showForest:        !s.showForest        })),
+  toggleBuildingPlots: () => set(s => ({ showBuildingPlots: !s.showBuildingPlots })),
 
   toggleDistrict: (name) => set(s => {
     const next = new Set(s.selectedDistricts)

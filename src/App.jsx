@@ -12,9 +12,10 @@ import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
 import waterData from './data/water.json'
 import forestData from './data/forest.json'
+import buildingsData from './data/buildings.json'
 
 export default function App() {
-  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setRoads, setFootways, activeMode } = useAppStore()
+  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways, activeMode } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function App() {
     setParks(parksData)
     setWater(waterData)
     setForest(forestData)
+    setBuildings(buildingsData)
     fetch(`${import.meta.env.BASE_URL}wolfsburg_roads.geojson`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setRoads(data) })
@@ -31,7 +33,7 @@ export default function App() {
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setFootways(data) })
       .catch(() => {})
-  }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setRoads, setFootways])
+  }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways])
 
   const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
 
