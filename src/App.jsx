@@ -5,6 +5,8 @@ import BottomBar from './components/BottomBar'
 import MapView from './components/MapView'
 import VenuePopup from './components/VenuePopup'
 import GreenerySidebar from './components/GreenerySidebar'
+import MobilityToolbar from './components/MobilityToolbar'
+import MobilityLeftBar from './components/MobilityLeftBar'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -38,6 +40,8 @@ export default function App() {
       <TopBar />
       <main className="map-area">
         <MapView onVenueClick={handleVenueClick} />
+        {activeMode === 'mobility' && <MobilityLeftBar />}
+        {activeMode === 'mobility' && <MobilityToolbar />}
         {selectedVenue && (
           <VenuePopup
             venue={selectedVenue}
