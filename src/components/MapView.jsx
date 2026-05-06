@@ -7,6 +7,15 @@ import { DISTRICTS } from '../constants'
 import { HIGHWAY_TYPES, ROAD_STYLE, getTrafficOpacity } from '../utils/trafficPatterns'
 import { computeFootwayGeoJSON } from '../utils/footwayActivity'
 import { computeBbox, inBbox, expandBbox, getCoordList } from '../utils/geoUtils'
+import {
+  GREENERY_FEATURES_QUERY,
+  NETWORK_QUERY,
+  GREENERY_QUERY_VERSION,
+  CATEGORY_COLOR_EXPRESSION,
+  greeneryOsmToGeoJSON,
+  networkOsmToGeoJSON,
+  computeVisibleGeoJSON,
+} from '../utils/greeneryConfig'
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 const WOLFSBURG  = { center: [10.7865, 52.4227], zoom: 12 }
@@ -215,6 +224,10 @@ export default function MapView({ onVenueClick }) {
     setCyclingRoutesGeoJSON,
     cyclingHighlightLeisureRoute,
     selectedMobilityDistrict, setSelectedMobilityDistrict,
+    // Greenery
+    greeneryGeoJSON, greeneryCategoryToggles, greeneryTagToggles, greeneryOthersTagToggles,
+    showGreeneryDistrictBorders,
+    setGreeneryGeoJSON, setGreeneryDataLoading, setGreeneryDataError,
   } = useAppStore()
   const { filteredVenues } = useFilters()
 
@@ -388,7 +401,7 @@ export default function MapView({ onVenueClick }) {
 
     for (const { id, data, fill, line, visible } of layers) {
       if (!data) continue
-      const vis = (activeMode !== 'mobility' && visible) ? 'visible' : 'none'
+      const vis = (activeMode === 'facilities' && visible) ? 'visible' : 'none'
       if (!map.getSource(id)) {
         map.addSource(id, { type: 'geojson', data })
         map.addLayer({ id: `${id}-fill`,    type: 'fill', source: id, paint: fill }, 'venue-circles')
@@ -410,7 +423,7 @@ export default function MapView({ onVenueClick }) {
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
-    const vis = activeMode !== 'mobility' ? 'visible' : 'none'
+    const vis = activeMode === 'facilities' ? 'visible' : 'none'
     if (map.getLayer('venue-circles'))       map.setLayoutProperty('venue-circles',       'visibility', vis)
     if (map.getLayer('venue-dots-inactive')) map.setLayoutProperty('venue-dots-inactive', 'visibility', vis)
   }, [mapReady, activeMode])
@@ -965,6 +978,247 @@ export default function MapView({ onVenueClick }) {
       }
     })
   }, [mapReady, mobilityScores, selectedDistricts, mobilitySubLayer])
+
+  // ── Greenery — fetch OSM data when Greenery tab becomes active ────────────
+  useEffect(() => {
+    if (!mapReady || activeMode !== 'greenery') return
+    // Skip if cache is fresh (same query version produced it)
+    const state = useAppStore.getState()
+    if (state.greeneryGeoJSON && state.greeneryQueryVersion === GREENERY_QUERY_VERSION) return
+    // Stale cache (query changed) — clear it before re-fetching
+    if (state.greeneryGeoJSON) setGreeneryGeoJSON(null, 0)
+
+    let cancelled = false
+
+    const fetchGreenery = async () => {
+      setGreeneryDataLoading(true)
+      setGreeneryDataError(null)
+      try {
+        const post = (query) => fetch('https://overpass-api.de/api/interpreter', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body:    `data=${encodeURIComponent(query)}`,
+        }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
+
+        const [greeneryResult, networkResult] = await Promise.allSettled([
+          post(GREENERY_FEATURES_QUERY),
+          post(NETWORK_QUERY),
+        ])
+        if (cancelled) return
+
+        if (greeneryResult.status === 'rejected' && networkResult.status === 'rejected') {
+          throw new Error('Both Overpass queries failed')
+        }
+
+        const greeneryFeatures = greeneryResult.status === 'fulfilled'
+          ? greeneryOsmToGeoJSON(greeneryResult.value.elements || []).features
+          : []
+        const networkFeatures = networkResult.status === 'fulfilled'
+          ? networkOsmToGeoJSON(networkResult.value.elements || [])
+          : []
+
+        const gj = { type: 'FeatureCollection', features: [...greeneryFeatures, ...networkFeatures] }
+        setGreeneryGeoJSON(gj, GREENERY_QUERY_VERSION)
+
+        if (greeneryResult.status === 'rejected')
+          setGreeneryDataError('Greenery features unavailable — showing network only.')
+        else if (networkResult.status === 'rejected')
+          setGreeneryDataError('Network data unavailable — showing greenery only.')
+      } catch (err) {
+        console.error('Greenery fetch error:', err)
+        if (!cancelled) setGreeneryDataError('Failed to load greenery data. Check your connection and reload the page.')
+      } finally {
+        if (!cancelled) setGreeneryDataLoading(false)
+      }
+    }
+
+    fetchGreenery()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady, activeMode])
+
+  // ── Greenery — hover tooltips (registered once after map ready) ────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const handleEnter = (e) => {
+      map.getCanvas().style.cursor = 'pointer'
+      const props = e.features[0].properties
+      tooltipRef.current?.remove()
+      const name = props._name ? `<strong style="display:block;margin-bottom:3px">${props._name}</strong>` : ''
+      tooltipRef.current = new maplibregl.Popup({
+        closeButton: false, closeOnClick: false, offset: 12, className: 'venue-tooltip',
+      })
+        .setLngLat(e.lngLat)
+        .setHTML(`
+          <div style="font-size:12px;line-height:1.5;color:#1D1D1F">
+            ${name}
+            <span style="color:#2D6A4F;font-weight:500;display:block">${props._tagLabel || props._tagValue}</span>
+            <span style="color:#AEAEB2;font-size:11px">${props._tagKey}=${props._tagValue}</span>
+          </div>`)
+        .addTo(map)
+    }
+
+    const handleLeave = () => {
+      map.getCanvas().style.cursor = ''
+      tooltipRef.current?.remove()
+      tooltipRef.current = null
+    }
+
+    for (const layerId of ['greenery-fill', 'greenery-line', 'greenery-point']) {
+      map.on('mouseenter', layerId, handleEnter)
+      map.on('mouseleave', layerId, handleLeave)
+    }
+
+    return () => {
+      for (const layerId of ['greenery-fill', 'greenery-line', 'greenery-point']) {
+        map.off('mouseenter', layerId, handleEnter)
+        map.off('mouseleave', layerId, handleLeave)
+      }
+    }
+  }, [mapReady])
+
+  // ── Greenery — render/update map layers when data or toggles change ────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const GREENERY_LAYERS = ['greenery-fill', 'greenery-outline', 'greenery-line', 'greenery-point']
+    const isActive = activeMode === 'greenery'
+
+    // Hide all greenery layers when not in greenery mode or no data yet
+    if (!isActive || !greeneryGeoJSON) {
+      for (const id of GREENERY_LAYERS) {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none')
+      }
+      return
+    }
+
+    const visibleGeoJSON = computeVisibleGeoJSON(
+      greeneryGeoJSON,
+      greeneryCategoryToggles,
+      greeneryTagToggles,
+      greeneryOthersTagToggles,
+    )
+
+    if (!map.getSource('greenery-all')) {
+      // First time: add source + all four layers
+      map.addSource('greenery-all', { type: 'geojson', data: visibleGeoJSON })
+
+      // Fill — polygons only, network category excluded (roads/paths are never areas)
+      map.addLayer({
+        id:     'greenery-fill',
+        type:   'fill',
+        source: 'greenery-all',
+        filter: ['!=', ['get', '_categoryId'], 'network'],
+        paint: {
+          'fill-color':   CATEGORY_COLOR_EXPRESSION,
+          'fill-opacity':  0.30,
+        },
+      }, 'venue-circles')
+
+      // Outline — polygon outlines only, network category excluded
+      map.addLayer({
+        id:     'greenery-outline',
+        type:   'line',
+        source: 'greenery-all',
+        filter: ['all',
+          ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]],
+          ['!=', ['get', '_categoryId'], 'network'],
+        ],
+        paint: {
+          'line-color':   CATEGORY_COLOR_EXPRESSION,
+          'line-width':    1.2,
+          'line-opacity':  0.65,
+        },
+      }, 'venue-circles')
+
+      // Lines — LineString / MultiLineString (hedges, tree rows, etc.)
+      map.addLayer({
+        id:     'greenery-line',
+        type:   'line',
+        source: 'greenery-all',
+        filter: ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-color':   CATEGORY_COLOR_EXPRESSION,
+          'line-width':    2,
+          'line-opacity':  0.80,
+        },
+      }, 'venue-circles')
+
+      // Points — only truly independent OSM node elements in the
+      // individual_vegetation category (trees, hedges). Nodes that happen
+      // to be tagged with area categories (grassland, park, etc.) are
+      // excluded here; they are represented by polygon/line layers instead.
+      map.addLayer({
+        id:      'greenery-point',
+        type:    'circle',
+        source:  'greenery-all',
+        minzoom:  14,
+        filter: ['all',
+          ['==', ['geometry-type'], 'Point'],
+          ['==', ['get', '_osmType'], 'node'],
+          ['==', ['get', '_categoryId'], 'individual_vegetation'],
+        ],
+        paint: {
+          'circle-radius':         4,
+          'circle-color':          CATEGORY_COLOR_EXPRESSION,
+          'circle-opacity':        0.85,
+          'circle-stroke-width':   1,
+          'circle-stroke-color':   '#FFFFFF',
+          'circle-stroke-opacity': 0.7,
+        },
+      }, 'venue-circles')
+
+    } else {
+      // Source already exists — update data and ensure layers are visible
+      map.getSource('greenery-all').setData(visibleGeoJSON)
+      for (const id of GREENERY_LAYERS) {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible')
+      }
+    }
+  }, [mapReady, activeMode, greeneryGeoJSON, greeneryCategoryToggles, greeneryTagToggles, greeneryOthersTagToggles])
+
+  // ── Greenery — dashed district border overlay ─────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const vis = (activeMode === 'greenery' && showGreeneryDistrictBorders) ? 'visible' : 'none'
+
+    const features = Object.entries(districtBoundaries).flatMap(([name, gj]) =>
+      (gj?.features || []).map(f => ({
+        ...f,
+        properties: { ...(f.properties || {}), _districtName: name },
+      }))
+    )
+
+    if (!map.getSource('greenery-district-borders')) {
+      if (!features.length) return
+      map.addSource('greenery-district-borders', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features },
+      })
+      map.addLayer({
+        id:     'greenery-district-borders-line',
+        type:   'line',
+        source: 'greenery-district-borders',
+        layout: { visibility: vis },
+        paint: {
+          'line-color':     '#1D1D1F',
+          'line-width':      1.5,
+          'line-opacity':    0.50,
+          'line-dasharray': [5, 4],
+        },
+      }, 'venue-circles')
+    } else {
+      map.getSource('greenery-district-borders').setData({ type: 'FeatureCollection', features })
+      if (map.getLayer('greenery-district-borders-line'))
+        map.setLayoutProperty('greenery-district-borders-line', 'visibility', vis)
+    }
+  }, [mapReady, districtBoundaries, activeMode, showGreeneryDistrictBorders])
 
   return (
     <div ref={containerRef} className="w-full h-full" />

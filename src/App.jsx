@@ -4,6 +4,7 @@ import TopBar from './components/TopBar'
 import BottomBar from './components/BottomBar'
 import MapView from './components/MapView'
 import VenuePopup from './components/VenuePopup'
+import GreenerySidebar from './components/GreenerySidebar'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -11,7 +12,7 @@ import waterData from './data/water.json'
 import forestData from './data/forest.json'
 
 export default function App() {
-  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setRoads, setFootways } = useAppStore()
+  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setRoads, setFootways, activeMode } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function App() {
             onClose={() => setSelectedVenue(null)}
           />
         )}
+        {activeMode === 'greenery' && <GreenerySidebar />}
       </main>
       <BottomBar />
     </div>
