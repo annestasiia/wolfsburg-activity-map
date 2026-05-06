@@ -328,6 +328,8 @@ export default function MapView({ onVenueClick }) {
     // Green Social Analysis
     greenSocialActiveAnalysis, greenSocialScores, showGreenSocialMap,
     socialAmenitiesGeoJSON,    showSocialAmenities,
+    // Global district overlay
+    showDistrictOverlay,
   } = useAppStore()
   const { filteredVenues } = useFilters()
 
@@ -1342,6 +1344,70 @@ export default function MapView({ onVenueClick }) {
     }
   }, [mapReady, districtBoundaries, activeMode, showGreeneryDistrictBorders])
 
+  // ── Global district overlay — borders + name labels (all modes) ──────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const vis = showDistrictOverlay ? 'visible' : 'none'
+
+    const features = Object.entries(districtBoundaries).flatMap(([name, gj]) =>
+      (gj?.features || []).map(f => ({
+        ...f,
+        properties: { ...(f.properties || {}), _districtName: name },
+      }))
+    )
+
+    if (!map.getSource('district-overlay')) {
+      if (!features.length) return
+      map.addSource('district-overlay', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features },
+      })
+      // Dashed border line
+      map.addLayer({
+        id:     'district-overlay-line',
+        type:   'line',
+        source: 'district-overlay',
+        layout: { visibility: vis },
+        paint: {
+          'line-color':     '#1D1D1F',
+          'line-width':      1.5,
+          'line-opacity':    0.55,
+          'line-dasharray': [5, 4],
+        },
+      })
+      // Name labels
+      map.addLayer({
+        id:     'district-overlay-labels',
+        type:   'symbol',
+        source: 'district-overlay',
+        layout: {
+          visibility:           vis,
+          'text-field':         ['get', '_districtName'],
+          'text-font':          ['Noto Sans Regular'],
+          'text-size':           11,
+          'text-anchor':        'center',
+          'text-max-width':      8,
+          'symbol-placement':   'point',
+          'text-allow-overlap': false,
+        },
+        paint: {
+          'text-color':        '#1D1D1F',
+          'text-halo-color':   'rgba(255,255,255,0.85)',
+          'text-halo-width':    1.5,
+          'text-opacity':       0.90,
+        },
+      })
+    } else {
+      map.getSource('district-overlay').setData({ type: 'FeatureCollection', features })
+      if (map.getLayer('district-overlay-line'))
+        map.setLayoutProperty('district-overlay-line', 'visibility', vis)
+      if (map.getLayer('district-overlay-labels'))
+        map.setLayoutProperty('district-overlay-labels', 'visibility', vis)
+    }
+  }, [mapReady, districtBoundaries, showDistrictOverlay])
+
   // ── Green Social Analysis — district heatmap ──────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -1392,9 +1458,9 @@ export default function MapView({ onVenueClick }) {
         },
       }, 'venue-circles')
 
-      // Hover tooltip showing district name + score
+      // Hover tooltip (cursor label only)
       map.on('mouseenter', 'gsa-district-fill', (e) => {
-        map.getCanvas().style.cursor = 'default'
+        map.getCanvas().style.cursor = 'pointer'
         const props = e.features[0].properties
         tooltipRef.current?.remove()
         tooltipRef.current = new maplibregl.Popup({
@@ -1412,6 +1478,26 @@ export default function MapView({ onVenueClick }) {
         map.getCanvas().style.cursor = ''
         tooltipRef.current?.remove()
         tooltipRef.current = null
+      })
+
+      // Click → open bottom stats popup
+      map.on('click', 'gsa-district-fill', (e) => {
+        const props = e.features[0].properties
+        const scores = useAppStore.getState().greenSocialScores
+        const sorted = Object.entries(scores).sort(([,a],[,b]) => b - a)
+        const rank   = sorted.findIndex(([n]) => n === props._districtName) + 1
+        useAppStore.getState().setHoveredGSADistrict({
+          name:  props._districtName,
+          score: Number(props._score),
+          rank,
+          total: sorted.length,
+        })
+      })
+
+      // Click on empty map area → dismiss stats popup
+      map.on('click', (e) => {
+        const hits = map.queryRenderedFeatures(e.point, { layers: ['gsa-district-fill'] })
+        if (!hits.length) useAppStore.getState().setHoveredGSADistrict(null)
       })
     } else {
       map.getSource('gsa-districts').setData(data)

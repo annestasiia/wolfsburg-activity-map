@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { useGreenSocialData } from '../../hooks/useGreenSocialData'
 import {
@@ -125,6 +125,153 @@ function ToggleRow({ active, onToggle, icon, label, rightLabel, color = '#2D6A4F
   )
 }
 
+// ── Coverage weight labels ────────────────────────────────────────────────────
+
+const COVERAGE_LABELS = {
+  parks_recreation:     'Parks & Recreation',
+  forests_woods:        'Forests & Woods',
+  protected_conservation: 'Protected Areas',
+  natural_vegetation:   'Natural Vegetation',
+  grass_open_green:     'Grass & Open Green',
+  agriculture_planted:  'Agriculture',
+  individual_vegetation:'Individual Vegetation',
+  others:               'Others',
+}
+
+const ENCOUNTER_LABELS = {
+  green:   'Green Quality',
+  social:  'Social Amenities',
+  transit: 'Transit Access',
+  paths:   'Pedestrian Paths',
+}
+
+// ── Weight slider row ─────────────────────────────────────────────────────────
+
+function WeightSlider({ label, value, min, max, step, color, onChange }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 2 }}>
+      <div style={{ width: 130, fontSize: 11, color: '#3D3D3F', flexShrink: 0, letterSpacing: '-0.01em' }}>
+        {label}
+      </div>
+      <input
+        type="range"
+        min={min} max={max} step={step} value={value}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        style={{ flex: 1, accentColor: color, cursor: 'pointer' }}
+      />
+      <div style={{
+        width: 30, fontSize: 11, fontWeight: 600, color,
+        textAlign: 'right', flexShrink: 0,
+      }}>
+        {value % 1 === 0 ? value : value.toFixed(1)}
+      </div>
+    </div>
+  )
+}
+
+// ── Weight controls panel ─────────────────────────────────────────────────────
+
+function WeightControls({ activeId, color }) {
+  const [open, setOpen] = useState(false)
+  const {
+    coverageWeights, encounterWeights,
+    setCoverageWeight, setEncounterWeight,
+    resetCoverageWeights, resetEncounterWeights,
+  } = useAppStore()
+
+  const showCoverage  = activeId === 'coverage'
+  const showEncounter = activeId === 'encounter'
+  if (!showCoverage && !showEncounter) return null
+
+  return (
+    <div>
+      {/* Toggle header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          width: '100%', padding: '7px 12px', borderRadius: 9,
+          background: open ? `${color}10` : '#F5F5F7',
+          border: `1px solid ${open ? color + '40' : 'rgba(0,0,0,0.08)'}`,
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 600, color: open ? color : '#6E6E73', letterSpacing: '-0.01em' }}>
+          ⚙ Weight controls
+        </span>
+        <span style={{ fontSize: 11, color: '#AEAEB2' }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{
+          marginTop: 6, padding: '10px 12px',
+          background: `${color}06`, border: `1px solid ${color}20`,
+          borderRadius: 10,
+        }}>
+          {showCoverage && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
+                Category weights (relative)
+              </div>
+              {Object.entries(coverageWeights).map(([key, val]) => (
+                <WeightSlider
+                  key={key}
+                  label={COVERAGE_LABELS[key] || key}
+                  value={val}
+                  min={0} max={5} step={0.1}
+                  color={color}
+                  onChange={v => setCoverageWeight(key, v)}
+                />
+              ))}
+              <button
+                onClick={resetCoverageWeights}
+                style={{
+                  marginTop: 8, fontSize: 10, color: '#AEAEB2',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontFamily: 'inherit', padding: 0, letterSpacing: '-0.01em',
+                }}
+              >
+                ↺ Reset to defaults
+              </button>
+            </>
+          )}
+
+          {showEncounter && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
+                Component weights (%)
+              </div>
+              {Object.entries(encounterWeights).map(([key, val]) => (
+                <WeightSlider
+                  key={key}
+                  label={ENCOUNTER_LABELS[key] || key}
+                  value={val}
+                  min={0} max={100} step={1}
+                  color={color}
+                  onChange={v => setEncounterWeight(key, v)}
+                />
+              ))}
+              <div style={{ fontSize: 10, color: '#AEAEB2', marginTop: 6, lineHeight: 1.4 }}>
+                Weights auto-normalise to 100% regardless of values.
+              </div>
+              <button
+                onClick={resetEncounterWeights}
+                style={{
+                  marginTop: 6, fontSize: 10, color: '#AEAEB2',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontFamily: 'inherit', padding: 0, letterSpacing: '-0.01em',
+                }}
+              >
+                ↺ Reset to defaults
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main panel ────────────────────────────────────────────────────────────────
 
 export default function GreenSocialPanel() {
@@ -142,6 +289,7 @@ export default function GreenSocialPanel() {
     showGreenSocialMap,
     toggleShowGreenSocialMap,
     greeneryGeoJSON,
+    setGSSInfoModal,
   } = useAppStore()
 
   const activeAnalysis = ANALYSES.find(a => a.id === greenSocialActiveAnalysis)
@@ -192,24 +340,46 @@ export default function GreenSocialPanel() {
         {ANALYSES.map(a => {
           const active = greenSocialActiveAnalysis === a.id
           return (
-            <button
+            <div
               key={a.id}
               onClick={() => setGreenSocialActiveAnalysis(active ? null : a.id)}
               style={{
+                position:      'relative',
                 display:       'flex',
                 flexDirection: 'column',
                 alignItems:    'center',
                 gap:            5,
-                padding:       '11px 8px',
+                padding:       '11px 8px 9px',
                 borderRadius:   12,
                 background:     active ? `${a.color}18` : '#F5F5F7',
                 border:        `1.5px solid ${active ? a.color : 'rgba(0,0,0,0.08)'}`,
                 cursor:        'pointer',
-                fontFamily:    'inherit',
                 transition:    'all 0.15s ease',
                 boxShadow:      active ? `0 2px 8px ${a.color}28` : 'none',
+                userSelect:    'none',
               }}
             >
+              <button
+                onClick={e => { e.stopPropagation(); setGSSInfoModal(a.id) }}
+                style={{
+                  position:     'absolute',
+                  top:           5,
+                  right:         6,
+                  background:   'none',
+                  border:       'none',
+                  cursor:       'pointer',
+                  fontSize:      11,
+                  color:        active ? a.color : '#AEAEB2',
+                  lineHeight:    1,
+                  padding:       '1px 3px',
+                  borderRadius:  4,
+                  fontFamily:   'inherit',
+                  fontWeight:    600,
+                }}
+                title={`How ${a.label} is calculated`}
+              >
+                ℹ
+              </button>
               <span style={{ fontSize: 20, lineHeight: 1 }}>{a.icon}</span>
               <span style={{
                 fontSize:   11,
@@ -221,7 +391,7 @@ export default function GreenSocialPanel() {
               }}>
                 {a.label}
               </span>
-            </button>
+            </div>
           )
         })}
       </div>
@@ -237,6 +407,11 @@ export default function GreenSocialPanel() {
         }}>
           {activeAnalysis.description}
         </p>
+      )}
+
+      {/* ── Weight controls (coverage + encounter only) ── */}
+      {greenSocialActiveAnalysis && (
+        <WeightControls activeId={greenSocialActiveAnalysis} color={color} />
       )}
 
       {/* ── Need to load greenery data first ── */}

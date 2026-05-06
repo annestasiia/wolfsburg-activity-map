@@ -9,6 +9,8 @@ import MobilityToolbar from './components/MobilityToolbar'
 import MobilityLeftBar from './components/MobilityLeftBar'
 import FacilityLeftBar from './components/FacilityLeftBar'
 import FacilityToolbar from './components/FacilityToolbar'
+import DistrictStatsPopup from './components/DistrictStatsPopup'
+import AnalysisInfoModal from './components/panels/AnalysisInfoModal'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -55,6 +57,8 @@ export default function App() {
           />
         )}
         {activeMode === 'greenery' && <GreenerySidebar />}
+        <DistrictStatsPopup />
+        <AnalysisInfoModal />
       </main>
       <BottomBar />
     </div>

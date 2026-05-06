@@ -33,6 +33,8 @@ export function useGreenSocialData() {
     setSocialAmenitiesLoading,
     setGreenSocialScores,
     setGreenSocialError,
+    coverageWeights,
+    encounterWeights,
   } = useAppStore()
 
   // ── Fetch social amenities once when first analysis is selected ──────────────
@@ -73,7 +75,7 @@ export function useGreenSocialData() {
       let scores = {}
       switch (greenSocialActiveAnalysis) {
         case 'coverage':
-          scores = computeGreenCoverageScores(greeneryGeoJSON, districtBoundaries)
+          scores = computeGreenCoverageScores(greeneryGeoJSON, districtBoundaries, coverageWeights)
           break
         case 'social':
           scores = computeSocialDensityScores(socialAmenitiesGeoJSON, districtBoundaries)
@@ -86,7 +88,9 @@ export function useGreenSocialData() {
             greeneryGeoJSON,
             socialAmenitiesGeoJSON,
             transitStopsGeoJSON,
-            districtBoundaries
+            districtBoundaries,
+            coverageWeights,
+            encounterWeights,
           )
           break
         default:
@@ -104,5 +108,7 @@ export function useGreenSocialData() {
     socialAmenitiesGeoJSON,
     transitStopsGeoJSON,
     districtBoundaries,
+    coverageWeights,
+    encounterWeights,
   ])
 }

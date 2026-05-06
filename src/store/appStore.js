@@ -187,6 +187,45 @@ export const useAppStore = create((set) => ({
     selectedMobilityDistrict: s.selectedMobilityDistrict === name ? null : name,
   })),
 
+  // ── GSA district hover popup ──────────────────────────────────────────────
+  hoveredGSADistrict: null,   // { name, score, rank, total } | null
+  setHoveredGSADistrict: (d) => set({ hoveredGSADistrict: d }),
+
+  // ── GSA configurable weights ──────────────────────────────────────────────
+  coverageWeights: {
+    parks_recreation: 3.0, forests_woods: 3.0,
+    protected_conservation: 2.5, natural_vegetation: 2.5,
+    grass_open_green: 2.0, agriculture_planted: 1.0,
+    individual_vegetation: 0.5, others: 0.5,
+  },
+  encounterWeights: { green: 35, social: 30, transit: 20, paths: 15 },
+
+  setCoverageWeight: (key, val) => set(s => ({
+    coverageWeights: { ...s.coverageWeights, [key]: val },
+  })),
+  setEncounterWeight: (key, val) => set(s => ({
+    encounterWeights: { ...s.encounterWeights, [key]: val },
+  })),
+  resetCoverageWeights: () => set({
+    coverageWeights: {
+      parks_recreation: 3.0, forests_woods: 3.0,
+      protected_conservation: 2.5, natural_vegetation: 2.5,
+      grass_open_green: 2.0, agriculture_planted: 1.0,
+      individual_vegetation: 0.5, others: 0.5,
+    },
+  }),
+  resetEncounterWeights: () => set({
+    encounterWeights: { green: 35, social: 30, transit: 20, paths: 15 },
+  }),
+
+  // ── GSA info modal ────────────────────────────────────────────────────────
+  gssInfoModal: null,   // null | 'coverage' | 'social' | 'accessibility' | 'encounter'
+  setGSSInfoModal: (id) => set({ gssInfoModal: id }),
+
+  // ── Global district overlay (borders + names, all modes) ─────────────────
+  showDistrictOverlay: false,
+  toggleDistrictOverlay: () => set(s => ({ showDistrictOverlay: !s.showDistrictOverlay })),
+
   // ── Green Social Infrastructure Analysis state ────────────────────────────
   greenSocialActiveAnalysis: null,  // 'coverage' | 'social' | 'encounter' | 'accessibility'
   greenSocialScores:         {},
