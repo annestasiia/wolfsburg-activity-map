@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useAppStore } from '../store/appStore'
 import { useFilters } from '../hooks/useFilters'
-import { DISTRICTS } from '../constants'
+import { DISTRICTS, CATEGORIES } from '../constants'
 import { HIGHWAY_TYPES, ROAD_STYLE, getTrafficOpacity } from '../utils/trafficPatterns'
 import { computeFootwayGeoJSON } from '../utils/footwayActivity'
 import { computeBbox, inBbox, expandBbox, getCoordList } from '../utils/geoUtils'
@@ -197,6 +197,50 @@ function tagAutoRoads(geoJSON) {
   }
 }
 
+// ── Building activity helpers ─────────────────────────────────────────────────
+
+function polygonCentroid(feature) {
+  const ring = feature.geometry.type === 'Polygon'
+    ? feature.geometry.coordinates[0]
+    : feature.geometry.coordinates[0][0]
+  let sumLng = 0, sumLat = 0
+  for (const [lng, lat] of ring) { sumLng += lng; sumLat += lat }
+  return [sumLng / ring.length, sumLat / ring.length]
+}
+
+function haversineM([lng1, lat1], [lng2, lat2]) {
+  const R = 6371000
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+const ACTIVITY_SCORE = { High: 1.0, Med: 0.55, Low: 0.25 }
+const MATCH_RADIUS   = 80
+
+function enrichBuildings(buildingsData, venues) {
+  return {
+    ...buildingsData,
+    features: buildingsData.features.map(f => {
+      const center = polygonCentroid(f)
+      const cat    = f.properties.category
+      let best = 0
+      for (const v of venues) {
+        if (v.category !== cat) continue
+        const d = haversineM(center, [v.lng, v.lat])
+        if (d <= MATCH_RADIUS) {
+          const s = ACTIVITY_SCORE[v.activityLevel] ?? 0
+          if (s > best) best = s
+        }
+      }
+      return { ...f, properties: { ...f.properties, activityScore: best } }
+    }),
+  }
+}
+
 function buildDistrictLabelGeoJSON(districtBoundaries) {
   const features = Object.entries(districtBoundaries)
     .filter(([, gj]) => gj?.features?.length)
@@ -224,7 +268,6 @@ function makeHeatmapOpacity(day, time) {
   ]
 }
 
-// Simple transit activity level based on time (no schedule data available)
 function getTransitActivity(selectedDay, selectedTime) {
   const hour = parseInt(selectedTime.split(':')[0], 10)
   const isWeekend = selectedDay === 'Sat' || selectedDay === 'Sun'
@@ -250,6 +293,7 @@ export default function MapView({ onVenueClick }) {
   const {
     districtBoundaries, selectedDistricts,
     parks, water, forest, showParks, showWater, showForest,
+    buildings, showBuildingPlots,
     roads, footways,
     activeModes, activeMode,
     selectedDay, selectedTime,
@@ -317,6 +361,47 @@ export default function MapView({ onVenueClick }) {
         filter: ['==', ['get', 'radius'], 0],
         paint: { 'circle-radius': 3, 'circle-color': '#8E8E93', 'circle-opacity': 0.35, 'circle-stroke-width': 0 },
       })
+
+      // Building footprint source + layers (colored by category, opacity = activity)
+      map.addSource('buildings', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
+
+      // Fill color = gray → category color (accessibility), opacity = activity level
+      map.addLayer({
+        id: 'buildings-fill', type: 'fill', source: 'buildings',
+        layout: { visibility: 'none' },
+        paint: {
+          'fill-color': [
+            'case',
+            ['==', ['get', 'category'], 'Schools'],
+            ['interpolate', ['linear'], ['get', 'connectivity_score'], 0, '#ECEFF1', 4, '#185FA5'],
+            ['==', ['get', 'category'], 'Culture'],
+            ['interpolate', ['linear'], ['get', 'connectivity_score'], 0, '#ECEFF1', 4, '#534AB7'],
+            ['==', ['get', 'category'], 'Leisure'],
+            ['interpolate', ['linear'], ['get', 'connectivity_score'], 0, '#ECEFF1', 4, '#1D9E75'],
+            ['==', ['get', 'category'], 'Commercial'],
+            ['interpolate', ['linear'], ['get', 'connectivity_score'], 0, '#ECEFF1', 4, '#BA7517'],
+            '#ECEFF1',
+          ],
+          'fill-opacity': [
+            'interpolate', ['linear'], ['get', 'activityScore'],
+            0, 0.15, 0.25, 0.45, 0.55, 0.70, 1, 0.95,
+          ],
+        },
+      }, 'venue-circles')
+
+      // Thin neutral outline — just marks the plot boundary, no encoding
+      map.addLayer({
+        id: 'buildings-outline', type: 'line', source: 'buildings',
+        layout: { visibility: 'none' },
+        paint: {
+          'line-color':   '#90A4AE',
+          'line-width':   0.5,
+          'line-opacity': 0.5,
+        },
+      }, 'venue-circles')
 
       map.on('mouseenter', 'venue-circles', (e) => {
         map.getCanvas().style.cursor = 'pointer'
@@ -425,14 +510,31 @@ export default function MapView({ onVenueClick }) {
     if (src) src.setData(buildGeoJSON(filteredVenues))
   }, [filteredVenues, mapReady])
 
-  // ── Venue layer visibility ─────────────────────────────────────────────────
+  // ── Venue circles: hide when building plots are active or not in facilities
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
-    const vis = activeMode === 'facilities' ? 'visible' : 'none'
+    const vis = activeMode === 'facilities' && !showBuildingPlots ? 'visible' : 'none'
     if (map.getLayer('venue-circles'))       map.setLayoutProperty('venue-circles',       'visibility', vis)
     if (map.getLayer('venue-dots-inactive')) map.setLayoutProperty('venue-dots-inactive', 'visibility', vis)
-  }, [mapReady, activeMode])
+  }, [mapReady, activeMode, showBuildingPlots])
+
+  // ── Building plots: enrich with activity scores and push to map ───────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !buildings) return
+    const src = mapRef.current.getSource('buildings')
+    if (!src) return
+    src.setData(enrichBuildings(buildings, filteredVenues))
+  }, [mapReady, buildings, filteredVenues])
+
+  // ── Building plots: toggle visibility ────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const vis = showBuildingPlots && activeMode === 'facilities' ? 'visible' : 'none'
+    if (map.getLayer('buildings-fill'))    map.setLayoutProperty('buildings-fill',    'visibility', vis)
+    if (map.getLayer('buildings-outline')) map.setLayoutProperty('buildings-outline', 'visibility', vis)
+  }, [mapReady, showBuildingPlots, activeMode])
 
   // ── Legacy traffic layer (non-mobility modes) ──────────────────────────────
   useEffect(() => {
