@@ -222,10 +222,6 @@ export const useAppStore = create((set) => ({
   gssInfoModal: null,   // null | 'coverage' | 'social' | 'accessibility' | 'encounter'
   setGSSInfoModal: (id) => set({ gssInfoModal: id }),
 
-  // ── Global district overlay (borders + names, all modes) ─────────────────
-  showDistrictOverlay: false,
-  toggleDistrictOverlay: () => set(s => ({ showDistrictOverlay: !s.showDistrictOverlay })),
-
   // ── Green Social Infrastructure Analysis state ────────────────────────────
   greenSocialActiveAnalysis: null,  // 'coverage' | 'social' | 'encounter' | 'accessibility'
   greenSocialScores:         {},

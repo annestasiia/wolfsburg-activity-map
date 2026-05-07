@@ -328,8 +328,6 @@ export default function MapView({ onVenueClick }) {
     // Green Social Analysis
     greenSocialActiveAnalysis, greenSocialScores, showGreenSocialMap,
     socialAmenitiesGeoJSON,    showSocialAmenities,
-    // Global district overlay
-    showDistrictOverlay,
   } = useAppStore()
   const { filteredVenues } = useFilters()
 
@@ -1343,70 +1341,6 @@ export default function MapView({ onVenueClick }) {
         map.setLayoutProperty('greenery-district-borders-line', 'visibility', vis)
     }
   }, [mapReady, districtBoundaries, activeMode, showGreeneryDistrictBorders])
-
-  // ── Global district overlay — borders + name labels (all modes) ──────────
-  useEffect(() => {
-    if (!mapReady || !mapRef.current) return
-    const map = mapRef.current
-
-    const vis = showDistrictOverlay ? 'visible' : 'none'
-
-    const features = Object.entries(districtBoundaries).flatMap(([name, gj]) =>
-      (gj?.features || []).map(f => ({
-        ...f,
-        properties: { ...(f.properties || {}), _districtName: name },
-      }))
-    )
-
-    if (!map.getSource('district-overlay')) {
-      if (!features.length) return
-      map.addSource('district-overlay', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features },
-      })
-      // Dashed border line
-      map.addLayer({
-        id:     'district-overlay-line',
-        type:   'line',
-        source: 'district-overlay',
-        layout: { visibility: vis },
-        paint: {
-          'line-color':     '#1D1D1F',
-          'line-width':      1.5,
-          'line-opacity':    0.55,
-          'line-dasharray': [5, 4],
-        },
-      })
-      // Name labels
-      map.addLayer({
-        id:     'district-overlay-labels',
-        type:   'symbol',
-        source: 'district-overlay',
-        layout: {
-          visibility:           vis,
-          'text-field':         ['get', '_districtName'],
-          'text-font':          ['Noto Sans Regular'],
-          'text-size':           11,
-          'text-anchor':        'center',
-          'text-max-width':      8,
-          'symbol-placement':   'point',
-          'text-allow-overlap': false,
-        },
-        paint: {
-          'text-color':        '#1D1D1F',
-          'text-halo-color':   'rgba(255,255,255,0.85)',
-          'text-halo-width':    1.5,
-          'text-opacity':       0.90,
-        },
-      })
-    } else {
-      map.getSource('district-overlay').setData({ type: 'FeatureCollection', features })
-      if (map.getLayer('district-overlay-line'))
-        map.setLayoutProperty('district-overlay-line', 'visibility', vis)
-      if (map.getLayer('district-overlay-labels'))
-        map.setLayoutProperty('district-overlay-labels', 'visibility', vis)
-    }
-  }, [mapReady, districtBoundaries, showDistrictOverlay])
 
   // ── Green Social Analysis — district heatmap ──────────────────────────────
   useEffect(() => {
