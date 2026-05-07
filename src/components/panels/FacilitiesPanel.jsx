@@ -4,7 +4,7 @@ import { CATEGORIES } from '../../constants'
 
 const ICONS = { Schools: '🏫', Culture: '🎭', Leisure: '🌳', Commercial: '🛍️' }
 
-export default function FacilitiesPanel() {
+export default function FacilitiesPanel({ noTitle }) {
   const {
     selectedCategories, toggleCategory, venues,
     showBuildingPlots, toggleBuildingPlots,
@@ -15,7 +15,7 @@ export default function FacilitiesPanel() {
 
   return (
     <div>
-      <p className="panel-label">Facility Categories</p>
+      {!noTitle && <p className="panel-label">Facility Categories</p>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
 
         {/* Building plots toggle */}

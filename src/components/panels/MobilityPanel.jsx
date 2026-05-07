@@ -34,7 +34,7 @@ function parseRoutes(cache) {
     .sort((a, b) => String(a.ref).localeCompare(String(b.ref), undefined, { numeric: true }))
 }
 
-export default function MobilityPanel() {
+export default function MobilityPanel({ noTitle }) {
   const {
     activeMobilityModes,
     mobilityDataLoading,
@@ -130,7 +130,7 @@ export default function MobilityPanel() {
 
   return (
     <div>
-      <p className="panel-label">Mobility Analysis</p>
+      {!noTitle && <p className="panel-label">Mobility Analysis</p>}
 
       {/* ── No mode selected ── */}
       {modes.length === 0 && (

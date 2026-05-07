@@ -69,6 +69,9 @@ export const useAppStore = create((set) => ({
   showAllBorders: false,
   showDistrictNames: false,
 
+  // ── Facilities: selected venue for left sidebar detail ───────────────────
+  selectedFacilityVenueId: null,
+
   // ── Non-mobility filters ──────────────────────────────────────────────────
   selectedDistricts: new Set(),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
@@ -124,10 +127,12 @@ export const useAppStore = create((set) => ({
   setSelectedDay:  (day)  => set({ selectedDay: day }),
   setSelectedTime: (time) => set({ selectedTime: time }),
   setShowNotes:    (val)  => set({ showNotes: val }),
+  setSelectedFacilityVenueId: (id) => set({ selectedFacilityVenueId: id }),
 
   // ── Mode switch: reset all mobility state ─────────────────────────────────
   setActiveMode: (mode) => set({
     activeMode: mode,
+    selectedFacilityVenueId: null,
     activeMobilityModes: new Set(),
     mobilityScoresPerMode: {},
     mobilityOverlayPerMode: {},

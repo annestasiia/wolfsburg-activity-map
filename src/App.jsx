@@ -7,8 +7,8 @@ import VenuePopup from './components/VenuePopup'
 import GreenerySidebar from './components/GreenerySidebar'
 import MobilityToolbar from './components/MobilityToolbar'
 import MobilityLeftBar from './components/MobilityLeftBar'
-import FacilityLeftBar from './components/FacilityLeftBar'
 import FacilityToolbar from './components/FacilityToolbar'
+import LeftSidebar from './components/LeftSidebar'
 import DistrictStatsPopup from './components/DistrictStatsPopup'
 import AnalysisInfoModal from './components/panels/AnalysisInfoModal'
 import venuesData from './data/venues.json'
@@ -19,7 +19,7 @@ import forestData from './data/forest.json'
 import buildingsData from './data/buildings.json'
 
 export default function App() {
-  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways, activeMode } = useAppStore()
+  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways, activeMode, setSelectedFacilityVenueId } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
 
   useEffect(() => {
@@ -39,7 +39,13 @@ export default function App() {
       .catch(() => {})
   }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways])
 
-  const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
+  const handleVenueClick = useCallback((props) => {
+    if (activeMode === 'facilities') {
+      setSelectedFacilityVenueId(props.id)
+    } else {
+      setSelectedVenue(props)
+    }
+  }, [activeMode, setSelectedFacilityVenueId])
 
   return (
     <div className="app-shell">
@@ -48,9 +54,9 @@ export default function App() {
         <MapView onVenueClick={handleVenueClick} />
         {activeMode === 'mobility'   && <MobilityLeftBar />}
         {activeMode === 'mobility'   && <MobilityToolbar />}
-        {activeMode === 'facilities' && <FacilityLeftBar />}
+        {activeMode === 'facilities' && <LeftSidebar />}
         {activeMode === 'facilities' && <FacilityToolbar />}
-        {selectedVenue && (
+        {selectedVenue && activeMode !== 'facilities' && (
           <VenuePopup
             venue={selectedVenue}
             onClose={() => setSelectedVenue(null)}

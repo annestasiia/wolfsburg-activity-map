@@ -9,7 +9,7 @@ const MODE_LABELS = {
   infrastructure: { label: 'Infrastructure', color: '#A855F7' },
 }
 
-export default function StatsPanel() {
+export default function StatsPanel({ noTitle }) {
   const { activeModes, footways, roads, venues } = useAppStore()
   const { filteredVenues, openCount } = useFilters()
 
@@ -25,7 +25,7 @@ export default function StatsPanel() {
 
   return (
     <div>
-      <p className="panel-label">Activity Summary</p>
+      {!noTitle && <p className="panel-label">Activity Summary</p>}
       <div className="stats-grid">
         <StatCard value={filteredVenues.length} label="Venues Visible"   color="#0071E3" />
         <StatCard value={openCount}             label="Open Now"         color="#34C759" />

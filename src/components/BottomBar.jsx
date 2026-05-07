@@ -83,6 +83,8 @@ export default function BottomBar() {
 
   const ActivePanel = activeBottomPanel ? PANELS[activeBottomPanel] : null
 
+  if (activeMode === 'facilities') return null
+
   if (activeMode === 'mobility') {
     return (
       <div className="bottom-bar">
