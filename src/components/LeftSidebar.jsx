@@ -133,6 +133,9 @@ export default function LeftSidebar() {
             <Section title="Facility Categories" icon="⊞" defaultOpen>
               <FacilitiesPanel noTitle />
             </Section>
+            <Section title="Connections" icon="🔗">
+              <ConnectionsSection />
+            </Section>
             <Section title="Districts" icon="⬡">
               <DistrictsPanel noTitle />
             </Section>
@@ -145,6 +148,71 @@ export default function LeftSidebar() {
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Connections section ────────────────────────────────────────────────────────
+
+const TRANSPORT_MODES = [
+  { id: 'automobile', label: 'Automobile',       sub: 'Transport', icon: '🚗', color: '#1565C0' },
+  { id: 'transport',  label: 'Public Transport', sub: 'Transit',   icon: '🚌', color: '#0288D1' },
+  { id: 'cycling',    label: 'Cycling',          sub: 'Access',    icon: '🚲', color: '#0097A7' },
+]
+
+function ConnectionsSection() {
+  const { activeMobilityModes, toggleMobilityMode, mobilityDataLoading } = useAppStore()
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <p style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 4, letterSpacing: '-0.01em', lineHeight: 1.4 }}>
+        Toggle a transport mode to overlay its network on the map.
+      </p>
+      {TRANSPORT_MODES.map(m => {
+        const active = activeMobilityModes.has(m.id)
+        const loading = active && mobilityDataLoading
+        return (
+          <button
+            key={m.id}
+            onClick={() => toggleMobilityMode(m.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '11px 14px', borderRadius: 12, fontFamily: 'inherit',
+              background: active ? `${m.color}12` : '#F5F5F7',
+              border: `1px solid ${active ? m.color + '50' : 'rgba(0,0,0,0.08)'}`,
+              cursor: 'pointer', textAlign: 'left', width: '100%',
+              transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              boxShadow: active ? `0 1px 6px ${m.color}28` : 'none',
+            }}
+          >
+            <span style={{ fontSize: 20, lineHeight: 1 }}>
+              {loading ? '⏳' : m.icon}
+            </span>
+            <span style={{ flex: 1 }}>
+              <span style={{
+                display: 'block', fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em',
+                color: active ? '#1D1D1F' : '#6E6E73', marginBottom: 1, transition: 'color 0.2s',
+              }}>
+                {m.label}
+              </span>
+              <span style={{ fontSize: 12, color: '#AEAEB2', letterSpacing: '-0.01em' }}>
+                {m.sub}
+              </span>
+            </span>
+            <span style={{
+              width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+              background: active ? m.color : '#E8E8ED',
+              boxShadow: active ? `0 0 6px ${m.color}60` : 'none',
+              transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            }} />
+          </button>
+        )
+      })}
+      {activeMobilityModes.size > 0 && (
+        <p style={{ fontSize: 12, color: '#6E6E73', marginTop: 4, letterSpacing: '-0.01em' }}>
+          Layer controls appear on the right →
+        </p>
+      )}
     </div>
   )
 }
