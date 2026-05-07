@@ -10,10 +10,10 @@ const fs   = require('fs')
 const path = require('path')
 const https = require('https')
 
-// District names as they appear in constants.js
+// District names as they appear in constants.js, plus Fallersleben-Sülfeld (Ortschaft)
 const DISTRICT_NAMES = [
   'Almke','Alt-Wolfsburg','Barnstorf','Brackstedt','Detmerode',
-  'Ehmen','Eichelkamp','Fallersleben','Hageberg','Hattorf',
+  'Ehmen','Eichelkamp','Fallersleben','Fallersleben-Sülfeld','Hageberg','Hattorf',
   'Hehlingen','Heiligendorf','Hellwinkel','Heßlingen','Hohenstein',
   'Klieversberg','Kreuzheide','Kästorf','Köhlerberg','Laagberg',
   'Mörse','Neindorf','Neuhaus','Nordsteimke','Rabenberg',
@@ -25,12 +25,25 @@ const DISTRICT_NAMES = [
 
 // Some OSM names differ slightly — map them
 const NAME_ALIASES = {
-  'Kästorf':         ['Kästorf', 'Kästorf (Wolfsburg)'],
-  'Neuhaus':         ['Neuhaus', 'Neuhaus (Wolfsburg)'],
-  'Alt-Wolfsburg':   ['Alt-Wolfsburg', 'Alt Wolfsburg'],
-  'Steimker Berg':   ['Steimker Berg', 'Steimkerberg'],
-  'Steimker Gärten': ['Steimker Gärten', 'Steimkergärten'],
+  'Kästorf':              ['Kästorf', 'Kästorf (Wolfsburg)'],
+  'Neuhaus':              ['Neuhaus', 'Neuhaus (Wolfsburg)'],
+  'Alt-Wolfsburg':        ['Alt-Wolfsburg', 'Alt Wolfsburg'],
+  'Steimker Berg':        ['Steimker Berg', 'Steimkerberg'],
+  'Steimker Gärten':      ['Steimker Gärten', 'Steimkergärten'],
+  'Fallersleben-Sülfeld': ['Fallersleben-Sülfeld', 'Fallersleben/Sülfeld'],
 }
+
+// These districts had incorrect OSM boundaries (wrong relation matched by name).
+// Their geometry was rebuilt from the official Wolfsburg GDI dataset.
+// Keep the existing districtBoundaries.json data for them so future script runs
+// do not overwrite the correct boundaries with wrong OSM data.
+const PREFER_EXISTING_DISTRICTS = new Set([
+  'Barnstorf',           // OSM "Barnstorf" matched Samtgemeinde, not city Ortsteil
+  'Fallersleben',        // OSM matched a tiny 300m-wide sliver instead of full district
+  'Hehlingen',           // OSM relation shifted 0.019° north of actual position
+  'Neuhaus',             // OSM relation slightly shifted; GDI data is correct
+  'Fallersleben-Sülfeld',// admin_level=9 Ortschaft — GDI geometry preferred
+])
 
 function fetchOverpass(query) {
   return new Promise((resolve, reject) => {
@@ -234,11 +247,16 @@ out geom;
   let existing = {}
   try { existing = JSON.parse(fs.readFileSync(outPath, 'utf8')) } catch (_) {}
 
+  // Overpass result wins by default; PREFER_EXISTING_DISTRICTS keeps GDI-verified geometry
   const merged = { ...existing, ...result }
+  let protected_ = 0
+  for (const name of PREFER_EXISTING_DISTRICTS) {
+    if (existing[name]) { merged[name] = existing[name]; protected_++ }
+  }
 
   fs.writeFileSync(outPath, JSON.stringify(merged, null, 2))
   console.log(`\nWrote ${Object.keys(merged).length} districts to ${outPath}`)
-  console.log(`  Fresh from OSM: ${matched.size} | Kept from existing: ${missing.length}`)
+  console.log(`  Fresh from OSM: ${matched.size} | Protected (GDI): ${protected_} | Kept from existing: ${missing.length - protected_}`)
 }
 
 main()
