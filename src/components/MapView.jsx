@@ -725,14 +725,24 @@ export default function MapView({ onVenueClick }) {
 
     const sourceData = tagAutoRoads(geoJSON)
 
+    const facilityMode = activeMode === 'facilities'
     const lineColor = autoShowHeatmap
       ? ['match', ['get', 'highway'],
-          'motorway', '#FF0000', 'trunk', '#FF2000', 'motorway_link', '#FF2000', 'trunk_link', '#FF2000',
-          'primary', '#FF4400', 'primary_link', '#FF4400',
-          'secondary', '#FF6600', 'secondary_link', '#FF6600',
-          'tertiary', '#FF8800', 'tertiary_link', '#FFAA00',
-          'unclassified', '#FFCC00', 'residential', '#FFDD66', 'living_street', '#FFEE88', '#AAAAAA']
-      : '#B8C0CC'
+          'motorway',       facilityMode ? '#0D47A1' : '#FF0000',
+          'trunk',          facilityMode ? '#1565C0' : '#FF2000',
+          'motorway_link',  facilityMode ? '#1565C0' : '#FF2000',
+          'trunk_link',     facilityMode ? '#1565C0' : '#FF2000',
+          'primary',        facilityMode ? '#1976D2' : '#FF4400',
+          'primary_link',   facilityMode ? '#1976D2' : '#FF4400',
+          'secondary',      facilityMode ? '#1E88E5' : '#FF6600',
+          'secondary_link', facilityMode ? '#1E88E5' : '#FF6600',
+          'tertiary',       facilityMode ? '#42A5F5' : '#FF8800',
+          'tertiary_link',  facilityMode ? '#64B5F6' : '#FFAA00',
+          'unclassified',   facilityMode ? '#90CAF9' : '#FFCC00',
+          'residential',    facilityMode ? '#BBDEFB' : '#FFDD66',
+          'living_street',  facilityMode ? '#E3F2FD' : '#FFEE88',
+          facilityMode ? '#B0BEC5' : '#AAAAAA']
+      : facilityMode ? '#7BB3D9' : '#B8C0CC'
 
     const lineWidth = autoShowHeatmap
       ? ['match', ['get', 'highway'], 'motorway', 9, 'trunk', 8, 'motorway_link', 5, 'trunk_link', 5, 'primary', 6, 'primary_link', 4.5, 'secondary', 4.5, 'secondary_link', 3.5, 'tertiary', 3.5, 'tertiary_link', 3, 'unclassified', 2.5, 'residential', 2, 'living_street', 1.5, 1.2]
@@ -765,7 +775,7 @@ export default function MapView({ onVenueClick }) {
         try { map.moveLayer('auto-overlay', getBeforeLayer()) } catch (_) {}
       }
     }
-  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, autoShowHeatmap, selectedDay, selectedTime])
+  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, autoShowHeatmap, selectedDay, selectedTime, activeMode])
 
   // ── Transport: render route overlay ───────────────────────────────────────
   useEffect(() => {
@@ -781,22 +791,27 @@ export default function MapView({ onVenueClick }) {
 
     const opacity = transitShowHeatmap ? getTransitActivity(selectedDay, selectedTime) : 0.55
 
+    const fMode = activeMode === 'facilities'
+    const tColor = transitShowHeatmap
+      ? (fMode ? '#0288D1' : '#FF6600')
+      : (fMode ? '#1565C0' : '#E63946')
+
     if (!map.getSource('transport-overlay')) {
       map.addSource('transport-overlay', { type: 'geojson', data: geoJSON })
       map.addLayer({ id: 'transport-overlay', type: 'line', source: 'transport-overlay',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': transitShowHeatmap ? '#FF6600' : '#E63946', 'line-width': 1.8, 'line-opacity': opacity },
+        paint: { 'line-color': tColor, 'line-width': 1.8, 'line-opacity': opacity },
       }, 'venue-circles')
     } else {
       map.getSource('transport-overlay').setData(geoJSON)
       if (map.getLayer('transport-overlay')) {
-        map.setPaintProperty('transport-overlay', 'line-color',   transitShowHeatmap ? '#FF6600' : '#E63946')
+        map.setPaintProperty('transport-overlay', 'line-color',   tColor)
         map.setPaintProperty('transport-overlay', 'line-width',   transitShowHeatmap ? 2.5 : 1.8)
         map.setPaintProperty('transport-overlay', 'line-opacity', opacity)
         map.setLayoutProperty('transport-overlay', 'visibility',  active ? 'visible' : 'none')
       }
     }
-  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, transitShowHeatmap, selectedDay, selectedTime])
+  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, transitShowHeatmap, selectedDay, selectedTime, activeMode])
 
   // ── Cycling: render cycling paths overlay ──────────────────────────────────
   useEffect(() => {
@@ -810,18 +825,22 @@ export default function MapView({ onVenueClick }) {
       return
     }
 
+    const cColor = activeMode === 'facilities' ? '#29B6F6' : '#FF1744'
+
     if (!map.getSource('cycling-overlay')) {
       map.addSource('cycling-overlay', { type: 'geojson', data: geoJSON })
       map.addLayer({ id: 'cycling-overlay', type: 'line', source: 'cycling-overlay',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#FF1744', 'line-width': 4.0, 'line-opacity': 0.88 },
+        paint: { 'line-color': cColor, 'line-width': 4.0, 'line-opacity': 0.88 },
       }, 'venue-circles')
     } else {
       map.getSource('cycling-overlay').setData(geoJSON)
-      if (map.getLayer('cycling-overlay'))
+      if (map.getLayer('cycling-overlay')) {
+        map.setPaintProperty('cycling-overlay', 'line-color', cColor)
         map.setLayoutProperty('cycling-overlay', 'visibility', active ? 'visible' : 'none')
+      }
     }
-  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, cyclingShowRoutes])
+  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, cyclingShowRoutes, activeMode])
 
   // ── Highlight selected transport route ────────────────────────────────────
   useEffect(() => {
@@ -838,17 +857,21 @@ export default function MapView({ onVenueClick }) {
     if (!feature) return
     const hlGeoJSON = { type: 'FeatureCollection', features: [feature] }
 
+    const hlColor = activeMode === 'facilities' ? '#0288D1' : '#FF6900'
+
     if (!map.getSource('mobility-highlight')) {
       map.addSource('mobility-highlight', { type: 'geojson', data: hlGeoJSON })
       map.addLayer({ id: 'mobility-highlight', type: 'line', source: 'mobility-highlight',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#FF6900', 'line-width': 4.5, 'line-opacity': 0.90 },
+        paint: { 'line-color': hlColor, 'line-width': 4.5, 'line-opacity': 0.90 },
       })
     } else {
       map.getSource('mobility-highlight').setData(hlGeoJSON)
+      if (map.getLayer('mobility-highlight'))
+        map.setPaintProperty('mobility-highlight', 'line-color', hlColor)
       map.setLayoutProperty('mobility-highlight', 'visibility', 'visible')
     }
-  }, [mapReady, mobilityHighlightRoute, mobilityOverlayPerMode])
+  }, [mapReady, mobilityHighlightRoute, mobilityOverlayPerMode, activeMode])
 
   // ── Transit stops: render / update ────────────────────────────────────────
   useEffect(() => {
@@ -905,18 +928,22 @@ export default function MapView({ onVenueClick }) {
     const map = mapRef.current
     const vis = (activeMobilityModes.has('cycling') && cyclingShowBikeParking) ? 'visible' : 'none'
 
+    const cpColor = activeMode === 'facilities' ? '#0097A7' : '#00C853'
+
     if (!map.getSource('cycling-parking')) {
       map.addSource('cycling-parking', { type: 'geojson', data: cyclingParkingGeoJSON })
       map.addLayer({ id: 'cycling-parking-circles', type: 'circle', source: 'cycling-parking',
         layout: { visibility: vis },
-        paint: { 'circle-radius': 5, 'circle-color': '#00C853', 'circle-opacity': 0.88, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#FFFFFF', 'circle-stroke-opacity': 0.9 },
+        paint: { 'circle-radius': 5, 'circle-color': cpColor, 'circle-opacity': 0.88, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#FFFFFF', 'circle-stroke-opacity': 0.9 },
       }, 'venue-circles')
     } else {
       map.getSource('cycling-parking').setData(cyclingParkingGeoJSON)
-      if (map.getLayer('cycling-parking-circles'))
+      if (map.getLayer('cycling-parking-circles')) {
+        map.setPaintProperty('cycling-parking-circles', 'circle-color', cpColor)
         map.setLayoutProperty('cycling-parking-circles', 'visibility', vis)
+      }
     }
-  }, [mapReady, cyclingParkingGeoJSON, cyclingShowBikeParking, activeMobilityModes])
+  }, [mapReady, cyclingParkingGeoJSON, cyclingShowBikeParking, activeMobilityModes, activeMode])
 
   // ── Cycling leisure routes: render / update ────────────────────────────────
   useEffect(() => {
@@ -924,18 +951,22 @@ export default function MapView({ onVenueClick }) {
     const map = mapRef.current
     const vis = (activeMobilityModes.has('cycling') && cyclingShowLeisureRoutes) ? 'visible' : 'none'
 
+    const lrColor = activeMode === 'facilities' ? '#0277BD' : '#FF6900'
+
     if (!map.getSource('cycling-routes')) {
       map.addSource('cycling-routes', { type: 'geojson', data: cyclingRoutesGeoJSON })
       map.addLayer({ id: 'cycling-routes-line', type: 'line', source: 'cycling-routes',
         layout: { 'line-cap': 'round', 'line-join': 'round', visibility: vis },
-        paint: { 'line-color': '#FF6900', 'line-width': 3.5, 'line-opacity': 0.80, 'line-dasharray': [4, 3] },
+        paint: { 'line-color': lrColor, 'line-width': 3.5, 'line-opacity': 0.80, 'line-dasharray': [4, 3] },
       }, 'venue-circles')
     } else {
       map.getSource('cycling-routes').setData(cyclingRoutesGeoJSON)
-      if (map.getLayer('cycling-routes-line'))
+      if (map.getLayer('cycling-routes-line')) {
+        map.setPaintProperty('cycling-routes-line', 'line-color', lrColor)
         map.setLayoutProperty('cycling-routes-line', 'visibility', vis)
+      }
     }
-  }, [mapReady, cyclingRoutesGeoJSON, cyclingShowLeisureRoutes, activeMobilityModes])
+  }, [mapReady, cyclingRoutesGeoJSON, cyclingShowLeisureRoutes, activeMobilityModes, activeMode])
 
   // ── Cycling highlight leisure route ────────────────────────────────────────
   useEffect(() => {
@@ -951,17 +982,21 @@ export default function MapView({ onVenueClick }) {
     if (!feature) return
     const hlGeoJSON = { type: 'FeatureCollection', features: [feature] }
 
+    const crhlColor = activeMode === 'facilities' ? '#01579B' : '#FF6900'
+
     if (!map.getSource('cycling-route-highlight')) {
       map.addSource('cycling-route-highlight', { type: 'geojson', data: hlGeoJSON })
       map.addLayer({ id: 'cycling-route-highlight', type: 'line', source: 'cycling-route-highlight',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#FF6900', 'line-width': 7, 'line-opacity': 0.92 },
+        paint: { 'line-color': crhlColor, 'line-width': 7, 'line-opacity': 0.92 },
       })
     } else {
       map.getSource('cycling-route-highlight').setData(hlGeoJSON)
+      if (map.getLayer('cycling-route-highlight'))
+        map.setPaintProperty('cycling-route-highlight', 'line-color', crhlColor)
       map.setLayoutProperty('cycling-route-highlight', 'visibility', 'visible')
     }
-  }, [mapReady, cyclingHighlightLeisureRoute, cyclingRoutesGeoJSON])
+  }, [mapReady, cyclingHighlightLeisureRoute, cyclingRoutesGeoJSON, activeMode])
 
   // ── District coloring by regional activity ────────────────────────────────
   useEffect(() => {
@@ -985,7 +1020,7 @@ export default function MapView({ onVenueClick }) {
       const lineId = `boundary-line-${name}`
       if (!map.getLayer(fillId)) return
 
-      if (hasMobilityScores && showRegional) {
+      if (hasMobilityScores && showRegional && activeMode !== 'facilities') {
         const normScore = scores[name] ?? 0
         map.setLayoutProperty(fillId, 'visibility', 'visible')
         map.setLayoutProperty(lineId, 'visibility', 'none')
