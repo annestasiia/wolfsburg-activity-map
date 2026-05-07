@@ -90,6 +90,7 @@ export default function FacilitiesPanel({ noTitle }) {
 
       {showBuildingPlots && (
         <div style={{ marginTop: 16, padding: '12px 14px', background: '#F5F5F7', borderRadius: 12 }}>
+          {/* Accessibility — color saturation per category */}
           <p style={{ fontSize: 11, fontWeight: 600, color: '#AEAEB2', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>
             Color — Transport access
           </p>
@@ -110,6 +111,7 @@ export default function FacilitiesPanel({ noTitle }) {
             </div>
           </div>
 
+          {/* Activity — opacity */}
           <p style={{ fontSize: 11, fontWeight: 600, color: '#AEAEB2', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>
             Opacity — Activity level
           </p>
@@ -129,10 +131,6 @@ export default function FacilitiesPanel({ noTitle }) {
           </div>
         </div>
       )}
-
-      <p style={{ fontSize: 13, color: '#6E6E73', marginTop: 14, letterSpacing: '-0.01em' }}>
-        Click a venue on the map to see its weekly activity
-      </p>
     </div>
   )
 }

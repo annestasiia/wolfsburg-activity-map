@@ -5,7 +5,12 @@ import BottomBar from './components/BottomBar'
 import MapView from './components/MapView'
 import VenuePopup from './components/VenuePopup'
 import GreenerySidebar from './components/GreenerySidebar'
+import MobilityToolbar from './components/MobilityToolbar'
+import MobilityLeftBar from './components/MobilityLeftBar'
+import FacilityToolbar from './components/FacilityToolbar'
 import LeftSidebar from './components/LeftSidebar'
+import DistrictStatsPopup from './components/DistrictStatsPopup'
+import AnalysisInfoModal from './components/panels/AnalysisInfoModal'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -14,10 +19,7 @@ import forestData from './data/forest.json'
 import buildingsData from './data/buildings.json'
 
 export default function App() {
-  const {
-    setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways,
-    activeMode, setSelectedFacilityVenueId,
-  } = useAppStore()
+  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways, activeMode, setSelectedFacilityVenueId } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
 
   useEffect(() => {
@@ -50,14 +52,19 @@ export default function App() {
       <TopBar />
       <main className="map-area">
         <MapView onVenueClick={handleVenueClick} />
+        {activeMode === 'mobility'   && <MobilityLeftBar />}
+        {activeMode === 'mobility'   && <MobilityToolbar />}
+        {activeMode === 'facilities' && <LeftSidebar />}
+        {activeMode === 'facilities' && <FacilityToolbar />}
         {selectedVenue && activeMode !== 'facilities' && (
           <VenuePopup
             venue={selectedVenue}
             onClose={() => setSelectedVenue(null)}
           />
         )}
-        {activeMode === 'greenery'   && <GreenerySidebar />}
-        {activeMode === 'facilities' && <LeftSidebar />}
+        {activeMode === 'greenery' && <GreenerySidebar />}
+        <DistrictStatsPopup />
+        <AnalysisInfoModal />
       </main>
       <BottomBar />
     </div>

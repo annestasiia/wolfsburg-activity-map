@@ -7,9 +7,12 @@ export const GREENERY_CATEGORIES = [
     icon: '🌳',
     color: '#52B788',
     tags: [
-      { key: 'leisure', value: 'park',           label: 'Parks' },
-      { key: 'leisure', value: 'garden',         label: 'Gardens' },
-      { key: 'leisure', value: 'nature_reserve', label: 'Nature reserves' },
+      { key: 'leisure', value: 'park',               label: 'Parks' },
+      { key: 'leisure', value: 'garden',             label: 'Gardens' },
+      { key: 'leisure', value: 'nature_reserve',     label: 'Nature reserves' },
+      { key: 'leisure', value: 'recreation_ground',  label: 'Recreation grounds' },
+      { key: 'landuse', value: 'recreation_ground',  label: 'Recreation grounds' },
+      { key: 'leisure', value: 'common',             label: 'Commons' },
     ],
   },
   {
@@ -143,9 +146,9 @@ export const CATEGORY_COLOR_EXPRESSION = [
 // ── Green OSM values allowed into "Others" ─────────────────────────────────
 // Only explicitly green/nature-related values are accepted; all other OSM
 // tag values are discarded and never rendered.
-const OTHERS_LANDUSE  = new Set(['cemetery', 'recreation_ground', 'flowerbed', 'greenhouse_horticulture', 'plant_nursery'])
+const OTHERS_LANDUSE  = new Set(['cemetery', 'flowerbed', 'greenhouse_horticulture', 'plant_nursery'])
 const OTHERS_NATURAL  = new Set(['fell', 'moor', 'tundra', 'floodplain', 'shrubbery'])
-const OTHERS_LEISURE  = new Set(['golf_course', 'dog_park', 'common', 'recreation_ground', 'bird_hide'])
+const OTHERS_LEISURE  = new Set(['golf_course', 'dog_park', 'bird_hide'])
 const OTHERS_BOUNDARY = new Set(['national_park', 'forest_compartment'])
 
 function formatTagLabel(key, value) {
@@ -179,7 +182,7 @@ export function classifyFeature(tags) {
 
 // Increment this whenever queries or classification logic changes so the
 // cached GeoJSON is automatically discarded on the next tab visit.
-export const GREENERY_QUERY_VERSION = 6
+export const GREENERY_QUERY_VERSION = 7
 
 const WOLFSBURG_BBOX = '52.35,10.68,52.52,10.93'
 

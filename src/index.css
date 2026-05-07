@@ -194,21 +194,49 @@ html, body, #root {
 /* ── Bottom bar ── */
 .bottom-bar { flex-shrink: 0; z-index: 20; }
 
-.bottom-panel-wrap {
-  overflow: hidden;
-  max-height: 0;
-  transition: max-height 0.44s var(--ease-apple);
-  background: rgba(255, 255, 255, 0.95);
+.bottom-drag-handle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0 5px;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid var(--border);
+  cursor: ns-resize;
+  user-select: none;
+  touch-action: none;
+  flex-shrink: 0;
 }
-.bottom-panel-wrap.open { max-height: 500px; }
+
+.bottom-drag-pill {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.15);
+  transition: background 0.15s ease;
+}
+.bottom-drag-handle:hover .bottom-drag-pill { background: rgba(0, 0, 0, 0.28); }
+
+.bottom-drag-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.bottom-sheet-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
 
 .bottom-panel-inner {
-  padding: 22px 28px 18px;
-  overflow-y: auto;
-  max-height: 500px;
+  padding: 20px 28px 16px;
 }
 
 .bottom-tabs {
