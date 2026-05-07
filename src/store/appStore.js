@@ -52,6 +52,8 @@ export const useAppStore = create((set) => ({
   // ── District selection in mobility mode ───────────────────────────────────
   selectedMobilityDistrict: null,   // district name clicked on the map
 
+  selectedFacilityVenueId: null,
+
   selectedDistricts: new Set(),
   selectedCategories: new Set(CATEGORIES.map(c => c.name)),
   selectedDay: getCurrentDayAbbr(),
@@ -108,8 +110,12 @@ export const useAppStore = create((set) => ({
   setShowNotes:    (val)  => set({ showNotes: val }),
 
   // ── New mode setters ──────────────────────────────────────────────────────
+  setSelectedFacilityVenueId: (id) => set({ selectedFacilityVenueId: id }),
+  openBottomPanel: (panel) => set({ activeBottomPanel: panel }),
+
   setActiveMode: (mode) => set({
     activeMode: mode,
+    selectedFacilityVenueId: null,
     mobilitySubLayer: null,
     mobilityScores: {},
     mobilityOverlayGeoJSON: null,

@@ -41,7 +41,7 @@ function parseRoutes(cache) {
     .sort((a, b) => String(a.ref).localeCompare(String(b.ref), undefined, { numeric: true }))
 }
 
-export default function MobilityPanel() {
+export default function MobilityPanel({ noTitle }) {
   const {
     mobilitySubLayer, setMobilitySubLayer,
     mobilityDataLoading, mobilityScores, mobilityDataCache,
@@ -127,7 +127,7 @@ export default function MobilityPanel() {
 
   return (
     <div>
-      <p className="panel-label">Mobility Analysis</p>
+      {!noTitle && <p className="panel-label">Mobility Analysis</p>}
 
       {/* ── 5-column button row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>

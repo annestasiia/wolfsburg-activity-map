@@ -5,6 +5,7 @@ import BottomBar from './components/BottomBar'
 import MapView from './components/MapView'
 import VenuePopup from './components/VenuePopup'
 import GreenerySidebar from './components/GreenerySidebar'
+import LeftSidebar from './components/LeftSidebar'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -13,7 +14,10 @@ import forestData from './data/forest.json'
 import buildingsData from './data/buildings.json'
 
 export default function App() {
-  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways, activeMode } = useAppStore()
+  const {
+    setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways,
+    activeMode, setSelectedFacilityVenueId,
+  } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
 
   useEffect(() => {
@@ -33,20 +37,27 @@ export default function App() {
       .catch(() => {})
   }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways])
 
-  const handleVenueClick = useCallback((props) => setSelectedVenue(props), [])
+  const handleVenueClick = useCallback((props) => {
+    if (activeMode === 'facilities') {
+      setSelectedFacilityVenueId(props.id)
+    } else {
+      setSelectedVenue(props)
+    }
+  }, [activeMode, setSelectedFacilityVenueId])
 
   return (
     <div className="app-shell">
       <TopBar />
       <main className="map-area">
         <MapView onVenueClick={handleVenueClick} />
-        {selectedVenue && (
+        {selectedVenue && activeMode !== 'facilities' && (
           <VenuePopup
             venue={selectedVenue}
             onClose={() => setSelectedVenue(null)}
           />
         )}
-        {activeMode === 'greenery' && <GreenerySidebar />}
+        {activeMode === 'greenery'   && <GreenerySidebar />}
+        {activeMode === 'facilities' && <LeftSidebar />}
       </main>
       <BottomBar />
     </div>

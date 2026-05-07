@@ -9,13 +9,13 @@ function toRgba(hex, a) {
   return `rgba(${r},${g},${b},${a})`
 }
 
-export default function DistrictsPanel() {
+export default function DistrictsPanel({ noTitle }) {
   const { selectedDistricts, toggleDistrict, selectAllDistricts, clearAllDistricts } = useAppStore()
   const allSelected = selectedDistricts.size === DISTRICTS.length
 
   return (
     <div>
-      <p className="panel-label">Districts — {selectedDistricts.size}/{DISTRICTS.length} selected</p>
+      {!noTitle && <p className="panel-label">Districts — {selectedDistricts.size}/{DISTRICTS.length} selected</p>}
       <div className="chip-grid" style={{ maxHeight: 300, overflowY: 'auto', paddingRight: 4 }}>
         {DISTRICTS.map(d => {
           const on = selectedDistricts.has(d.name)
