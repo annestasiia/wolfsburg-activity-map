@@ -29,8 +29,7 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-               "Helvetica Neue", Arial, sans-serif;
+  font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-size: 16px;
   line-height: 1.5;
@@ -175,12 +174,14 @@ html, body, #root {
 .mode-btn.active:hover { background: var(--accent-hover); }
 
 /* Mode-specific active colors */
-.mode-btn.mobility.active   { background: #E63946; box-shadow: 0 2px 8px rgba(230,57,70,0.35); }
-.mode-btn.facilities.active { background: #1D70B8; box-shadow: 0 2px 8px rgba(29,112,184,0.35); }
-.mode-btn.greenery.active   { background: #2D6A4F; box-shadow: 0 2px 8px rgba(45,106,79,0.35); }
-.mode-btn.mobility.active:hover   { background: #C1121F; }
-.mode-btn.facilities.active:hover { background: #1557A0; }
-.mode-btn.greenery.active:hover   { background: #1B4332; }
+.mode-btn.mobility.active    { background: #E63946; box-shadow: 0 2px 8px rgba(230,57,70,0.35); }
+.mode-btn.facilities.active  { background: #1D70B8; box-shadow: 0 2px 8px rgba(29,112,184,0.35); }
+.mode-btn.greenery.active    { background: #2D6A4F; box-shadow: 0 2px 8px rgba(45,106,79,0.35); }
+.mode-btn.intermodal.active  { background: #7C3AED; box-shadow: 0 2px 8px rgba(124,58,237,0.35); }
+.mode-btn.mobility.active:hover    { background: #C1121F; }
+.mode-btn.facilities.active:hover  { background: #1557A0; }
+.mode-btn.greenery.active:hover    { background: #1B4332; }
+.mode-btn.intermodal.active:hover  { background: #6D28D9; }
 
 .top-bar-meta {
   font-size: 14px;

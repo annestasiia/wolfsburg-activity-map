@@ -11,6 +11,8 @@ import FacilityToolbar from './components/FacilityToolbar'
 import LeftSidebar from './components/LeftSidebar'
 import DistrictStatsPopup from './components/DistrictStatsPopup'
 import AnalysisInfoModal from './components/panels/AnalysisInfoModal'
+import IntermodalSidebar from './components/IntermodalSidebar'
+import IntermodalHubPopup from './components/IntermodalHubPopup'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -62,7 +64,9 @@ export default function App() {
             onClose={() => setSelectedVenue(null)}
           />
         )}
-        {activeMode === 'greenery' && <GreenerySidebar />}
+        {activeMode === 'greenery'    && <GreenerySidebar />}
+        {activeMode === 'intermodal' && <IntermodalSidebar />}
+        {activeMode === 'intermodal' && <IntermodalHubPopup />}
         <DistrictStatsPopup />
         <AnalysisInfoModal />
       </main>

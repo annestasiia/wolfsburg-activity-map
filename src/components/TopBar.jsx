@@ -6,6 +6,7 @@ const MODES = [
   { id: 'mobility',   label: 'Mobility'   },
   { id: 'facilities', label: 'Facilities' },
   { id: 'greenery',   label: 'Greenery'   },
+  { id: 'intermodal', label: 'Intermodal Hub' },
 ]
 
 export default function TopBar() {

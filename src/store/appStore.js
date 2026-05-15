@@ -129,7 +129,7 @@ export const useAppStore = create((set) => ({
   setShowNotes:    (val)  => set({ showNotes: val }),
   setSelectedFacilityVenueId: (id) => set({ selectedFacilityVenueId: id }),
 
-  // ── Mode switch: reset all mobility state ─────────────────────────────────
+  // ── Mode switch: reset mobility state; intermodal data is cached ─────────
   setActiveMode: (mode) => set({
     activeMode: mode,
     selectedFacilityVenueId: null,
@@ -144,6 +144,7 @@ export const useAppStore = create((set) => ({
     cyclingHighlightLeisureRoute: null,
     selectedMobilityDistrict: null,
     showFacilitiesInMobility: false,
+    intermodalSelectedHub: null,
   }),
 
   // ── Mobility multi-mode toggle ────────────────────────────────────────────
@@ -222,6 +223,64 @@ export const useAppStore = create((set) => ({
   resetEncounterWeights: () => set({
     encounterWeights: { green: 35, social: 30, transit: 20, paths: 15 },
   }),
+
+  // ── Intermodal Hub ────────────────────────────────────────────────────────
+  intermodalLoading: false,
+  intermodalError: null,
+  intermodalHubs: [],
+  intermodalRawBusStops: null,
+  intermodalRawCarParkings: null,
+  intermodalRawBikeParkings: null,
+  intermodalRawOsmFacilities: null,
+
+  // base layer toggles
+  intermodalShowBusStops: false,
+  intermodalShowCarParkings: false,
+  intermodalShowBikeParkings: false,
+
+  // hub type filter (which pie-chart types to show)
+  intermodalHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
+
+  // status filter: 'all' | 'existing' | 'proposed'
+  intermodalStatusFilter: 'all',
+
+  // radius layers
+  intermodalShowFacilitiesRadius: false,
+  intermodalShowGreeneryRadius: false,
+  intermodalShowFacilitiesPoints: false,
+  intermodalShowParksOverlay: false,
+
+  // currently open hub popup
+  intermodalSelectedHub: null,
+
+  setIntermodalLoading: (val) => set({ intermodalLoading: val }),
+  setIntermodalError:   (msg) => set({ intermodalError: msg }),
+  setIntermodalHubs:    (hubs) => set({ intermodalHubs: hubs }),
+  setIntermodalRawData: (busStops, carParkings, bikeParkings, osmFacilities) => set({
+    intermodalRawBusStops: busStops,
+    intermodalRawCarParkings: carParkings,
+    intermodalRawBikeParkings: bikeParkings,
+    intermodalRawOsmFacilities: osmFacilities,
+  }),
+
+  toggleIntermodalShowBusStops:     () => set(s => ({ intermodalShowBusStops:     !s.intermodalShowBusStops     })),
+  toggleIntermodalShowCarParkings:  () => set(s => ({ intermodalShowCarParkings:  !s.intermodalShowCarParkings  })),
+  toggleIntermodalShowBikeParkings: () => set(s => ({ intermodalShowBikeParkings: !s.intermodalShowBikeParkings })),
+
+  toggleIntermodalHubType: (type) => set(s => {
+    const next = new Set(s.intermodalHubTypes)
+    next.has(type) ? next.delete(type) : next.add(type)
+    return { intermodalHubTypes: next }
+  }),
+
+  setIntermodalStatusFilter: (f) => set({ intermodalStatusFilter: f }),
+
+  toggleIntermodalFacilitiesRadius: () => set(s => ({ intermodalShowFacilitiesRadius: !s.intermodalShowFacilitiesRadius })),
+  toggleIntermodalGreeneryRadius:   () => set(s => ({ intermodalShowGreeneryRadius:   !s.intermodalShowGreeneryRadius   })),
+  toggleIntermodalFacilitiesPoints: () => set(s => ({ intermodalShowFacilitiesPoints: !s.intermodalShowFacilitiesPoints })),
+  toggleIntermodalParksOverlay:     () => set(s => ({ intermodalShowParksOverlay:     !s.intermodalShowParksOverlay     })),
+
+  setIntermodalSelectedHub: (hub) => set({ intermodalSelectedHub: hub }),
 
   // ── GSA info modal ────────────────────────────────────────────────────────
   gssInfoModal: null,   // null | 'coverage' | 'social' | 'accessibility' | 'encounter'

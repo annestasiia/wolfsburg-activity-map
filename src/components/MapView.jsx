@@ -17,6 +17,8 @@ import {
   computeVisibleGeoJSON,
 } from '../utils/greeneryConfig'
 import { scoreToGSAColor } from '../utils/greenSocialAnalysis'
+import { generateCircleGeoJSON } from '../utils/intermodalAlgorithm'
+import { makePieSVG } from './IntermodalSidebar'
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 const WOLFSBURG  = { center: [10.7865, 52.4227], zoom: 12 }
@@ -328,6 +330,14 @@ export default function MapView({ onVenueClick }) {
     // Green Social Analysis
     greenSocialActiveAnalysis, greenSocialScores, showGreenSocialMap,
     socialAmenitiesGeoJSON,    showSocialAmenities,
+    // Intermodal Hub
+    intermodalHubs, intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
+    intermodalRawOsmFacilities,
+    intermodalShowBusStops, intermodalShowCarParkings, intermodalShowBikeParkings,
+    intermodalHubTypes, intermodalStatusFilter,
+    intermodalShowFacilitiesRadius, intermodalShowGreeneryRadius,
+    intermodalShowFacilitiesPoints, intermodalShowParksOverlay,
+    setIntermodalSelectedHub,
   } = useAppStore()
   const { filteredVenues } = useFilters()
 
@@ -344,6 +354,7 @@ export default function MapView({ onVenueClick }) {
       center: WOLFSBURG.center,
       zoom: WOLFSBURG.zoom,
       attributionControl: { compact: true },
+      preserveDrawingBuffer: true,
     })
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
@@ -1064,7 +1075,7 @@ export default function MapView({ onVenueClick }) {
       map.addSource('all-borders', { type: 'geojson', data: allGeoJSON })
       map.addLayer({ id: 'all-borders-line', type: 'line', source: 'all-borders',
         layout: { 'line-join': 'round', 'line-cap': 'round', visibility: 'none' },
-        paint: { 'line-color': '#B8BCC8', 'line-width': 1.5, 'line-opacity': 0.65 },
+        paint: { 'line-color': '#4A4A52', 'line-width': 1.5, 'line-opacity': 0.75 },
       })
     } else {
       map.getSource('all-borders').setData(allGeoJSON)
@@ -1501,7 +1512,247 @@ export default function MapView({ onVenueClick }) {
     }
   }, [mapReady, socialAmenitiesGeoJSON, showSocialAmenities, activeMode])
 
+  // ── Intermodal Hub — custom pie-chart markers ─────────────────────────────
+  const intermodalMarkersRef = useRef([])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    // Remove old markers
+    intermodalMarkersRef.current.forEach(m => m.remove())
+    intermodalMarkersRef.current = []
+
+    if (activeMode !== 'intermodal' || !intermodalHubs.length) return
+
+    const visibleHubs = intermodalHubs.filter(hub => {
+      if (!intermodalHubTypes.has(hub.hubType)) return false
+      if (intermodalStatusFilter === 'existing' && hub.status !== 'existing') return false
+      if (intermodalStatusFilter === 'proposed' && hub.status !== 'proposed') return false
+      return true
+    })
+
+    const markers = visibleHubs.map(hub => {
+      const size = hub.priority === 'priority' ? 40 : 30
+      const el = document.createElement('div')
+      el.innerHTML = makePieSVG(hub.hubType, hub.priority, size)
+      el.style.cssText = `cursor:pointer;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.25));width:${size}px;height:${size}px`
+      el.title = `${hub.hubType.replace(/_/g,' ')} · score ${hub.score}`
+      el.addEventListener('click', (e) => {
+        e.stopPropagation()
+        setIntermodalSelectedHub(hub)
+      })
+      const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+        .setLngLat([hub.lng, hub.lat])
+        .addTo(map)
+      return marker
+    })
+
+    intermodalMarkersRef.current = markers
+    return () => {
+      markers.forEach(m => m.remove())
+      intermodalMarkersRef.current = []
+    }
+  }, [mapReady, activeMode, intermodalHubs, intermodalHubTypes, intermodalStatusFilter, setIntermodalSelectedHub])
+
+  // ── Intermodal — base point layers (bus stops, car parkings, bike parkings) ─
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const isActive = activeMode === 'intermodal'
+
+    // Bus stops
+    if (intermodalRawBusStops) {
+      if (!map.getSource('imd-bus-stops')) {
+        map.addSource('imd-bus-stops', { type: 'geojson', data: intermodalRawBusStops })
+        map.addLayer({ id: 'imd-bus-stops-circle', type: 'circle', source: 'imd-bus-stops',
+          layout: { visibility: 'none' },
+          paint: { 'circle-radius': 5, 'circle-color': '#EF4444', 'circle-opacity': 0.85,
+            'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-stroke-opacity': 0.9 },
+        })
+      } else {
+        map.getSource('imd-bus-stops').setData(intermodalRawBusStops)
+      }
+      if (map.getLayer('imd-bus-stops-circle'))
+        map.setLayoutProperty('imd-bus-stops-circle', 'visibility', isActive && intermodalShowBusStops ? 'visible' : 'none')
+    }
+
+    // Car parkings
+    if (intermodalRawCarParkings) {
+      if (!map.getSource('imd-car-parkings')) {
+        map.addSource('imd-car-parkings', { type: 'geojson', data: intermodalRawCarParkings })
+        map.addLayer({ id: 'imd-car-parkings-circle', type: 'circle', source: 'imd-car-parkings',
+          layout: { visibility: 'none' },
+          paint: { 'circle-radius': 5, 'circle-color': '#6B7280', 'circle-opacity': 0.85,
+            'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-stroke-opacity': 0.9 },
+        })
+      } else {
+        map.getSource('imd-car-parkings').setData(intermodalRawCarParkings)
+      }
+      if (map.getLayer('imd-car-parkings-circle'))
+        map.setLayoutProperty('imd-car-parkings-circle', 'visibility', isActive && intermodalShowCarParkings ? 'visible' : 'none')
+    }
+
+    // Bike parkings
+    if (intermodalRawBikeParkings) {
+      if (!map.getSource('imd-bike-parkings')) {
+        map.addSource('imd-bike-parkings', { type: 'geojson', data: intermodalRawBikeParkings })
+        map.addLayer({ id: 'imd-bike-parkings-circle', type: 'circle', source: 'imd-bike-parkings',
+          layout: { visibility: 'none' },
+          paint: { 'circle-radius': 4, 'circle-color': '#22C55E', 'circle-opacity': 0.85,
+            'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-stroke-opacity': 0.9 },
+        })
+      } else {
+        map.getSource('imd-bike-parkings').setData(intermodalRawBikeParkings)
+      }
+      if (map.getLayer('imd-bike-parkings-circle'))
+        map.setLayoutProperty('imd-bike-parkings-circle', 'visibility', isActive && intermodalShowBikeParkings ? 'visible' : 'none')
+    }
+
+    // OSM facility points (when facilities radius is on)
+    if (intermodalRawOsmFacilities) {
+      const osmGJ = {
+        type: 'FeatureCollection',
+        features: intermodalRawOsmFacilities.map(f => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [f.lng, f.lat] },
+          properties: { name: f.name },
+        })),
+      }
+      if (!map.getSource('imd-osm-facilities')) {
+        map.addSource('imd-osm-facilities', { type: 'geojson', data: osmGJ })
+        map.addLayer({ id: 'imd-osm-facilities-circle', type: 'circle', source: 'imd-osm-facilities',
+          layout: { visibility: 'none' },
+          paint: { 'circle-radius': 4, 'circle-color': '#F59E0B', 'circle-opacity': 0.80,
+            'circle-stroke-width': 1, 'circle-stroke-color': '#fff', 'circle-stroke-opacity': 0.9 },
+        })
+      } else {
+        map.getSource('imd-osm-facilities').setData(osmGJ)
+      }
+      if (map.getLayer('imd-osm-facilities-circle'))
+        map.setLayoutProperty('imd-osm-facilities-circle', 'visibility',
+          isActive && intermodalShowFacilitiesRadius && intermodalShowFacilitiesPoints ? 'visible' : 'none')
+    }
+  }, [mapReady, activeMode,
+    intermodalRawBusStops, intermodalShowBusStops,
+    intermodalRawCarParkings, intermodalShowCarParkings,
+    intermodalRawBikeParkings, intermodalShowBikeParkings,
+    intermodalRawOsmFacilities, intermodalShowFacilitiesRadius, intermodalShowFacilitiesPoints])
+
+  // ── Intermodal — radius circle layers ────────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const isActive = activeMode === 'intermodal' && intermodalHubs.length > 0
+
+    // Facilities radius (1500 m) circles
+    const facGJ = isActive ? generateCircleGeoJSON(intermodalHubs, 1500) : { type: 'FeatureCollection', features: [] }
+    if (!map.getSource('imd-facilities-radius')) {
+      map.addSource('imd-facilities-radius', { type: 'geojson', data: facGJ })
+      map.addLayer({ id: 'imd-facilities-radius-fill', type: 'fill', source: 'imd-facilities-radius',
+        layout: { visibility: 'none' },
+        paint: { 'fill-color': '#F59E0B', 'fill-opacity': 0.06 },
+      }, 'venue-circles')
+      map.addLayer({ id: 'imd-facilities-radius-line', type: 'line', source: 'imd-facilities-radius',
+        layout: { visibility: 'none' },
+        paint: { 'line-color': '#F59E0B', 'line-width': 1, 'line-opacity': 0.45, 'line-dasharray': [4, 3] },
+      }, 'venue-circles')
+    } else {
+      map.getSource('imd-facilities-radius').setData(facGJ)
+    }
+    const facVis = isActive && intermodalShowFacilitiesRadius ? 'visible' : 'none'
+    if (map.getLayer('imd-facilities-radius-fill')) map.setLayoutProperty('imd-facilities-radius-fill', 'visibility', facVis)
+    if (map.getLayer('imd-facilities-radius-line')) map.setLayoutProperty('imd-facilities-radius-line', 'visibility', facVis)
+
+    // Greenery radius (500 m) circles
+    const greenGJ = isActive ? generateCircleGeoJSON(intermodalHubs, 500) : { type: 'FeatureCollection', features: [] }
+    if (!map.getSource('imd-greenery-radius')) {
+      map.addSource('imd-greenery-radius', { type: 'geojson', data: greenGJ })
+      map.addLayer({ id: 'imd-greenery-radius-fill', type: 'fill', source: 'imd-greenery-radius',
+        layout: { visibility: 'none' },
+        paint: { 'fill-color': '#22C55E', 'fill-opacity': 0.08 },
+      }, 'venue-circles')
+      map.addLayer({ id: 'imd-greenery-radius-line', type: 'line', source: 'imd-greenery-radius',
+        layout: { visibility: 'none' },
+        paint: { 'line-color': '#22C55E', 'line-width': 1, 'line-opacity': 0.50, 'line-dasharray': [3, 3] },
+      }, 'venue-circles')
+    } else {
+      map.getSource('imd-greenery-radius').setData(greenGJ)
+    }
+    const greenVis = isActive && intermodalShowGreeneryRadius ? 'visible' : 'none'
+    if (map.getLayer('imd-greenery-radius-fill')) map.setLayoutProperty('imd-greenery-radius-fill', 'visibility', greenVis)
+    if (map.getLayer('imd-greenery-radius-line')) map.setLayoutProperty('imd-greenery-radius-line', 'visibility', greenVis)
+
+    // Parks overlay (reuse parks data)
+  }, [mapReady, activeMode, intermodalHubs, intermodalShowFacilitiesRadius, intermodalShowGreeneryRadius])
+
+  // ── Intermodal — parks overlay ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !parks) return
+    const map = mapRef.current
+    const vis = activeMode === 'intermodal' && intermodalShowGreeneryRadius && intermodalShowParksOverlay ? 'visible' : 'none'
+    if (!map.getSource('imd-parks')) {
+      map.addSource('imd-parks', { type: 'geojson', data: parks })
+      map.addLayer({ id: 'imd-parks-fill', type: 'fill', source: 'imd-parks',
+        layout: { visibility: 'none' },
+        paint: { 'fill-color': '#22C55E', 'fill-opacity': 0.18 },
+      }, 'venue-circles')
+      map.addLayer({ id: 'imd-parks-line', type: 'line', source: 'imd-parks',
+        layout: { visibility: 'none' },
+        paint: { 'line-color': '#16A34A', 'line-width': 1, 'line-opacity': 0.60 },
+      }, 'venue-circles')
+    }
+    if (map.getLayer('imd-parks-fill')) map.setLayoutProperty('imd-parks-fill', 'visibility', vis)
+    if (map.getLayer('imd-parks-line')) map.setLayoutProperty('imd-parks-line', 'visibility', vis)
+  }, [mapReady, activeMode, parks, intermodalShowGreeneryRadius, intermodalShowParksOverlay])
+
+  function handleDownloadPNG() {
+    if (!mapRef.current) return
+    const canvas = mapRef.current.getCanvas()
+    const url = canvas.toDataURL('image/png')
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'wolfsburg-map.png'
+    a.click()
+  }
+
   return (
-    <div ref={containerRef} className="w-full h-full" />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div ref={containerRef} className="w-full h-full" />
+      <button
+        onClick={handleDownloadPNG}
+        title="Download map as PNG"
+        style={{
+          position: 'absolute',
+          bottom: 32,
+          right: 12,
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '7px 13px',
+          borderRadius: 980,
+          fontSize: 13,
+          fontWeight: 500,
+          fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
+          letterSpacing: '-0.01em',
+          cursor: 'pointer',
+          border: '1px solid rgba(0,0,0,0.12)',
+          background: 'rgba(255,255,255,0.90)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          color: '#1D1D1F',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+          transition: 'background 0.15s ease',
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,1)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.90)'}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M7 1v8M4 6l3 3 3-3M1 10v1a2 2 0 002 2h8a2 2 0 002-2v-1" />
+        </svg>
+        Export PNG
+      </button>
+    </div>
   )
 }
