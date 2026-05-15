@@ -68,6 +68,10 @@ export const useAppStore = create((set) => ({
   // ── Global map overlays ───────────────────────────────────────────────────
   showAllBorders: false,
   showDistrictNames: false,
+  showGrid: false,
+
+  // ── Map view reset trigger (incremented → MapView flies home) ─────────────
+  mapResetViewTrigger: 0,
 
   // ── Facilities: selected venue for left sidebar detail ───────────────────
   selectedFacilityVenueId: null,
@@ -233,10 +237,13 @@ export const useAppStore = create((set) => ({
   intermodalRawBikeParkings: null,
   intermodalRawOsmFacilities: null,
 
-  // base layer toggles
+  // base layer toggles (data layers section)
   intermodalShowBusStops: false,
   intermodalShowCarParkings: false,
   intermodalShowBikeParkings: false,
+  intermodalShowFacilities: false,
+  intermodalFacilityCategories: new Set(['culture', 'commercial', 'educational', 'leisure', 'healthcare']),
+  intermodalShowParksBase: false,
 
   // hub type filter (which pie-chart types to show)
   intermodalHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
@@ -249,6 +256,9 @@ export const useAppStore = create((set) => ({
   intermodalShowGreeneryRadius: false,
   intermodalShowFacilitiesPoints: false,
   intermodalShowParksOverlay: false,
+
+  // object size scale (intermodal only)
+  intermodalObjectScale: 1.0,
 
   // currently open hub popup
   intermodalSelectedHub: null,
@@ -266,6 +276,14 @@ export const useAppStore = create((set) => ({
   toggleIntermodalShowBusStops:     () => set(s => ({ intermodalShowBusStops:     !s.intermodalShowBusStops     })),
   toggleIntermodalShowCarParkings:  () => set(s => ({ intermodalShowCarParkings:  !s.intermodalShowCarParkings  })),
   toggleIntermodalShowBikeParkings: () => set(s => ({ intermodalShowBikeParkings: !s.intermodalShowBikeParkings })),
+  toggleIntermodalShowFacilities:   () => set(s => ({ intermodalShowFacilities:   !s.intermodalShowFacilities   })),
+  toggleIntermodalShowParksBase:    () => set(s => ({ intermodalShowParksBase:    !s.intermodalShowParksBase    })),
+
+  toggleIntermodalFacilityCategory: (cat) => set(s => {
+    const next = new Set(s.intermodalFacilityCategories)
+    next.has(cat) ? next.delete(cat) : next.add(cat)
+    return { intermodalFacilityCategories: next }
+  }),
 
   toggleIntermodalHubType: (type) => set(s => {
     const next = new Set(s.intermodalHubTypes)
@@ -280,6 +298,7 @@ export const useAppStore = create((set) => ({
   toggleIntermodalFacilitiesPoints: () => set(s => ({ intermodalShowFacilitiesPoints: !s.intermodalShowFacilitiesPoints })),
   toggleIntermodalParksOverlay:     () => set(s => ({ intermodalShowParksOverlay:     !s.intermodalShowParksOverlay     })),
 
+  setIntermodalObjectScale: (v) => set({ intermodalObjectScale: Math.max(0.5, Math.min(2.0, v)) }),
   setIntermodalSelectedHub: (hub) => set({ intermodalSelectedHub: hub }),
 
   // ── GSA info modal ────────────────────────────────────────────────────────
@@ -354,4 +373,50 @@ export const useAppStore = create((set) => ({
   // ── Global overlays ───────────────────────────────────────────────────────
   toggleShowAllBorders: () => set(s => ({ showAllBorders: !s.showAllBorders })),
   toggleDistrictNames:  () => set(s => ({ showDistrictNames: !s.showDistrictNames })),
+  toggleShowGrid:       () => set(s => ({ showGrid: !s.showGrid })),
+
+  // ── Reset all settings (does not clear loaded data caches) ────────────────
+  resetAll: () => set(s => ({
+    selectedDistricts: new Set(),
+    selectedCategories: new Set(CATEGORIES.map(c => c.name)),
+    selectedDay: getCurrentDayAbbr(),
+    selectedTime: getCurrentTimeStr(),
+    showNotes: true,
+    activeMobilityModes: new Set(),
+    autoShowRegional: true, autoShowHeatmap: false, autoShowParking: false,
+    transitShowRegional: true, transitShowHeatmap: false, transitShowBusStops: false,
+    cyclingShowRegional: true, cyclingShowRoutes: true,
+    cyclingShowLeisureRoutes: true, cyclingShowBikeParking: false,
+    cyclingHighlightLeisureRoute: null,
+    mobilityHighlightRoute: null,
+    selectedMobilityDistrict: null,
+    showFacilitiesInMobility: false,
+    showAllBorders: false,
+    showDistrictNames: false,
+    showGrid: false,
+    showParks: false, showWater: false, showForest: false, showBuildingPlots: false,
+    intermodalShowBusStops: false,
+    intermodalShowCarParkings: false,
+    intermodalShowBikeParkings: false,
+    intermodalShowFacilities: false,
+    intermodalFacilityCategories: new Set(['culture', 'commercial', 'educational', 'leisure', 'healthcare']),
+    intermodalShowParksBase: false,
+    intermodalHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
+    intermodalStatusFilter: 'all',
+    intermodalShowFacilitiesRadius: false,
+    intermodalShowGreeneryRadius: false,
+    intermodalShowFacilitiesPoints: false,
+    intermodalShowParksOverlay: false,
+    intermodalObjectScale: 1.0,
+    intermodalSelectedHub: null,
+    greenSocialActiveAnalysis: null,
+    showSocialAmenities: false,
+    showGreenSocialMap: true,
+    showGreeneryDistrictBorders: false,
+    greeneryCategoryToggles: {},
+    greeneryTagToggles: {},
+    greeneryOthersTagToggles: {},
+    activeBottomPanel: null,
+    mapResetViewTrigger: s.mapResetViewTrigger + 1,
+  })),
 }))

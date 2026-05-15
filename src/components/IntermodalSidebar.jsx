@@ -1,9 +1,12 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useAppStore } from '../store/appStore'
-import { runIntermodalAlgorithm } from '../utils/intermodalAlgorithm'
+import { runIntermodalAlgorithm, INTENSITY_FOOTFALL } from '../utils/intermodalAlgorithm'
+
+// ── Config ────────────────────────────────────────────────────────────────────
 
 const OVERPASS = 'https://overpass-api.de/api/interpreter'
-const BBOX = '52.35,10.68,52.52,10.93'
+// Expanded BBOX covering all Wolfsburg administrative districts
+const BBOX = '52.32,10.57,52.60,10.98'
 
 const BUS_STOPS_Q = `[out:json][timeout:30];node["highway"="bus_stop"](${BBOX});out body;`
 
@@ -14,61 +17,82 @@ const CAR_PARKINGS_Q = `[out:json][timeout:30];(
 
 const BIKE_PARKINGS_Q = `[out:json][timeout:30];node["amenity"="bicycle_parking"](${BBOX});out body;`
 
-const OSM_FACILITIES_Q = `[out:json][timeout:60];(
+const OSM_FACILITIES_Q = `[out:json][timeout:90];(
   node["amenity"~"theatre|cinema|museum|arts_centre|library|community_centre|social_centre|marketplace"](${BBOX});
-  way["amenity"~"theatre|cinema|museum|arts_centre|library|community_centre"](${BBOX});
+  way["amenity"~"theatre|cinema|museum|arts_centre|library|community_centre|social_centre"](${BBOX});
   node["leisure"~"sports_centre|fitness_centre|swimming_pool|stadium|ice_rink"](${BBOX});
   way["leisure"~"sports_centre|fitness_centre|swimming_pool|stadium"](${BBOX});
-  node["shop"~"supermarket|mall|department_store"](${BBOX});
-  way["shop"~"supermarket|mall|department_store"](${BBOX});
+  node["shop"~"supermarket|grocery|convenience|bakery|butcher|hardware|electronics|department_store|mall"](${BBOX});
+  way["shop"~"supermarket|grocery|convenience|department_store|mall"](${BBOX});
   node["amenity"~"school|university|college|kindergarten"](${BBOX});
   way["amenity"~"school|university|college|kindergarten"](${BBOX});
   node["amenity"~"hospital|clinic|doctors|dentist|pharmacy|health_post"](${BBOX});
-  way["amenity"~"hospital|clinic"](${BBOX});
+  way["amenity"~"hospital|clinic|pharmacy"](${BBOX});
+  node["amenity"~"fuel|bank|post_office"](${BBOX});
 );out center;`
 
-// Footfall estimates for OSM facility types
+// Footfall estimates by OSM amenity/shop/leisure type
 const OSM_FOOTFALL = {
-  hospital: 800, clinic: 300, doctors: 200, dentist: 100, pharmacy: 150, health_post: 100,
+  hospital: 800, clinic: 300, doctors: 200, dentist: 120, pharmacy: 180, health_post: 100,
   school: 400, university: 600, college: 400, kindergarten: 150,
-  supermarket: 700, mall: 900, department_store: 500, marketplace: 400,
+  supermarket: 700, grocery: 350, convenience: 250, bakery: 180, butcher: 140,
+  hardware: 200, electronics: 250, department_store: 500, mall: 900, marketplace: 400,
   sports_centre: 300, fitness_centre: 250, swimming_pool: 250, stadium: 800, ice_rink: 200,
   theatre: 350, cinema: 400, museum: 200, arts_centre: 150, library: 150,
   community_centre: 120, social_centre: 100,
+  fuel: 200, bank: 150, post_office: 100,
 }
-
 const OSM_HOURS = {
-  hospital: 'daily 08:00–20:00', clinic: 'Mo–Fr 08:00–18:00',
+  hospital: 'daily 00:00–24:00', clinic: 'Mo–Fr 08:00–18:00',
   school: 'Mo–Fr 07:30–17:00', university: 'Mo–Fr 08:00–18:00', college: 'Mo–Fr 08:00–17:00',
   kindergarten: 'Mo–Fr 07:00–17:00',
-  supermarket: 'Mo–Sa 07:00–22:00', mall: 'Mo–Su 09:00–21:00',
-  sports_centre: 'Mo–Su 07:00–22:00', fitness_centre: 'Mo–Su 07:00–22:00',
-  swimming_pool: 'Mo–Su 07:00–20:00',
-  theatre: 'Mo–Su 10:00–22:00', cinema: 'Mo–Su 10:00–24:00', museum: 'Tue–Su 10:00–18:00',
-  library: 'Mo–Fr 09:00–19:00', community_centre: 'Mo–Fr 09:00–21:00',
+  supermarket: 'Mo–Sa 07:00–22:00', grocery: 'Mo–Sa 07:00–21:00',
+  convenience: 'Mo–Su 06:00–22:00', bakery: 'Mo–Sa 06:00–18:00',
+  mall: 'Mo–Su 09:00–21:00', department_store: 'Mo–Sa 09:00–20:00',
+  sports_centre: 'Mo–Su 07:00–22:00', fitness_centre: 'Mo–Su 06:00–23:00',
+  swimming_pool: 'Mo–Su 07:00–21:00',
+  theatre: 'Tue–Su 10:00–22:00', cinema: 'Mo–Su 10:00–24:00',
+  museum: 'Tue–Su 10:00–18:00', library: 'Mo–Fr 09:00–19:00',
+  community_centre: 'Mo–Fr 09:00–21:00',
+  fuel: 'Mo–Su 00:00–24:00', bank: 'Mo–Fr 09:00–17:00', post_office: 'Mo–Fr 08:00–18:00',
 }
 
-function osmElementToVenueFeature(el) {
+const CATEGORY_COLORS = {
+  culture: '#534AB7', commercial: '#BA7517', educational: '#185FA5',
+  leisure: '#1D9E75', healthcare: '#D62828',
+}
+const CATEGORY_LABELS = {
+  culture: 'Culture', commercial: 'Commercial', educational: 'Educational',
+  leisure: 'Leisure', healthcare: 'Healthcare',
+}
+
+function osmAmenityToCategory(amenity, shop, leisure) {
+  if (['hospital','clinic','doctors','dentist','pharmacy','health_post'].includes(amenity)) return 'healthcare'
+  if (['school','university','college','kindergarten'].includes(amenity)) return 'educational'
+  if (['theatre','cinema','museum','arts_centre','library','community_centre','social_centre'].includes(amenity)) return 'culture'
+  if (shop || ['fuel','bank','post_office','marketplace'].includes(amenity)) return 'commercial'
+  if (leisure || ['sports_centre','fitness_centre','swimming_pool','stadium','ice_rink'].includes(amenity)) return 'leisure'
+  return 'commercial'
+}
+
+function osmElementToVenue(el) {
   const props = el.tags || {}
   const lat = el.lat ?? el.center?.lat
   const lng = el.lon ?? el.center?.lon
   if (!lat || !lng) return null
-
-  const amenity = props.amenity || props.leisure || props.shop || ''
-  const footfall = OSM_FOOTFALL[amenity] ?? 100
-  const hours = OSM_HOURS[amenity] ?? null
-
-  let category = 'Leisure'
-  if (['hospital','clinic','doctors','dentist','pharmacy','health_post'].includes(amenity)) category = 'Healthcare'
-  else if (['school','university','college','kindergarten'].includes(amenity)) category = 'Schools'
-  else if (['theatre','cinema','museum','arts_centre','library','community_centre','social_centre'].includes(amenity)) category = 'Culture'
-  else if (['supermarket','mall','department_store','marketplace'].includes(amenity)) category = 'Commercial'
-
+  const amenity = props.amenity || ''
+  const shop    = props.shop || ''
+  const leisure = props.leisure || ''
+  const key     = amenity || leisure || shop
+  const footfall = OSM_FOOTFALL[key] ?? 100
+  const hours    = OSM_HOURS[key] ?? null
+  const category = osmAmenityToCategory(amenity, shop, leisure)
   return {
     id: `osm-${el.id}`,
-    name: props.name || amenity || 'Facility',
+    name: props.name || key || 'Facility',
     lat, lng,
-    category,
+    category: category.charAt(0).toUpperCase() + category.slice(1),
+    _category: category,
     activityIntensity: footfall >= 500 ? 'High' : footfall >= 200 ? 'Medium' : 'Low',
     openingHours: hours || '—',
     _footfall: footfall,
@@ -78,20 +102,13 @@ function osmElementToVenueFeature(el) {
 
 function osmToGeoJSON(elements, type) {
   const features = elements
-    .filter(el => {
-      const lat = el.lat ?? el.center?.lat
-      const lng = el.lon ?? el.center?.lon
-      return lat && lng
-    })
+    .filter(el => (el.lat ?? el.center?.lat) && (el.lon ?? el.center?.lon))
     .map(el => {
       const lat = el.lat ?? el.center?.lat
       const lng = el.lon ?? el.center?.lon
-      return {
-        type: 'Feature',
-        id: `${type}-${el.id}`,
+      return { type: 'Feature', id: `${type}-${el.id}`,
         geometry: { type: 'Point', coordinates: [lng, lat] },
-        properties: { ...(el.tags || {}), _osmType: type },
-      }
+        properties: { ...(el.tags || {}), _osmType: type } }
     })
   return { type: 'FeatureCollection', features }
 }
@@ -106,22 +123,43 @@ async function overpassFetch(query) {
   return res.json()
 }
 
-// ── Toggle row ─────────────────────────────────────────────────────────────────
-function Toggle({ checked, onChange, label, color }) {
+// ── Pie chart SVG ─────────────────────────────────────────────────────────────
+function polarXY(cx, cy, r, angleDeg) {
+  const rad = (angleDeg - 90) * Math.PI / 180
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
+}
+function sectorPath(cx, cy, r, startDeg, endDeg) {
+  const s = polarXY(cx, cy, r, startDeg)
+  const e = polarXY(cx, cy, r, endDeg)
+  const large = endDeg - startDeg > 180 ? 1 : 0
+  return `M${cx} ${cy} L${s.x} ${s.y} A${r} ${r} 0 ${large} 1 ${e.x} ${e.y}Z`
+}
+export function makePieSVG(hubType, priority, size = 36) {
+  const cx = size / 2, cy = size / 2, r = size / 2 - 2
+  const strokeW = priority === 'priority' ? 2 : 1.5
+  let sectors
+  if (hubType === 'bus_bike')       sectors = [{ c: '#EF4444', s: 0, e: 180 }, { c: '#22C55E', s: 180, e: 360 }]
+  else if (hubType === 'auto_bike') sectors = [{ c: '#6B7280', s: 0, e: 180 }, { c: '#22C55E', s: 180, e: 360 }]
+  else                              sectors = [{ c: '#6B7280', s: 0, e: 120 }, { c: '#EF4444', s: 120, e: 240 }, { c: '#22C55E', s: 240, e: 360 }]
+  const paths = sectors.map(({ c, s, e }) => `<path d="${sectorPath(cx, cy, r, s, e)}" fill="${c}"/>`).join('')
+  const border = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="white" stroke-width="${strokeW}"/>`
+  const outer  = priority === 'priority'
+    ? `<circle cx="${cx}" cy="${cy}" r="${r + 2}" fill="none" stroke="#1D1D1F" stroke-width="1.5" stroke-dasharray="3 2"/>`
+    : ''
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${outer}${paths}${border}</svg>`
+}
+
+// ── UI primitives ─────────────────────────────────────────────────────────────
+function Toggle({ checked, onChange, label, color, indent = false }) {
   return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#1D1D1F' }}>
-      <div
-        onClick={onChange}
-        style={{
-          width: 32, height: 18, borderRadius: 9,
-          background: checked ? (color || '#0071E3') : '#E0E0E0',
-          position: 'relative', transition: 'background 0.2s', flexShrink: 0, cursor: 'pointer',
-        }}
-      >
+    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#1D1D1F', paddingLeft: indent ? 12 : 0 }}>
+      <div onClick={onChange} style={{
+        width: 32, height: 18, borderRadius: 9, flexShrink: 0, cursor: 'pointer',
+        background: checked ? (color || '#0071E3') : '#E0E0E0', position: 'relative', transition: 'background 0.2s',
+      }}>
         <div style={{
-          position: 'absolute', top: 2, left: checked ? 15 : 2,
-          width: 14, height: 14, borderRadius: 7, background: '#fff',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s',
+          position: 'absolute', top: 2, left: checked ? 15 : 2, width: 14, height: 14,
+          borderRadius: 7, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s',
         }} />
       </div>
       {label}
@@ -129,83 +167,16 @@ function Toggle({ checked, onChange, label, color }) {
   )
 }
 
-// ── Section header ─────────────────────────────────────────────────────────────
-function Section({ title, children }) {
+function SectionHead({ children }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#AEAEB2', marginBottom: 8 }}>
-        {title}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {children}
-      </div>
+    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#AEAEB2', marginBottom: 8, marginTop: 4 }}>
+      {children}
     </div>
   )
 }
 
-// ── Hub type pill ──────────────────────────────────────────────────────────────
-function HubTypePill({ type, active, onClick }) {
-  const labels = { bus_bike: 'Bus + Bike', auto_bike: 'Auto + Bike', auto_bus_bike: 'Auto + Bus + Bike' }
-  const colors = { bus_bike: '#EF4444', auto_bike: '#6B7280', auto_bus_bike: '#8B5CF6' }
-  const c = colors[type]
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        padding: '5px 10px', borderRadius: 980, fontSize: 12, fontWeight: 500,
-        fontFamily: 'inherit', cursor: 'pointer',
-        border: `1.5px solid ${active ? c : 'rgba(0,0,0,0.10)'}`,
-        background: active ? `${c}18` : 'transparent',
-        color: active ? c : '#6E6E73',
-        transition: 'all 0.15s',
-      }}
-    >
-      <span style={{ width: 8, height: 8, borderRadius: 4, background: active ? c : '#ccc', flexShrink: 0 }} />
-      {labels[type]}
-    </button>
-  )
-}
-
-// ── Pie chart legend item ──────────────────────────────────────────────────────
-function PieLegend({ hubType }) {
-  const size = 20
-  const svgStr = makePieSVG(hubType, 'potential', size)
-  return (
-    <span
-      style={{ display: 'inline-block', width: size, height: size }}
-      dangerouslySetInnerHTML={{ __html: svgStr }}
-    />
-  )
-}
-
-// ── Pie chart SVG maker (shared with MapView) ─────────────────────────────────
-function polarXY(cx, cy, r, angleDeg) {
-  const rad = (angleDeg - 90) * Math.PI / 180
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
-}
-
-function sectorPath(cx, cy, r, startDeg, endDeg) {
-  const s = polarXY(cx, cy, r, startDeg)
-  const e = polarXY(cx, cy, r, endDeg)
-  const large = endDeg - startDeg > 180 ? 1 : 0
-  return `M${cx} ${cy} L${s.x} ${s.y} A${r} ${r} 0 ${large} 1 ${e.x} ${e.y}Z`
-}
-
-export function makePieSVG(hubType, priority, size = 36) {
-  const cx = size / 2, cy = size / 2, r = size / 2 - 2
-  const strokeW = priority === 'priority' ? 2 : 1.5
-  let sectors
-  if (hubType === 'bus_bike')      sectors = [{ c: '#EF4444', s: 0, e: 180 }, { c: '#22C55E', s: 180, e: 360 }]
-  else if (hubType === 'auto_bike') sectors = [{ c: '#6B7280', s: 0, e: 180 }, { c: '#22C55E', s: 180, e: 360 }]
-  else                              sectors = [{ c: '#6B7280', s: 0, e: 120 }, { c: '#EF4444', s: 120, e: 240 }, { c: '#22C55E', s: 240, e: 360 }]
-
-  const paths = sectors.map(({ c, s, e }) => `<path d="${sectorPath(cx, cy, r, s, e)}" fill="${c}"/>`).join('')
-  const border = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="white" stroke-width="${strokeW}"/>`
-  const outer = priority === 'priority'
-    ? `<circle cx="${cx}" cy="${cy}" r="${r + 2}" fill="none" stroke="#1D1D1F" stroke-width="1.5" stroke-dasharray="3 2"/>`
-    : ''
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${outer}${paths}${border}</svg>`
+function Divider() {
+  return <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '12px 0' }} />
 }
 
 // ── Main sidebar ───────────────────────────────────────────────────────────────
@@ -213,62 +184,87 @@ export default function IntermodalSidebar() {
   const {
     venues, parks,
     intermodalLoading, intermodalError, intermodalHubs,
-    intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
+    intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings, intermodalRawOsmFacilities,
     intermodalShowBusStops, intermodalShowCarParkings, intermodalShowBikeParkings,
+    intermodalShowFacilities, intermodalFacilityCategories, intermodalShowParksBase,
     intermodalHubTypes, intermodalStatusFilter,
     intermodalShowFacilitiesRadius, intermodalShowGreeneryRadius,
     intermodalShowFacilitiesPoints, intermodalShowParksOverlay,
+    intermodalObjectScale,
     setIntermodalLoading, setIntermodalError, setIntermodalHubs, setIntermodalRawData,
     toggleIntermodalShowBusStops, toggleIntermodalShowCarParkings, toggleIntermodalShowBikeParkings,
+    toggleIntermodalShowFacilities, toggleIntermodalFacilityCategory, toggleIntermodalShowParksBase,
     toggleIntermodalHubType, setIntermodalStatusFilter,
     toggleIntermodalFacilitiesRadius, toggleIntermodalGreeneryRadius,
     toggleIntermodalFacilitiesPoints, toggleIntermodalParksOverlay,
+    setIntermodalObjectScale,
   } = useAppStore()
 
-  const [fetchProgress, setFetchProgress] = useState('')
+  const [loadProgress, setLoadProgress] = useState('')
+  const dataLoaded = !!(intermodalRawBusStops && intermodalRawCarParkings)
 
-  const handleRunAnalysis = useCallback(async () => {
+  // Auto-load when no data yet
+  useEffect(() => {
+    if (dataLoaded || intermodalLoading) return
+    handleLoadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleLoadData = useCallback(async () => {
     setIntermodalLoading(true)
     setIntermodalError(null)
-    setIntermodalHubs([])
-    setFetchProgress('Loading bus stops…')
-
     try {
-      const post = (q) => overpassFetch(q)
+      setLoadProgress('Bus stops…')
+      const busRaw  = await overpassFetch(BUS_STOPS_Q)
+      const busGJ   = osmToGeoJSON(busRaw.elements || [], 'bus')
 
-      setFetchProgress('Loading bus stops…')
-      const busRaw = await post(BUS_STOPS_Q)
-      const busGeoJSON = osmToGeoJSON(busRaw.elements || [], 'bus')
+      setLoadProgress('Car parkings…')
+      const carRaw  = await overpassFetch(CAR_PARKINGS_Q)
+      const carGJ   = osmToGeoJSON(carRaw.elements || [], 'car')
 
-      setFetchProgress('Loading car parkings…')
-      const carRaw = await post(CAR_PARKINGS_Q)
-      const carGeoJSON = osmToGeoJSON(carRaw.elements || [], 'car')
+      setLoadProgress('Bike parkings…')
+      const bikeRaw = await overpassFetch(BIKE_PARKINGS_Q)
+      const bikeGJ  = osmToGeoJSON(bikeRaw.elements || [], 'bike')
 
-      setFetchProgress('Loading bike parkings…')
-      const bikeRaw = await post(BIKE_PARKINGS_Q)
-      const bikeGeoJSON = osmToGeoJSON(bikeRaw.elements || [], 'bike')
+      setLoadProgress('Facilities from OSM…')
+      const facRaw  = await overpassFetch(OSM_FACILITIES_Q)
+      const osmFacs = (facRaw.elements || []).map(osmElementToVenue).filter(Boolean)
 
-      setFetchProgress('Loading additional facilities from OSM…')
-      const facRaw = await post(OSM_FACILITIES_Q)
-      const osmFacs = (facRaw.elements || []).map(osmElementToVenueFeature).filter(Boolean)
-
-      setIntermodalRawData(busGeoJSON, carGeoJSON, bikeGeoJSON, osmFacs)
-
-      setFetchProgress('Running algorithm…')
-      const allVenues = [...venues, ...osmFacs]
-      const parksGJ = parks || { type: 'FeatureCollection', features: [] }
-      const hubs = runIntermodalAlgorithm(allVenues, busGeoJSON, carGeoJSON, bikeGeoJSON, parksGJ)
-
-      setIntermodalHubs(hubs)
-      setFetchProgress('')
+      setIntermodalRawData(busGJ, carGJ, bikeGJ, osmFacs)
+      setLoadProgress('')
     } catch (err) {
-      console.error('Intermodal fetch error:', err)
-      setIntermodalError('Failed to load data. Check your internet connection and try again.')
-      setFetchProgress('')
+      console.error('Intermodal load error:', err)
+      setIntermodalError('Failed to load OSM data. Check your connection.')
+      setLoadProgress('')
     } finally {
       setIntermodalLoading(false)
     }
-  }, [venues, parks, setIntermodalLoading, setIntermodalError, setIntermodalHubs, setIntermodalRawData])
+  }, [setIntermodalLoading, setIntermodalError, setIntermodalRawData])
+
+  const handleRunAnalysis = useCallback(async () => {
+    if (!intermodalRawBusStops || !intermodalRawCarParkings) return
+    setIntermodalLoading(true)
+    setIntermodalError(null)
+    setIntermodalHubs([])
+    try {
+      setLoadProgress('Running algorithm…')
+      const allVenues = [...venues, ...(intermodalRawOsmFacilities || [])]
+      const parksGJ   = parks || { type: 'FeatureCollection', features: [] }
+      const hubs = runIntermodalAlgorithm(
+        allVenues, intermodalRawBusStops, intermodalRawCarParkings,
+        intermodalRawBikeParkings, parksGJ
+      )
+      setIntermodalHubs(hubs)
+      setLoadProgress('')
+    } catch (err) {
+      console.error('Algorithm error:', err)
+      setIntermodalError('Analysis failed. Try reloading data.')
+      setLoadProgress('')
+    } finally {
+      setIntermodalLoading(false)
+    }
+  }, [venues, parks, intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
+      intermodalRawOsmFacilities, setIntermodalLoading, setIntermodalError, setIntermodalHubs])
 
   const hubCounts = {
     bus_bike:      intermodalHubs.filter(h => h.hubType === 'bus_bike').length,
@@ -279,66 +275,117 @@ export default function IntermodalSidebar() {
     proposed:      intermodalHubs.filter(h => h.status === 'proposed').length,
   }
 
+  const busCount  = intermodalRawBusStops?.features?.length ?? 0
+  const carCount  = intermodalRawCarParkings?.features?.length ?? 0
+  const bikeCount = intermodalRawBikeParkings?.features?.length ?? 0
+  const facCount  = (intermodalRawOsmFacilities?.length ?? 0) + venues.length
+
   return (
     <div style={{
-      position: 'absolute',
-      top: 0, left: 0,
-      width: 300,
-      height: '100%',
-      background: 'rgba(255,255,255,0.94)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderRight: '1px solid rgba(0,0,0,0.08)',
-      boxShadow: '4px 0 20px rgba(0,0,0,0.06)',
-      zIndex: 20,
-      display: 'flex',
-      flexDirection: 'column',
-      overflowY: 'auto',
+      position: 'absolute', top: 0, left: 0, width: 300, height: '100%',
+      background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)', borderRight: '1px solid rgba(0,0,0,0.08)',
+      boxShadow: '4px 0 20px rgba(0,0,0,0.06)', zIndex: 20,
+      display: 'flex', flexDirection: 'column',
       fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
     }}>
       {/* Header */}
-      <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-        <div style={{ fontSize: 16, fontWeight: 600, color: '#1D1D1F', marginBottom: 2 }}>
-          Intermodal Hub
-        </div>
-        <div style={{ fontSize: 12, color: '#6E6E73' }}>
-          Wolfsburg · Multi-modal transfer points
-        </div>
+      <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#1D1D1F' }}>Intermodal Hub</div>
+        <div style={{ fontSize: 12, color: '#6E6E73' }}>Wolfsburg · Multi-modal transfer points</div>
       </div>
 
-      {/* Body */}
-      <div style={{ padding: '14px 16px', flex: 1, overflowY: 'auto' }}>
+      {/* Loading status bar */}
+      {intermodalLoading && (
+        <div style={{ background: '#FFF3CD', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '6px 16px', fontSize: 12, color: '#856404', flexShrink: 0 }}>
+          {loadProgress || 'Loading…'}
+        </div>
+      )}
 
-        {/* Run button */}
-        <button
-          onClick={handleRunAnalysis}
-          disabled={intermodalLoading}
-          style={{
-            width: '100%', padding: '9px 0', borderRadius: 10,
-            fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
-            cursor: intermodalLoading ? 'not-allowed' : 'pointer',
-            border: 'none',
-            background: intermodalLoading ? '#E0E0E0' : '#1D1D1F',
-            color: intermodalLoading ? '#999' : '#fff',
-            marginBottom: 16, transition: 'background 0.15s',
-          }}
-        >
-          {intermodalLoading ? (fetchProgress || 'Loading…') : intermodalHubs.length ? 'Re-run Analysis' : 'Run Analysis'}
-        </button>
+      {/* Error */}
+      {intermodalError && (
+        <div style={{ background: '#FEF2F2', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '8px 16px', fontSize: 12, color: '#EF4444', flexShrink: 0 }}>
+          {intermodalError}
+          <button onClick={handleLoadData} style={{ marginLeft: 8, fontFamily: 'inherit', fontSize: 11, color: '#0071E3', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+            Retry
+          </button>
+        </div>
+      )}
 
-        {/* Error */}
-        {intermodalError && (
-          <div style={{ fontSize: 12, color: '#EF4444', background: '#FEF2F2', borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
-            {intermodalError}
-          </div>
+      {/* Scrollable body */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 20px' }}>
+
+        {/* ── DATA LAYERS ─────────────────────────────────────────────────────── */}
+        <SectionHead>Data Layers</SectionHead>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 4 }}>
+          <Toggle checked={intermodalShowBusStops} onChange={toggleIntermodalShowBusStops}
+            label={`Bus stops${busCount ? ` (${busCount})` : ''}`} color="#EF4444" />
+          <Toggle checked={intermodalShowCarParkings} onChange={toggleIntermodalShowCarParkings}
+            label={`Car parkings${carCount ? ` (${carCount})` : ''}`} color="#6B7280" />
+          <Toggle checked={intermodalShowBikeParkings} onChange={toggleIntermodalShowBikeParkings}
+            label={`Bike parkings${bikeCount ? ` (${bikeCount})` : ''}`} color="#22C55E" />
+
+          <Toggle checked={intermodalShowFacilities} onChange={toggleIntermodalShowFacilities}
+            label={`Facilities${facCount ? ` (${facCount})` : ''}`} color="#F59E0B" />
+
+          {intermodalShowFacilities && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, paddingLeft: 12, marginTop: 2 }}>
+              {Object.entries(CATEGORY_LABELS).map(([key, label]) => {
+                const active = intermodalFacilityCategories.has(key)
+                const color  = CATEGORY_COLORS[key]
+                return (
+                  <button key={key} onClick={() => toggleIntermodalFacilityCategory(key)}
+                    style={{
+                      fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 980,
+                      fontFamily: 'inherit', cursor: 'pointer',
+                      border: `1.5px solid ${active ? color : 'rgba(0,0,0,0.10)'}`,
+                      background: active ? `${color}18` : 'transparent',
+                      color: active ? color : '#AEAEB2', transition: 'all 0.15s',
+                    }}>
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          <Toggle checked={intermodalShowParksBase} onChange={toggleIntermodalShowParksBase}
+            label="Parks" color="#16A34A" />
+        </div>
+
+        {!dataLoaded && !intermodalLoading && (
+          <button onClick={handleLoadData} style={{
+            width: '100%', padding: '7px 0', borderRadius: 8, fontSize: 12, fontWeight: 500,
+            fontFamily: 'inherit', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.12)',
+            background: '#F5F5F7', color: '#1D1D1F', marginTop: 8,
+          }}>
+            Reload OSM data
+          </button>
         )}
+
+        <Divider />
+
+        {/* ── ANALYSIS ────────────────────────────────────────────────────────── */}
+        <SectionHead>Analysis</SectionHead>
+
+        <button onClick={handleRunAnalysis} disabled={intermodalLoading || !dataLoaded}
+          style={{
+            width: '100%', padding: '9px 0', borderRadius: 10, fontSize: 13, fontWeight: 600,
+            fontFamily: 'inherit', cursor: (intermodalLoading || !dataLoaded) ? 'not-allowed' : 'pointer',
+            border: 'none', marginBottom: 12,
+            background: (intermodalLoading || !dataLoaded) ? '#E0E0E0' : '#1D1D1F',
+            color: (intermodalLoading || !dataLoaded) ? '#999' : '#fff',
+            transition: 'background 0.15s',
+          }}>
+          {intermodalLoading && loadProgress === 'Running algorithm…' ? 'Running…'
+            : intermodalHubs.length ? 'Re-run Analysis' : 'Run Analysis'}
+        </button>
 
         {/* Results summary */}
         {intermodalHubs.length > 0 && (
           <div style={{ background: '#F5F5F7', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 12 }}>
-            <div style={{ fontWeight: 600, marginBottom: 6, color: '#1D1D1F' }}>
-              {intermodalHubs.length} hubs identified
-            </div>
+            <div style={{ fontWeight: 600, marginBottom: 6, color: '#1D1D1F' }}>{intermodalHubs.length} hubs identified</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {[
                 { label: `${hubCounts.priority} priority`, color: '#1D1D1F' },
@@ -353,143 +400,125 @@ export default function IntermodalSidebar() {
           </div>
         )}
 
-        {/* Base Layers */}
-        <Section title="Base Layers">
-          <Toggle
-            checked={intermodalShowBusStops}
-            onChange={toggleIntermodalShowBusStops}
-            label="Bus stops"
-            color="#EF4444"
-          />
-          <Toggle
-            checked={intermodalShowCarParkings}
-            onChange={toggleIntermodalShowCarParkings}
-            label="Car parkings"
-            color="#6B7280"
-          />
-          <Toggle
-            checked={intermodalShowBikeParkings}
-            onChange={toggleIntermodalShowBikeParkings}
-            label="Bike parkings"
-            color="#22C55E"
-          />
-        </Section>
-
         {/* Hub Types */}
         {intermodalHubs.length > 0 && (
-          <Section title="Hub Types">
-            {['bus_bike', 'auto_bike', 'auto_bus_bike'].map(type => (
-              <div key={type} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <HubTypePill
-                  type={type}
-                  active={intermodalHubTypes.has(type)}
-                  onClick={() => toggleIntermodalHubType(type)}
-                />
-                <span style={{ fontSize: 11, color: '#AEAEB2' }}>{hubCounts[type]}</span>
-              </div>
-            ))}
-          </Section>
-        )}
+          <>
+            <div style={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 7 }}>Hub Types</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
+              {[
+                { type: 'bus_bike',      label: 'Bus + Bike',           color: '#EF4444' },
+                { type: 'auto_bike',     label: 'Auto + Bike',          color: '#6B7280' },
+                { type: 'auto_bus_bike', label: 'Auto + Bus + Bike',    color: '#7C3AED' },
+              ].map(({ type, label, color }) => {
+                const active = intermodalHubTypes.has(type)
+                return (
+                  <div key={type} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <button onClick={() => toggleIntermodalHubType(type)} style={{
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px',
+                      borderRadius: 980, fontSize: 12, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
+                      border: `1.5px solid ${active ? color : 'rgba(0,0,0,0.10)'}`,
+                      background: active ? `${color}18` : 'transparent',
+                      color: active ? color : '#6E6E73', transition: 'all 0.15s',
+                    }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 4, background: active ? color : '#ccc', flexShrink: 0 }} />
+                      {label}
+                    </button>
+                    <span style={{ fontSize: 11, color: '#AEAEB2' }}>{hubCounts[type]}</span>
+                  </div>
+                )
+              })}
+            </div>
 
-        {/* Status Filter */}
-        {intermodalHubs.length > 0 && (
-          <Section title="Status">
-            {[
-              { value: 'all',      label: 'All hubs' },
-              { value: 'existing', label: 'Existing (bike parking present)' },
-              { value: 'proposed', label: 'Proposed (new bike parking needed)' },
-            ].map(({ value, label }) => (
-              <label key={value} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 13, color: '#1D1D1F' }}>
-                <div
-                  onClick={() => setIntermodalStatusFilter(value)}
-                  style={{
-                    width: 16, height: 16, borderRadius: 8,
+            {/* Status filter */}
+            <div style={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 7 }}>Status</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 4 }}>
+              {[
+                { value: 'all',      label: 'All hubs' },
+                { value: 'existing', label: 'Existing (bike parking present)' },
+                { value: 'proposed', label: 'Proposed (needs bike parking)' },
+              ].map(({ value, label }) => (
+                <label key={value} onClick={() => setIntermodalStatusFilter(value)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 13, color: '#1D1D1F' }}>
+                  <div style={{
+                    width: 16, height: 16, borderRadius: 8, flexShrink: 0,
                     border: `2px solid ${intermodalStatusFilter === value ? '#0071E3' : '#ccc'}`,
                     background: intermodalStatusFilter === value ? '#0071E3' : '#fff',
-                    flexShrink: 0, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  {intermodalStatusFilter === value && (
-                    <div style={{ width: 6, height: 6, borderRadius: 3, background: '#fff' }} />
-                  )}
-                </div>
-                {label}
-              </label>
-            ))}
-          </Section>
+                  }}>
+                    {intermodalStatusFilter === value && <div style={{ width: 6, height: 6, borderRadius: 3, background: '#fff' }} />}
+                  </div>
+                  {label}
+                </label>
+              ))}
+            </div>
+          </>
         )}
 
-        {/* Radius Layers */}
-        <Section title="Radius Layers">
-          <Toggle
-            checked={intermodalShowFacilitiesRadius}
-            onChange={toggleIntermodalFacilitiesRadius}
-            label="Facilities radius (1500 m)"
-            color="#F59E0B"
-          />
+        <Divider />
+
+        {/* ── RADIUS LAYERS ───────────────────────────────────────────────────── */}
+        <SectionHead>Radius Layers</SectionHead>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 4 }}>
+          <Toggle checked={intermodalShowFacilitiesRadius} onChange={toggleIntermodalFacilitiesRadius}
+            label="Facilities radius (1500 m)" color="#F59E0B" />
           {intermodalShowFacilitiesRadius && (
-            <div style={{ paddingLeft: 20 }}>
-              <Toggle
-                checked={intermodalShowFacilitiesPoints}
-                onChange={toggleIntermodalFacilitiesPoints}
-                label="Show facility points"
-                color="#F59E0B"
-              />
-            </div>
+            <Toggle indent checked={intermodalShowFacilitiesPoints} onChange={toggleIntermodalFacilitiesPoints}
+              label="Show facility points" color="#F59E0B" />
           )}
-          <Toggle
-            checked={intermodalShowGreeneryRadius}
-            onChange={toggleIntermodalGreeneryRadius}
-            label="Greenery radius (500 m)"
-            color="#22C55E"
-          />
+          <Toggle checked={intermodalShowGreeneryRadius} onChange={toggleIntermodalGreeneryRadius}
+            label="Greenery radius (500 m)" color="#22C55E" />
           {intermodalShowGreeneryRadius && (
-            <div style={{ paddingLeft: 20 }}>
-              <Toggle
-                checked={intermodalShowParksOverlay}
-                onChange={toggleIntermodalParksOverlay}
-                label="Show park areas"
-                color="#22C55E"
-              />
-            </div>
+            <Toggle indent checked={intermodalShowParksOverlay} onChange={toggleIntermodalParksOverlay}
+              label="Show park areas" color="#22C55E" />
           )}
-        </Section>
+        </div>
 
-        {/* Legend */}
+        <Divider />
+
+        {/* ── LEGEND ──────────────────────────────────────────────────────────── */}
         {intermodalHubs.length > 0 && (
-          <Section title="Legend">
-            {[
-              { type: 'bus_bike', label: 'Bus + Bike hub' },
-              { type: 'auto_bike', label: 'Auto + Bike hub' },
-              { type: 'auto_bus_bike', label: 'Auto + Bus + Bike hub' },
-            ].map(({ type, label }) => (
-              <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#1D1D1F' }}>
-                <PieLegend hubType={type} />
-                <span>{label}</span>
+          <>
+            <SectionHead>Legend</SectionHead>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+              {[
+                { type: 'bus_bike',      label: 'Bus + Bike hub' },
+                { type: 'auto_bike',     label: 'Auto + Bike hub' },
+                { type: 'auto_bus_bike', label: 'Auto + Bus + Bike hub' },
+              ].map(({ type, label }) => (
+                <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#1D1D1F' }}>
+                  <span dangerouslySetInnerHTML={{ __html: makePieSVG(type, 'potential', 20) }} style={{ display: 'inline-block', width: 20, height: 20, flexShrink: 0 }} />
+                  {label}
+                </div>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#6E6E73' }}>
+                <span dangerouslySetInnerHTML={{ __html: makePieSVG('bus_bike', 'priority', 20) }} style={{ display: 'inline-block', width: 20, height: 20, flexShrink: 0 }} />
+                Priority hub (score above median)
               </div>
-            ))}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#6E6E73', marginTop: 4 }}>
-              <div style={{ width: 20, height: 20, borderRadius: 10, border: '1.5px dashed #1D1D1F', background: 'transparent' }} />
-              <span>Priority hub (score above median)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#6E6E73' }}>
-              <div style={{ width: 20, height: 20, borderRadius: 10, border: '1.5px solid transparent', background: 'transparent', position: 'relative' }}>
-                <div style={{ position: 'absolute', inset: 3, borderRadius: 7, background: '#22C55E40', border: '1px solid #22C55E' }} />
-              </div>
-              <span>Existing (bike parking present)</span>
-            </div>
-          </Section>
+          </>
         )}
 
-        {/* Data info */}
-        {intermodalHubs.length > 0 && (
-          <div style={{ fontSize: 11, color: '#AEAEB2', lineHeight: 1.5, marginTop: 4 }}>
-            Data: OpenStreetMap · Overpass API<br />
-            Facilities: venues.json + OSM enrichment
+        {/* ── OBJECT SIZE ─────────────────────────────────────────────────────── */}
+        <SectionHead>Object Size</SectionHead>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <button onClick={() => setIntermodalObjectScale(intermodalObjectScale - 0.25)} style={scaleBtn}>−</button>
+          <div style={{ flex: 1, background: '#F5F5F7', borderRadius: 8, padding: '4px 10px', fontSize: 12, textAlign: 'center', color: '#1D1D1F', fontWeight: 500 }}>
+            ×{intermodalObjectScale.toFixed(2)}
           </div>
-        )}
+          <button onClick={() => setIntermodalObjectScale(intermodalObjectScale + 0.25)} style={scaleBtn}>+</button>
+        </div>
+
+        <div style={{ fontSize: 11, color: '#AEAEB2', lineHeight: 1.5, marginTop: 12 }}>
+          Data: OpenStreetMap · Overpass API
+        </div>
       </div>
     </div>
   )
+}
+
+const scaleBtn = {
+  width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(0,0,0,0.12)',
+  background: '#F5F5F7', cursor: 'pointer', fontFamily: 'inherit',
+  fontSize: 16, fontWeight: 500, color: '#1D1D1F', display: 'flex',
+  alignItems: 'center', justifyContent: 'center', flexShrink: 0,
 }

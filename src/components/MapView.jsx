@@ -326,7 +326,7 @@ export default function MapView({ onVenueClick }) {
     showGreeneryDistrictBorders,
     setGreeneryGeoJSON, setGreeneryDataLoading, setGreeneryDataError,
     // Global
-    showAllBorders, showDistrictNames,
+    showAllBorders, showDistrictNames, showGrid, mapResetViewTrigger,
     // Green Social Analysis
     greenSocialActiveAnalysis, greenSocialScores, showGreenSocialMap,
     socialAmenitiesGeoJSON,    showSocialAmenities,
@@ -337,6 +337,8 @@ export default function MapView({ onVenueClick }) {
     intermodalHubTypes, intermodalStatusFilter,
     intermodalShowFacilitiesRadius, intermodalShowGreeneryRadius,
     intermodalShowFacilitiesPoints, intermodalShowParksOverlay,
+    intermodalShowFacilities, intermodalFacilityCategories, intermodalShowParksBase,
+    intermodalObjectScale,
     setIntermodalSelectedHub,
   } = useAppStore()
   const { filteredVenues } = useFilters()
@@ -357,7 +359,8 @@ export default function MapView({ onVenueClick }) {
       preserveDrawingBuffer: true,
     })
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right')
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-right')
 
     map.on('load', () => {
       map.addSource('venues', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -437,6 +440,13 @@ export default function MapView({ onVenueClick }) {
 
       map.on('click', 'venue-circles',       (e) => onVenueClick?.(e.features[0].properties))
       map.on('click', 'venue-dots-inactive', (e) => onVenueClick?.(e.features[0].properties))
+
+      // Grid layer (data + visibility updated by showGrid effect)
+      map.addSource('grid', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addLayer({ id: 'grid-line', type: 'line', source: 'grid',
+        layout: { visibility: 'none' },
+        paint: { 'line-color': '#AEAEB2', 'line-width': 0.5, 'line-opacity': 0.45, 'line-dasharray': [4, 4] },
+      })
 
       setMapReady(true)
     })
@@ -1085,6 +1095,43 @@ export default function MapView({ onVenueClick }) {
       map.setLayoutProperty('all-borders-line', 'visibility', showAllBorders ? 'visible' : 'none')
   }, [mapReady, districtBoundaries, showAllBorders])
 
+  // ── Grid overlay (1 km dashed lines, zoom-adaptive spacing) ─────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    const generateGrid = (spacingKm) => {
+      const latStep = spacingKm / 111.32
+      const lngStep = spacingKm / (111.32 * Math.cos(52.42 * Math.PI / 180))
+      const minLat = 52.28, maxLat = 52.62, minLng = 10.53, maxLng = 11.00
+      const features = []
+      for (let lat = Math.ceil(minLat / latStep) * latStep; lat <= maxLat + 1e-9; lat += latStep)
+        features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[minLng, lat], [maxLng, lat]] }, properties: {} })
+      for (let lng = Math.ceil(minLng / lngStep) * lngStep; lng <= maxLng + 1e-9; lng += lngStep)
+        features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[lng, minLat], [lng, maxLat]] }, properties: {} })
+      return { type: 'FeatureCollection', features }
+    }
+
+    const updateGrid = () => {
+      if (!map.getSource('grid')) return
+      const z = map.getZoom()
+      const spacing = z < 11 ? 2 : z < 12 ? 1 : z < 13 ? 0.5 : 0.25
+      map.getSource('grid').setData(generateGrid(spacing))
+      if (map.getLayer('grid-line'))
+        map.setLayoutProperty('grid-line', 'visibility', showGrid ? 'visible' : 'none')
+    }
+
+    updateGrid()
+    map.on('zoom', updateGrid)
+    return () => map.off('zoom', updateGrid)
+  }, [mapReady, showGrid])
+
+  // ── Map view reset (fly back to Wolfsburg home) ────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || mapResetViewTrigger === 0) return
+    mapRef.current.flyTo({ center: WOLFSBURG.center, zoom: WOLFSBURG.zoom })
+  }, [mapReady, mapResetViewTrigger])
+
   // ── District name labels ───────────────────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -1533,7 +1580,8 @@ export default function MapView({ onVenueClick }) {
     })
 
     const markers = visibleHubs.map(hub => {
-      const size = hub.priority === 'priority' ? 40 : 30
+      const baseSize = hub.priority === 'priority' ? 40 : 30
+      const size = Math.round(baseSize * (intermodalObjectScale ?? 1))
       const el = document.createElement('div')
       el.innerHTML = makePieSVG(hub.hubType, hub.priority, size)
       el.style.cssText = `cursor:pointer;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.25));width:${size}px;height:${size}px`
@@ -1553,7 +1601,7 @@ export default function MapView({ onVenueClick }) {
       markers.forEach(m => m.remove())
       intermodalMarkersRef.current = []
     }
-  }, [mapReady, activeMode, intermodalHubs, intermodalHubTypes, intermodalStatusFilter, setIntermodalSelectedHub])
+  }, [mapReady, activeMode, intermodalHubs, intermodalHubTypes, intermodalStatusFilter, intermodalObjectScale, setIntermodalSelectedHub])
 
   // ── Intermodal — base point layers (bus stops, car parkings, bike parkings) ─
   useEffect(() => {
@@ -1706,12 +1754,132 @@ export default function MapView({ onVenueClick }) {
     if (map.getLayer('imd-parks-line')) map.setLayoutProperty('imd-parks-line', 'visibility', vis)
   }, [mapReady, activeMode, parks, intermodalShowGreeneryRadius, intermodalShowParksOverlay])
 
-  function handleDownloadPNG() {
+  // ── Intermodal — parks base layer (Data Layers section) ───────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !parks) return
+    const map = mapRef.current
+    const vis = activeMode === 'intermodal' && intermodalShowParksBase ? 'visible' : 'none'
+    if (!map.getSource('imd-parks-base')) {
+      map.addSource('imd-parks-base', { type: 'geojson', data: parks })
+      map.addLayer({ id: 'imd-parks-base-fill', type: 'fill', source: 'imd-parks-base',
+        layout: { visibility: 'none' },
+        paint: { 'fill-color': '#22C55E', 'fill-opacity': 0.22 },
+      }, 'venue-circles')
+      map.addLayer({ id: 'imd-parks-base-line', type: 'line', source: 'imd-parks-base',
+        layout: { visibility: 'none' },
+        paint: { 'line-color': '#16A34A', 'line-width': 1, 'line-opacity': 0.65 },
+      }, 'venue-circles')
+    }
+    if (map.getLayer('imd-parks-base-fill')) map.setLayoutProperty('imd-parks-base-fill', 'visibility', vis)
+    if (map.getLayer('imd-parks-base-line')) map.setLayoutProperty('imd-parks-base-line', 'visibility', vis)
+  }, [mapReady, activeMode, parks, intermodalShowParksBase])
+
+  // ── Intermodal — facilities base layer (category-colored points) ───────────
+  const CAT_MAP = { Culture: 'culture', Commercial: 'commercial', Schools: 'educational', Leisure: 'leisure', Healthcare: 'healthcare' }
+  const CAT_COLOR = { culture: '#534AB7', commercial: '#BA7517', educational: '#185FA5', leisure: '#1D9E75', healthcare: '#D62828' }
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const isActive = activeMode === 'intermodal' && intermodalShowFacilities
+
+    const allFeatures = []
+    if (isActive) {
+      for (const v of filteredVenues) {
+        const cat = CAT_MAP[v.category] || null
+        if (!cat || !intermodalFacilityCategories.has(cat)) continue
+        allFeatures.push({ type: 'Feature',
+          geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
+          properties: { _cat: cat, _color: CAT_COLOR[cat] || '#AEAEB2', name: v.name },
+        })
+      }
+      const osmFacs = useAppStore.getState().intermodalRawOsmFacilities || []
+      for (const f of osmFacs) {
+        const cat = f.category || null
+        if (!cat || !intermodalFacilityCategories.has(cat)) continue
+        allFeatures.push({ type: 'Feature',
+          geometry: { type: 'Point', coordinates: [f.lng, f.lat] },
+          properties: { _cat: cat, _color: CAT_COLOR[cat] || '#AEAEB2', name: f.name },
+        })
+      }
+    }
+    const gj = { type: 'FeatureCollection', features: allFeatures }
+
+    if (!map.getSource('imd-facilities-base')) {
+      map.addSource('imd-facilities-base', { type: 'geojson', data: gj })
+      map.addLayer({ id: 'imd-facilities-base-circle', type: 'circle', source: 'imd-facilities-base',
+        layout: { visibility: 'none' },
+        paint: { 'circle-radius': 5, 'circle-color': ['get', '_color'],
+          'circle-opacity': 0.85, 'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#fff', 'circle-stroke-opacity': 0.9 },
+      }, 'venue-circles')
+    } else {
+      map.getSource('imd-facilities-base').setData(gj)
+    }
+    if (map.getLayer('imd-facilities-base-circle'))
+      map.setLayoutProperty('imd-facilities-base-circle', 'visibility', isActive ? 'visible' : 'none')
+  }, [mapReady, activeMode, intermodalShowFacilities, intermodalFacilityCategories, filteredVenues])
+
+  // ── Intermodal — object scale: update circle layer radii ──────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const s = intermodalObjectScale ?? 1
+    const layers = [
+      { id: 'imd-bus-stops-circle',     base: 5 },
+      { id: 'imd-car-parkings-circle',  base: 5 },
+      { id: 'imd-bike-parkings-circle', base: 4 },
+      { id: 'imd-osm-facilities-circle', base: 4 },
+    ]
+    for (const { id, base } of layers) {
+      if (map.getLayer(id))
+        map.setPaintProperty(id, 'circle-radius', Math.round(base * s))
+    }
+  }, [mapReady, intermodalObjectScale])
+
+  async function handleDownloadPNG() {
     if (!mapRef.current) return
-    const canvas = mapRef.current.getCanvas()
-    const url = canvas.toDataURL('image/png')
-    const a = document.createElement('a')
-    a.href = url
+    const map = mapRef.current
+    const mapCanvas = map.getCanvas()
+    const pr = window.devicePixelRatio || 1
+
+    const offscreen = document.createElement('canvas')
+    offscreen.width  = mapCanvas.width
+    offscreen.height = mapCanvas.height
+    const ctx = offscreen.getContext('2d')
+    ctx.drawImage(mapCanvas, 0, 0)
+
+    // Composite pie-chart markers (DOM elements not captured by toDataURL)
+    const state = useAppStore.getState()
+    if (state.activeMode === 'intermodal' && state.intermodalHubs.length) {
+      const visibleHubs = state.intermodalHubs.filter(hub => {
+        if (!state.intermodalHubTypes.has(hub.hubType)) return false
+        if (state.intermodalStatusFilter === 'existing' && hub.status !== 'existing') return false
+        if (state.intermodalStatusFilter === 'proposed' && hub.status !== 'proposed') return false
+        return true
+      })
+      const scale = state.intermodalObjectScale ?? 1.0
+      await Promise.all(visibleHubs.map(hub => new Promise(resolve => {
+        const baseSize = hub.priority === 'priority' ? 40 : 30
+        const size = Math.round(baseSize * scale)
+        const svg  = makePieSVG(hub.hubType, hub.priority, size)
+        const blob = new Blob([svg], { type: 'image/svg+xml' })
+        const blobUrl = URL.createObjectURL(blob)
+        const img = new Image()
+        img.onload = () => {
+          const pt = map.project([hub.lng, hub.lat])
+          ctx.drawImage(img, (pt.x - size / 2) * pr, (pt.y - size / 2) * pr, size * pr, size * pr)
+          URL.revokeObjectURL(blobUrl)
+          resolve()
+        }
+        img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve() }
+        img.src = blobUrl
+      })))
+    }
+
+    const url = offscreen.toDataURL('image/png')
+    const a   = document.createElement('a')
+    a.href     = url
     a.download = 'wolfsburg-map.png'
     a.click()
   }

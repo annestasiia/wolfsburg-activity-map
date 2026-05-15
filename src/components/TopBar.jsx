@@ -9,8 +9,32 @@ const MODES = [
   { id: 'intermodal', label: 'Intermodal Hub' },
 ]
 
+const pillStyle = (active) => ({
+  display:       'flex',
+  alignItems:    'center',
+  gap:            6,
+  padding:       '5px 12px',
+  borderRadius:   980,
+  fontSize:       13,
+  fontWeight:     500,
+  letterSpacing: '-0.01em',
+  cursor:        'pointer',
+  fontFamily:    'inherit',
+  border:        `1px solid ${active ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.08)'}`,
+  background:     active ? '#E8E8ED' : 'var(--bg-secondary)',
+  color:          active ? '#1D1D1F' : 'var(--text-secondary)',
+  transition:    'all 0.18s ease',
+  whiteSpace:    'nowrap',
+})
+
 export default function TopBar() {
-  const { activeMode, setActiveMode, selectedDay, selectedTime, showAllBorders, toggleShowAllBorders } = useAppStore()
+  const {
+    activeMode, setActiveMode,
+    selectedDay, selectedTime,
+    showAllBorders, toggleShowAllBorders,
+    showGrid, toggleShowGrid,
+    resetAll,
+  } = useAppStore()
   const { filteredVenues } = useFilters()
 
   return (
@@ -31,27 +55,26 @@ export default function TopBar() {
         ))}
       </div>
 
-      {/* Global: show all district borders in light gray */}
-      <button
-        onClick={toggleShowAllBorders}
-        style={{
-          display:       'flex',
-          alignItems:    'center',
-          gap:            6,
-          padding:       '5px 12px',
-          borderRadius:   980,
-          fontSize:       13,
-          fontWeight:     500,
-          letterSpacing: '-0.01em',
-          cursor:        'pointer',
-          fontFamily:    'inherit',
-          border:        `1px solid ${showAllBorders ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.08)'}`,
-          background:     showAllBorders ? '#E8E8ED' : 'var(--bg-secondary)',
-          color:          showAllBorders ? '#1D1D1F' : 'var(--text-secondary)',
-          transition:    'all 0.18s ease',
-          whiteSpace:    'nowrap',
-        }}
-      >
+      {/* Reset button */}
+      <button onClick={resetAll} style={pillStyle(false)} title="Reset all filters and overlays">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 6.5A4.5 4.5 0 1 1 8 2.3" />
+          <polyline points="8 1 8 3.5 10.5 3.5" />
+        </svg>
+        Reset
+      </button>
+
+      {/* Grid toggle */}
+      <button onClick={toggleShowGrid} style={pillStyle(showGrid)} title="Toggle 1 km grid overlay">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+          <line x1="4" y1="1" x2="4" y2="12" /><line x1="9" y1="1" x2="9" y2="12" />
+          <line x1="1" y1="4" x2="12" y2="4" /><line x1="1" y1="9" x2="12" y2="9" />
+        </svg>
+        Grid
+      </button>
+
+      {/* Show all district borders */}
+      <button onClick={toggleShowAllBorders} style={pillStyle(showAllBorders)}>
         <span style={{ fontSize: 14, opacity: 0.7 }}>⬡</span>
         Show all borders
       </button>
