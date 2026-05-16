@@ -307,6 +307,48 @@ export const useAppStore = create((set) => ({
   setIntermodalObjectScale: (v) => set({ intermodalObjectScale: Math.max(0.5, Math.min(2.0, v)) }),
   setIntermodalSelectedHub: (hub) => set({ intermodalSelectedHub: hub }),
 
+  // ── Rad Network ──────────────────────────────────────────────────────────
+  radNodes: [], radEdges: [], radGaps: [],
+  radLoading: false, radError: null, radLoadProgress: '',
+  radRawHistoric: null, radRawVillages: null,
+
+  radShowBusStops: false, radShowCarParkings: false, radShowBikeParkings: false,
+  radShowFacilities: false, radShowHistoric: false, radShowParks: false,
+  radHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
+  radShowAutoRoads: false, radShowPedestrianRoads: false,
+  radStatusFilter: 'all', radShowGaps: false,
+  radSelectedNode: null, radSelectedEdge: null,
+
+  setRadNodes:         (v) => set({ radNodes: v }),
+  setRadEdges:         (v) => set({ radEdges: v }),
+  setRadGaps:          (v) => set({ radGaps: v }),
+  setRadLoading:       (v) => set({ radLoading: v }),
+  setRadError:         (v) => set({ radError: v }),
+  setRadLoadProgress:  (v) => set({ radLoadProgress: v }),
+  setRadRawData:       (historic, villages) => set({ radRawHistoric: historic, radRawVillages: villages }),
+  setRadStatusFilter:  (v) => set({ radStatusFilter: v }),
+  setRadSelectedNode:  (v) => set({ radSelectedNode: v }),
+  setRadSelectedEdge:  (v) => set({ radSelectedEdge: v }),
+
+  toggleRadShowBusStops:       () => set(s => ({ radShowBusStops:       !s.radShowBusStops       })),
+  toggleRadShowCarParkings:    () => set(s => ({ radShowCarParkings:    !s.radShowCarParkings    })),
+  toggleRadShowBikeParkings:   () => set(s => ({ radShowBikeParkings:   !s.radShowBikeParkings   })),
+  toggleRadShowFacilities:     () => set(s => ({ radShowFacilities:     !s.radShowFacilities     })),
+  toggleRadShowHistoric:       () => set(s => ({ radShowHistoric:       !s.radShowHistoric       })),
+  toggleRadShowParks:          () => set(s => ({ radShowParks:          !s.radShowParks          })),
+  toggleRadShowAutoRoads:      () => set(s => ({ radShowAutoRoads:      !s.radShowAutoRoads      })),
+  toggleRadShowPedestrianRoads:() => set(s => ({ radShowPedestrianRoads:!s.radShowPedestrianRoads})),
+  toggleRadShowGaps:           () => set(s => ({ radShowGaps:           !s.radShowGaps           })),
+  toggleRadHubType: (type) => set(s => {
+    const next = new Set(s.radHubTypes)
+    next.has(type) ? next.delete(type) : next.add(type)
+    return { radHubTypes: next }
+  }),
+
+  // ── Export trigger (TopBar → MapView) ────────────────────────────────────
+  exportPNGTrigger: 0,
+  incrementExportTrigger: () => set(s => ({ exportPNGTrigger: s.exportPNGTrigger + 1 })),
+
   // ── GSA info modal ────────────────────────────────────────────────────────
   gssInfoModal: null,   // null | 'coverage' | 'social' | 'accessibility' | 'encounter'
   setGSSInfoModal: (id) => set({ gssInfoModal: id }),
@@ -417,6 +459,14 @@ export const useAppStore = create((set) => ({
     intermodalSelectedHub: null,
     intermodalLoadProgress: '',
     intermodalRawResidential: null,
+    radNodes: [], radEdges: [], radGaps: [],
+    radShowBusStops: false, radShowCarParkings: false, radShowBikeParkings: false,
+    radShowFacilities: false, radShowHistoric: false, radShowParks: false,
+    radHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
+    radShowAutoRoads: false, radShowPedestrianRoads: false,
+    radStatusFilter: 'all', radShowGaps: false,
+    radSelectedNode: null, radSelectedEdge: null,
+    radLoadProgress: '',
     greenSocialActiveAnalysis: null,
     showSocialAmenities: false,
     showGreenSocialMap: true,

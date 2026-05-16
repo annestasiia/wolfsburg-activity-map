@@ -13,6 +13,7 @@ import DistrictStatsPopup from './components/DistrictStatsPopup'
 import AnalysisInfoModal from './components/panels/AnalysisInfoModal'
 import IntermodalSidebar, { IntermodalDataPanel } from './components/IntermodalSidebar'
 import IntermodalHubPopup from './components/IntermodalHubPopup'
+import RadSidebar, { RadNodePopup, RadEdgePopup } from './components/RadSidebar'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -68,6 +69,9 @@ export default function App() {
         {activeMode === 'intermodal' && <IntermodalSidebar />}
         {activeMode === 'intermodal' && <IntermodalDataPanel />}
         {activeMode === 'intermodal' && <IntermodalHubPopup />}
+        {activeMode === 'rad' && <RadSidebar />}
+        {activeMode === 'rad' && <RadNodePopup />}
+        {activeMode === 'rad' && <RadEdgePopup />}
         <DistrictStatsPopup />
         <AnalysisInfoModal />
       </main>

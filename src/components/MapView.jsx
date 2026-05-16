@@ -18,6 +18,7 @@ import {
 } from '../utils/greeneryConfig'
 import { scoreToGSAColor } from '../utils/greenSocialAnalysis'
 import { generateCircleGeoJSON } from '../utils/intermodalAlgorithm'
+import { nodesGeoJSON, edgesGeoJSON, gapsGeoJSON } from '../utils/radAlgorithm'
 import { makePieSVG } from './IntermodalSidebar'
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
@@ -342,6 +343,16 @@ export default function MapView({ onVenueClick }) {
     intermodalShowFacilities, intermodalFacilityCategories, intermodalShowParksBase,
     intermodalObjectScale, intermodalRawForests,
     setIntermodalSelectedHub,
+    // Rad Network
+    radNodes, radEdges, radGaps,
+    radShowBusStops, radShowCarParkings, radShowBikeParkings,
+    radShowFacilities, radShowHistoric, radShowParks,
+    radHubTypes, radShowAutoRoads, radShowPedestrianRoads,
+    radStatusFilter, radShowGaps,
+    setRadSelectedNode, setRadSelectedEdge,
+    radRawHistoric,
+    // Export trigger
+    exportPNGTrigger,
   } = useAppStore()
   const { filteredVenues } = useFilters()
 
@@ -363,7 +374,6 @@ export default function MapView({ onVenueClick }) {
     })
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right')
-    map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left')
 
     map.on('load', () => {
       map.addSource('venues', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -1852,6 +1862,141 @@ export default function MapView({ onVenueClick }) {
     }
   }, [mapReady, intermodalObjectScale])
 
+  // ── Rad Network — initialize layers on map load ───────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const sources = ['rad-nodes', 'rad-edges', 'rad-edges-dashed', 'rad-gaps']
+    const empty = { type: 'FeatureCollection', features: [] }
+    for (const id of sources) {
+      if (!map.getSource(id)) map.addSource(id, { type: 'geojson', data: empty })
+    }
+
+    if (!map.getLayer('rad-edges-solid')) {
+      map.addLayer({ id: 'rad-edges-solid', type: 'line', source: 'rad-edges',
+        filter: ['!', ['get', 'needs_infrastructure']],
+        paint: {
+          'line-color': ['match', ['get', 'route_type'], 'A', '#064E3B', 'B', '#15803D', 'C', '#4ADE80', '#86EFAC'],
+          'line-width': ['match', ['get', 'route_type'], 'A', 4, 'B', 3, 2],
+          'line-opacity': 0.85,
+        },
+        layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+      })
+    }
+    if (!map.getLayer('rad-edges-dashed')) {
+      map.addLayer({ id: 'rad-edges-dashed', type: 'line', source: 'rad-edges',
+        filter: ['get', 'needs_infrastructure'],
+        paint: {
+          'line-color': ['match', ['get', 'route_type'], 'A', '#064E3B', 'B', '#15803D', 'C', '#4ADE80', '#86EFAC'],
+          'line-width': ['match', ['get', 'route_type'], 'A', 4, 'B', 3, 2],
+          'line-opacity': 0.7, 'line-dasharray': [4, 3],
+        },
+        layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+      })
+    }
+    if (!map.getLayer('rad-gaps-line')) {
+      map.addLayer({ id: 'rad-gaps-line', type: 'line', source: 'rad-gaps',
+        paint: { 'line-color': '#FF453A', 'line-width': 2, 'line-opacity': 0.8, 'line-dasharray': [4, 3] },
+        layout: { visibility: 'none', 'line-cap': 'round' },
+      })
+    }
+    if (!map.getLayer('rad-nodes-circle')) {
+      map.addLayer({ id: 'rad-nodes-circle', type: 'circle', source: 'rad-nodes',
+        paint: {
+          'circle-radius': ['match', ['get', 'node_type'],
+            'hub', 10, 'city_center', 12, 'village_center', 9,
+            'facility', 7, 'historic', 7, 'bike_parking', 5, 'bus_stop', 5, 6],
+          'circle-color': ['match', ['get', 'node_type'],
+            'hub', '#1D1D1F', 'city_center', '#0071E3', 'village_center', '#5856D6',
+            'facility', '#FF9F0A', 'historic', '#BF5AF2',
+            'bike_parking', '#32ADE6', 'bus_stop', '#FF453A', '#6B7280'],
+          'circle-stroke-width': 2, 'circle-stroke-color': '#fff', 'circle-opacity': 0.9,
+        },
+        layout: { visibility: 'none' },
+      })
+    }
+    if (!map.getLayer('rad-historic-circle')) {
+      map.addSource('rad-historic', { type: 'geojson', data: empty })
+      map.addLayer({ id: 'rad-historic-circle', type: 'circle', source: 'rad-historic',
+        paint: { 'circle-radius': 6, 'circle-color': '#BF5AF2', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
+        layout: { visibility: 'none' },
+      })
+    }
+
+    // Click: rad nodes
+    map.on('click', 'rad-nodes-circle', e => {
+      if (!e.features?.length) return
+      const id = e.features[0].properties.id
+      const node = useAppStore.getState().radNodes.find(n => n.id === id)
+      if (node) { useAppStore.getState().setRadSelectedNode(node); useAppStore.getState().setRadSelectedEdge(null) }
+    })
+    // Click: rad edges
+    for (const layerId of ['rad-edges-solid', 'rad-edges-dashed']) {
+      map.on('click', layerId, e => {
+        if (!e.features?.length) return
+        const edgeId = e.features[0].properties.id
+        const edge = useAppStore.getState().radEdges.find(ed => ed.id === edgeId)
+        if (edge) { useAppStore.getState().setRadSelectedEdge(edge); useAppStore.getState().setRadSelectedNode(null) }
+      })
+    }
+    map.on('mouseenter', 'rad-nodes-circle', () => { map.getCanvas().style.cursor = 'pointer' })
+    map.on('mouseleave', 'rad-nodes-circle', () => { map.getCanvas().style.cursor = '' })
+    map.on('mouseenter', 'rad-edges-solid',  () => { map.getCanvas().style.cursor = 'pointer' })
+    map.on('mouseleave', 'rad-edges-solid',  () => { map.getCanvas().style.cursor = '' })
+  }, [mapReady])
+
+  // ── Rad Network — update data and visibility ──────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const isRad = activeMode === 'rad'
+
+    // Filter edges by status
+    const state = useAppStore.getState()
+    const filter = state.radStatusFilter
+    const visEdges = isRad ? (state.radEdges || []).filter(e => {
+      if (filter === 'existing') return e.has_cycleway && !e.needs_infrastructure
+      if (filter === 'proposed') return e.needs_infrastructure
+      return true
+    }) : []
+    const visGaps = isRad && state.radShowGaps ? (state.radGaps || []) : []
+    const visNodes = isRad ? (state.radNodes || []) : []
+
+    if (map.getSource('rad-edges'))   map.getSource('rad-edges').setData(edgesGeoJSON(visEdges))
+    if (map.getSource('rad-gaps'))    map.getSource('rad-gaps').setData(gapsGeoJSON(visGaps))
+    if (map.getSource('rad-nodes'))   map.getSource('rad-nodes').setData(nodesGeoJSON(visNodes))
+
+    const vis = isRad && visNodes.length > 0 ? 'visible' : 'none'
+    const edgeVis = isRad && visEdges.length > 0 ? 'visible' : 'none'
+    const gapVis  = isRad && visGaps.length > 0  ? 'visible' : 'none'
+    if (map.getLayer('rad-nodes-circle'))  map.setLayoutProperty('rad-nodes-circle',  'visibility', vis)
+    if (map.getLayer('rad-edges-solid'))   map.setLayoutProperty('rad-edges-solid',   'visibility', edgeVis)
+    if (map.getLayer('rad-edges-dashed'))  map.setLayoutProperty('rad-edges-dashed',  'visibility', edgeVis)
+    if (map.getLayer('rad-gaps-line'))     map.setLayoutProperty('rad-gaps-line',      'visibility', gapVis)
+  }, [mapReady, activeMode, radNodes, radEdges, radGaps, radStatusFilter, radShowGaps])
+
+  // ── Rad Network — historic overlay ───────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const isActive = activeMode === 'rad' && radShowHistoric
+    const features = isActive ? (radRawHistoric || []).map(el => {
+      const lat = el.lat ?? el.center?.lat
+      const lng = el.lon ?? el.center?.lon
+      if (!lat || !lng) return null
+      return { type: 'Feature', geometry: { type: 'Point', coordinates: [lng, lat] },
+        properties: { name: el.tags?.name || el.tags?.historic || 'Historic' } }
+    }).filter(Boolean) : []
+    if (map.getSource('rad-historic')) map.getSource('rad-historic').setData({ type: 'FeatureCollection', features })
+    if (map.getLayer('rad-historic-circle'))
+      map.setLayoutProperty('rad-historic-circle', 'visibility', isActive ? 'visible' : 'none')
+  }, [mapReady, activeMode, radShowHistoric, radRawHistoric])
+
+  // ── Export trigger from TopBar ────────────────────────────────────────────
+  useEffect(() => {
+    if (exportPNGTrigger > 0) handleDownloadPNG()
+  }, [exportPNGTrigger])  // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleDownloadPNG() {
     if (!mapRef.current) return
     const map = mapRef.current
@@ -1892,7 +2037,7 @@ export default function MapView({ onVenueClick }) {
       })))
     }
 
-    // Draw scale bar (bottom-left, replaces DOM ScaleControl which isn't captured)
+    // Draw scale bar (bottom-center)
     const center = map.getCenter()
     const zoom   = map.getZoom()
     const mPerCssPx = (156543.03392 * Math.cos(center.lat * Math.PI / 180)) / Math.pow(2, zoom)
@@ -1901,7 +2046,8 @@ export default function MapView({ onVenueClick }) {
     const targetM = 90 * mPerCssPx
     const barM = niceDists.find(d => d >= targetM * 0.5) ?? 1000
     const barW = barM / mPerCanvasPx
-    const bx = 14 * pr, by = offscreen.height - 38 * pr, bh = 3 * pr, fs = 10 * pr
+    const bx = (offscreen.width - barW) / 2
+    const by = offscreen.height - 38 * pr, bh = 3 * pr, fs = 10 * pr
     ctx.fillStyle = 'rgba(255,255,255,0.88)'
     ctx.fillRect(bx - 5 * pr, by - fs - 8 * pr, barW + 10 * pr, fs + bh + 14 * pr)
     ctx.fillStyle = '#1D1D1F'
@@ -1922,40 +2068,45 @@ export default function MapView({ onVenueClick }) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={containerRef} className="w-full h-full" />
-      <button
-        onClick={handleDownloadPNG}
-        title="Download map as PNG"
-        style={{
-          position: 'absolute',
-          bottom: 32,
-          right: 12,
-          zIndex: 10,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '7px 13px',
-          borderRadius: 980,
-          fontSize: 13,
-          fontWeight: 500,
-          fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
-          letterSpacing: '-0.01em',
-          cursor: 'pointer',
-          border: '1px solid rgba(0,0,0,0.12)',
-          background: 'rgba(255,255,255,0.90)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          color: '#1D1D1F',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-          transition: 'background 0.15s ease',
-        }}
-        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,1)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.90)'}
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M7 1v8M4 6l3 3 3-3M1 10v1a2 2 0 002 2h8a2 2 0 002-2v-1" />
-        </svg>
-        Export PNG
-      </button>
+      {mapReady && <ScaleBarOverlay mapRef={mapRef} />}
+    </div>
+  )
+}
+
+// ── Custom scale bar overlay (bottom-center, also drawn in export) ────────────
+function ScaleBarOverlay({ mapRef }) {
+  const [bar, setBar] = React.useState({ px: 80, label: '1 km' })
+
+  React.useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const update = () => {
+      const c = map.getCenter()
+      const mPerPx = (156543.03392 * Math.cos(c.lat * Math.PI / 180)) / Math.pow(2, map.getZoom())
+      const nice = [25, 50, 100, 200, 500, 1000, 2000, 5000, 10000].find(d => d >= mPerPx * 45) ?? 1000
+      setBar({ px: Math.round(nice / mPerPx), label: nice >= 1000 ? `${nice / 1000} km` : `${nice} m` })
+    }
+    map.on('zoom', update)
+    map.on('move', update)
+    update()
+    return () => { map.off('zoom', update); map.off('move', update) }
+  }, [mapRef])
+
+  return (
+    <div style={{
+      position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 10, pointerEvents: 'none',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+      fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: '#1D1D1F',
+        textShadow: '0 0 3px white, 0 0 6px white, 0 0 3px white' }}>
+        {bar.label}
+      </div>
+      <div style={{
+        width: bar.px, height: 4, background: '#1D1D1F', borderRadius: 2,
+        boxShadow: '0 0 0 1.5px white, 0 2px 4px rgba(0,0,0,0.25)',
+      }} />
     </div>
   )
 }

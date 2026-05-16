@@ -7,6 +7,7 @@ const MODES = [
   { id: 'facilities', label: 'Facilities' },
   { id: 'greenery',   label: 'Greenery'   },
   { id: 'intermodal', label: 'Intermodal Hub' },
+  { id: 'rad',        label: 'Rad Network' },
 ]
 
 const pillStyle = (active) => ({
@@ -34,6 +35,7 @@ export default function TopBar() {
     showAllBorders, toggleShowAllBorders,
     showGrid, toggleShowGrid,
     resetAll,
+    incrementExportTrigger,
   } = useAppStore()
   const { filteredVenues } = useFilters()
 
@@ -77,6 +79,14 @@ export default function TopBar() {
       <button onClick={toggleShowAllBorders} style={pillStyle(showAllBorders)}>
         <span style={{ fontSize: 14, opacity: 0.7 }}>⬡</span>
         Show all borders
+      </button>
+
+      {/* Export PNG */}
+      <button onClick={incrementExportTrigger} style={pillStyle(false)} title="Download map as PNG">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M7 1v8M4 6l3 3 3-3M1 10v1a2 2 0 002 2h8a2 2 0 002-2v-1" />
+        </svg>
+        Export PNG
       </button>
 
       <div className="top-bar-meta">
