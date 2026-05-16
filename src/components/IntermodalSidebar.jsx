@@ -17,6 +17,13 @@ const CAR_PARKINGS_Q = `[out:json][timeout:30];(
 
 const BIKE_PARKINGS_Q = `[out:json][timeout:30];node["amenity"="bicycle_parking"](${BBOX});out body;`
 
+const FORESTS_Q = `[out:json][timeout:60];(
+  way["landuse"="forest"](${BBOX});
+  way["natural"="wood"](${BBOX});
+  relation["landuse"="forest"](${BBOX});
+  relation["natural"="wood"](${BBOX});
+);out body;>;out skel qt;`
+
 const OSM_FACILITIES_Q = `[out:json][timeout:90];(
   node["amenity"~"theatre|cinema|museum|arts_centre|library|community_centre|social_centre|marketplace"](${BBOX});
   way["amenity"~"theatre|cinema|museum|arts_centre|library|community_centre|social_centre"](${BBOX});
@@ -113,6 +120,26 @@ function osmToGeoJSON(elements, type) {
   return { type: 'FeatureCollection', features }
 }
 
+function forestOsmToGeoJSON(data) {
+  const nodeMap = {}
+  ;(data.elements || []).forEach(el => {
+    if (el.type === 'node') nodeMap[el.id] = [el.lon, el.lat]
+  })
+  const features = []
+  ;(data.elements || []).forEach(el => {
+    if (el.type === 'way') {
+      const coords = (el.nodes || []).map(id => nodeMap[id]).filter(Boolean)
+      if (coords.length >= 4) {
+        features.push({ type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [coords] },
+          properties: { name: el.tags?.name || '', _type: el.tags?.landuse || el.tags?.natural || 'forest' },
+        })
+      }
+    }
+  })
+  return { type: 'FeatureCollection', features }
+}
+
 async function overpassFetch(query) {
   const res = await fetch(OVERPASS, {
     method: 'POST',
@@ -184,7 +211,8 @@ export default function IntermodalSidebar() {
   const {
     venues, parks,
     intermodalLoading, intermodalError, intermodalHubs,
-    intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings, intermodalRawOsmFacilities,
+    intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
+    intermodalRawOsmFacilities, intermodalRawForests,
     intermodalShowBusStops, intermodalShowCarParkings, intermodalShowBikeParkings,
     intermodalShowFacilities, intermodalFacilityCategories, intermodalShowParksBase,
     intermodalHubTypes, intermodalStatusFilter,
@@ -230,7 +258,11 @@ export default function IntermodalSidebar() {
       const facRaw  = await overpassFetch(OSM_FACILITIES_Q)
       const osmFacs = (facRaw.elements || []).map(osmElementToVenue).filter(Boolean)
 
-      setIntermodalRawData(busGJ, carGJ, bikeGJ, osmFacs)
+      setLoadProgress('Forests & woods…')
+      const forestRaw = await overpassFetch(FORESTS_Q)
+      const forestsGJ = forestOsmToGeoJSON(forestRaw)
+
+      setIntermodalRawData(busGJ, carGJ, bikeGJ, osmFacs, forestsGJ)
       setLoadProgress('')
     } catch (err) {
       console.error('Intermodal load error:', err)
@@ -249,10 +281,12 @@ export default function IntermodalSidebar() {
     try {
       setLoadProgress('Running algorithm…')
       const allVenues = [...venues, ...(intermodalRawOsmFacilities || [])]
-      const parksGJ   = parks || { type: 'FeatureCollection', features: [] }
+      const parksFeatures = (parks?.features || [])
+      const forestFeatures = (intermodalRawForests?.features || [])
+      const greenGJ = { type: 'FeatureCollection', features: [...parksFeatures, ...forestFeatures] }
       const hubs = runIntermodalAlgorithm(
         allVenues, intermodalRawBusStops, intermodalRawCarParkings,
-        intermodalRawBikeParkings, parksGJ
+        intermodalRawBikeParkings, greenGJ
       )
       setIntermodalHubs(hubs)
       setLoadProgress('')
@@ -264,7 +298,7 @@ export default function IntermodalSidebar() {
       setIntermodalLoading(false)
     }
   }, [venues, parks, intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
-      intermodalRawOsmFacilities, setIntermodalLoading, setIntermodalError, setIntermodalHubs])
+      intermodalRawOsmFacilities, intermodalRawForests, setIntermodalLoading, setIntermodalError, setIntermodalHubs])
 
   const hubCounts = {
     bus_bike:      intermodalHubs.filter(h => h.hubType === 'bus_bike').length,

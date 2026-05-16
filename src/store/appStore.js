@@ -236,6 +236,7 @@ export const useAppStore = create((set) => ({
   intermodalRawCarParkings: null,
   intermodalRawBikeParkings: null,
   intermodalRawOsmFacilities: null,
+  intermodalRawForests: null,
 
   // base layer toggles (data layers section)
   intermodalShowBusStops: false,
@@ -266,11 +267,12 @@ export const useAppStore = create((set) => ({
   setIntermodalLoading: (val) => set({ intermodalLoading: val }),
   setIntermodalError:   (msg) => set({ intermodalError: msg }),
   setIntermodalHubs:    (hubs) => set({ intermodalHubs: hubs }),
-  setIntermodalRawData: (busStops, carParkings, bikeParkings, osmFacilities) => set({
+  setIntermodalRawData: (busStops, carParkings, bikeParkings, osmFacilities, forests) => set({
     intermodalRawBusStops: busStops,
     intermodalRawCarParkings: carParkings,
     intermodalRawBikeParkings: bikeParkings,
     intermodalRawOsmFacilities: osmFacilities,
+    intermodalRawForests: forests ?? null,
   }),
 
   toggleIntermodalShowBusStops:     () => set(s => ({ intermodalShowBusStops:     !s.intermodalShowBusStops     })),

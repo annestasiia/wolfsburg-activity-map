@@ -338,7 +338,7 @@ export default function MapView({ onVenueClick }) {
     intermodalShowFacilitiesRadius, intermodalShowGreeneryRadius,
     intermodalShowFacilitiesPoints, intermodalShowParksOverlay,
     intermodalShowFacilities, intermodalFacilityCategories, intermodalShowParksBase,
-    intermodalObjectScale,
+    intermodalObjectScale, intermodalRawForests,
     setIntermodalSelectedHub,
   } = useAppStore()
   const { filteredVenues } = useFilters()
@@ -1734,13 +1734,17 @@ export default function MapView({ onVenueClick }) {
     // Parks overlay (reuse parks data)
   }, [mapReady, activeMode, intermodalHubs, intermodalShowFacilitiesRadius, intermodalShowGreeneryRadius])
 
-  // ── Intermodal — parks overlay ────────────────────────────────────────────────
+  // ── Intermodal — parks overlay (parks + forests, Radius Layers section) ──────
   useEffect(() => {
     if (!mapReady || !mapRef.current || !parks) return
     const map = mapRef.current
     const vis = activeMode === 'intermodal' && intermodalShowGreeneryRadius && intermodalShowParksOverlay ? 'visible' : 'none'
+    const combinedGJ = {
+      type: 'FeatureCollection',
+      features: [...(parks.features || []), ...(intermodalRawForests?.features || [])],
+    }
     if (!map.getSource('imd-parks')) {
-      map.addSource('imd-parks', { type: 'geojson', data: parks })
+      map.addSource('imd-parks', { type: 'geojson', data: combinedGJ })
       map.addLayer({ id: 'imd-parks-fill', type: 'fill', source: 'imd-parks',
         layout: { visibility: 'none' },
         paint: { 'fill-color': '#22C55E', 'fill-opacity': 0.18 },
@@ -1749,18 +1753,24 @@ export default function MapView({ onVenueClick }) {
         layout: { visibility: 'none' },
         paint: { 'line-color': '#16A34A', 'line-width': 1, 'line-opacity': 0.60 },
       }, 'venue-circles')
+    } else {
+      map.getSource('imd-parks').setData(combinedGJ)
     }
     if (map.getLayer('imd-parks-fill')) map.setLayoutProperty('imd-parks-fill', 'visibility', vis)
     if (map.getLayer('imd-parks-line')) map.setLayoutProperty('imd-parks-line', 'visibility', vis)
-  }, [mapReady, activeMode, parks, intermodalShowGreeneryRadius, intermodalShowParksOverlay])
+  }, [mapReady, activeMode, parks, intermodalShowGreeneryRadius, intermodalShowParksOverlay, intermodalRawForests])
 
-  // ── Intermodal — parks base layer (Data Layers section) ───────────────────
+  // ── Intermodal — parks base layer (parks + forests, Data Layers section) ────
   useEffect(() => {
     if (!mapReady || !mapRef.current || !parks) return
     const map = mapRef.current
     const vis = activeMode === 'intermodal' && intermodalShowParksBase ? 'visible' : 'none'
+    const combinedGJ = {
+      type: 'FeatureCollection',
+      features: [...(parks.features || []), ...(intermodalRawForests?.features || [])],
+    }
     if (!map.getSource('imd-parks-base')) {
-      map.addSource('imd-parks-base', { type: 'geojson', data: parks })
+      map.addSource('imd-parks-base', { type: 'geojson', data: combinedGJ })
       map.addLayer({ id: 'imd-parks-base-fill', type: 'fill', source: 'imd-parks-base',
         layout: { visibility: 'none' },
         paint: { 'fill-color': '#22C55E', 'fill-opacity': 0.22 },
@@ -1769,10 +1779,12 @@ export default function MapView({ onVenueClick }) {
         layout: { visibility: 'none' },
         paint: { 'line-color': '#16A34A', 'line-width': 1, 'line-opacity': 0.65 },
       }, 'venue-circles')
+    } else {
+      map.getSource('imd-parks-base').setData(combinedGJ)
     }
     if (map.getLayer('imd-parks-base-fill')) map.setLayoutProperty('imd-parks-base-fill', 'visibility', vis)
     if (map.getLayer('imd-parks-base-line')) map.setLayoutProperty('imd-parks-base-line', 'visibility', vis)
-  }, [mapReady, activeMode, parks, intermodalShowParksBase])
+  }, [mapReady, activeMode, parks, intermodalShowParksBase, intermodalRawForests])
 
   // ── Intermodal — facilities base layer (category-colored points) ───────────
   const CAT_MAP = { Culture: 'culture', Commercial: 'commercial', Schools: 'educational', Leisure: 'leisure', Healthcare: 'healthcare' }
