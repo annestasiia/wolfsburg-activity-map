@@ -30,17 +30,17 @@ const OSM_FACILITIES_Q = `[out:json][timeout:90];(
   node["amenity"~"fuel|bank|post_office"](${BBOX});
 );out center;`
 
-const FORESTS_Q = `[out:json][timeout:60];(
+const FORESTS_Q = `[out:json][timeout:90];(
   way["landuse"="forest"](${BBOX});
   way["natural"="wood"](${BBOX});
   relation["landuse"="forest"](${BBOX});
   relation["natural"="wood"](${BBOX});
-);out body;>;out skel qt;`
+);out geom;`
 
-const RESIDENTIAL_Q = `[out:json][timeout:60];(
+const RESIDENTIAL_Q = `[out:json][timeout:90];(
   way["landuse"="residential"](${BBOX});
   relation["landuse"="residential"](${BBOX});
-);out body;>;out skel qt;`
+);out geom;`
 
 // ── Footfall + category maps ──────────────────────────────────────────────────
 
@@ -125,22 +125,29 @@ function osmToGeoJSON(elements, type) {
   return { type: 'FeatureCollection', features }
 }
 
+// Parses Overpass `out geom;` response — geometry is embedded inline in each element
 function osmPolygonToGeoJSON(data) {
-  const nodeMap = {}
-  ;(data.elements || []).forEach(el => {
-    if (el.type === 'node') nodeMap[el.id] = [el.lon, el.lat]
-  })
   const features = []
-  ;(data.elements || []).forEach(el => {
-    if (el.type === 'way') {
-      const coords = (el.nodes || []).map(id => nodeMap[id]).filter(Boolean)
-      if (coords.length >= 4)
-        features.push({ type: 'Feature',
-          geometry: { type: 'Polygon', coordinates: [coords] },
-          properties: { name: el.tags?.name || '' },
-        })
+  for (const el of data.elements || []) {
+    if (el.type === 'way' && Array.isArray(el.geometry) && el.geometry.length >= 4) {
+      const coords = el.geometry.map(p => [p.lon, p.lat])
+      features.push({ type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [coords] },
+        properties: { name: el.tags?.name || '' },
+      })
+    } else if (el.type === 'relation' && Array.isArray(el.members)) {
+      // Use outer member ways as polygon rings
+      for (const m of el.members) {
+        if (m.type === 'way' && m.role === 'outer' && Array.isArray(m.geometry) && m.geometry.length >= 4) {
+          const coords = m.geometry.map(p => [p.lon, p.lat])
+          features.push({ type: 'Feature',
+            geometry: { type: 'Polygon', coordinates: [coords] },
+            properties: { name: el.tags?.name || '' },
+          })
+        }
+      }
     }
-  })
+  }
   return { type: 'FeatureCollection', features }
 }
 
@@ -237,12 +244,16 @@ export function IntermodalDataPanel() {
   const handleLoadData = useCallback(async () => {
     setIntermodalLoading(true)
     setIntermodalError(null)
-    setIntermodalLoadProgress('Loading data…')
+    setIntermodalLoadProgress('Loading transport data…')
     try {
-      const [busRaw, carRaw, bikeRaw, facRaw, forestRaw, residentialRaw] = await Promise.all([
+      // 2 batches of 3 to avoid Overpass rate limiting
+      const [busRaw, carRaw, bikeRaw] = await Promise.all([
         overpassFetch(BUS_STOPS_Q),
         overpassFetch(CAR_PARKINGS_Q),
         overpassFetch(BIKE_PARKINGS_Q),
+      ])
+      setIntermodalLoadProgress('Loading facilities & land use…')
+      const [facRaw, forestRaw, residentialRaw] = await Promise.all([
         overpassFetch(OSM_FACILITIES_Q),
         overpassFetch(FORESTS_Q),
         overpassFetch(RESIDENTIAL_Q),
