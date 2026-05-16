@@ -282,6 +282,8 @@ function getTransitActivity(selectedDay, selectedTime) {
   return 0.45
 }
 
+const MAP_PIXEL_RATIO = 3  // 3× resolution for export quality
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function MapView({ onVenueClick }) {
@@ -357,10 +359,11 @@ export default function MapView({ onVenueClick }) {
       zoom: WOLFSBURG.zoom,
       attributionControl: { compact: true },
       preserveDrawingBuffer: true,
+      pixelRatio: MAP_PIXEL_RATIO,
     })
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right')
-    map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-right')
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left')
 
     map.on('load', () => {
       map.addSource('venues', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -445,7 +448,7 @@ export default function MapView({ onVenueClick }) {
       map.addSource('grid', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'grid-line', type: 'line', source: 'grid',
         layout: { visibility: 'none' },
-        paint: { 'line-color': '#AEAEB2', 'line-width': 0.5, 'line-opacity': 0.45, 'line-dasharray': [4, 4] },
+        paint: { 'line-color': '#707070', 'line-width': 1.0, 'line-opacity': 0.65, 'line-dasharray': [4, 4] },
       })
 
       setMapReady(true)
@@ -1788,7 +1791,7 @@ export default function MapView({ onVenueClick }) {
 
   // ── Intermodal — facilities base layer (category-colored points) ───────────
   const CAT_MAP = { Culture: 'culture', Commercial: 'commercial', Schools: 'educational', Leisure: 'leisure', Healthcare: 'healthcare' }
-  const CAT_COLOR = { culture: '#534AB7', commercial: '#BA7517', educational: '#185FA5', leisure: '#1D9E75', healthcare: '#D62828' }
+  const CAT_COLOR = { culture: '#534AB7', commercial: '#BA7517', educational: '#185FA5', leisure: '#1D9E75', healthcare: '#D62828', other: '#6B7280' }
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -1798,7 +1801,7 @@ export default function MapView({ onVenueClick }) {
     const allFeatures = []
     if (isActive) {
       for (const v of filteredVenues) {
-        const cat = CAT_MAP[v.category] || null
+        const cat = CAT_MAP[v.category] || 'other'
         if (!cat || !intermodalFacilityCategories.has(cat)) continue
         allFeatures.push({ type: 'Feature',
           geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
@@ -1807,7 +1810,7 @@ export default function MapView({ onVenueClick }) {
       }
       const osmFacs = useAppStore.getState().intermodalRawOsmFacilities || []
       for (const f of osmFacs) {
-        const cat = f.category || null
+        const cat = f._category || f.category?.toLowerCase() || null
         if (!cat || !intermodalFacilityCategories.has(cat)) continue
         allFeatures.push({ type: 'Feature',
           geometry: { type: 'Point', coordinates: [f.lng, f.lat] },
@@ -1853,7 +1856,7 @@ export default function MapView({ onVenueClick }) {
     if (!mapRef.current) return
     const map = mapRef.current
     const mapCanvas = map.getCanvas()
-    const pr = window.devicePixelRatio || 1
+    const pr = MAP_PIXEL_RATIO
 
     const offscreen = document.createElement('canvas')
     offscreen.width  = mapCanvas.width
@@ -1888,6 +1891,26 @@ export default function MapView({ onVenueClick }) {
         img.src = blobUrl
       })))
     }
+
+    // Draw scale bar (bottom-left, replaces DOM ScaleControl which isn't captured)
+    const center = map.getCenter()
+    const zoom   = map.getZoom()
+    const mPerCssPx = (156543.03392 * Math.cos(center.lat * Math.PI / 180)) / Math.pow(2, zoom)
+    const mPerCanvasPx = mPerCssPx / pr
+    const niceDists = [25, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+    const targetM = 90 * mPerCssPx
+    const barM = niceDists.find(d => d >= targetM * 0.5) ?? 1000
+    const barW = barM / mPerCanvasPx
+    const bx = 14 * pr, by = offscreen.height - 38 * pr, bh = 3 * pr, fs = 10 * pr
+    ctx.fillStyle = 'rgba(255,255,255,0.88)'
+    ctx.fillRect(bx - 5 * pr, by - fs - 8 * pr, barW + 10 * pr, fs + bh + 14 * pr)
+    ctx.fillStyle = '#1D1D1F'
+    ctx.fillRect(bx, by, barW, bh)
+    ctx.fillRect(bx, by - 3 * pr, 1.5 * pr, bh + 3 * pr)
+    ctx.fillRect(bx + barW - 1.5 * pr, by - 3 * pr, 1.5 * pr, bh + 3 * pr)
+    ctx.font = `bold ${fs}px Helvetica, Arial, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.fillText(barM >= 1000 ? `${barM / 1000} km` : `${barM} m`, bx + barW / 2, by - 7 * pr)
 
     const url = offscreen.toDataURL('image/png')
     const a   = document.createElement('a')

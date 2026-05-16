@@ -41,7 +41,7 @@ export default function IntermodalHubPopup() {
     <div style={{
       position: 'absolute',
       top: 16,
-      right: 16,
+      right: 246,
       zIndex: 30,
       width: 320,
       background: 'rgba(255,255,255,0.96)',

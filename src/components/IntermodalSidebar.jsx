@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useAppStore } from '../store/appStore'
 import { runIntermodalAlgorithm, INTENSITY_FOOTFALL } from '../utils/intermodalAlgorithm'
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const OVERPASS = 'https://overpass-api.de/api/interpreter'
-// Expanded BBOX covering all Wolfsburg administrative districts
 const BBOX = '52.32,10.57,52.60,10.98'
 
 const BUS_STOPS_Q = `[out:json][timeout:30];node["highway"="bus_stop"](${BBOX});out body;`
@@ -16,13 +15,6 @@ const CAR_PARKINGS_Q = `[out:json][timeout:30];(
 );out center;`
 
 const BIKE_PARKINGS_Q = `[out:json][timeout:30];node["amenity"="bicycle_parking"](${BBOX});out body;`
-
-const FORESTS_Q = `[out:json][timeout:60];(
-  way["landuse"="forest"](${BBOX});
-  way["natural"="wood"](${BBOX});
-  relation["landuse"="forest"](${BBOX});
-  relation["natural"="wood"](${BBOX});
-);out body;>;out skel qt;`
 
 const OSM_FACILITIES_Q = `[out:json][timeout:90];(
   node["amenity"~"theatre|cinema|museum|arts_centre|library|community_centre|social_centre|marketplace"](${BBOX});
@@ -38,7 +30,20 @@ const OSM_FACILITIES_Q = `[out:json][timeout:90];(
   node["amenity"~"fuel|bank|post_office"](${BBOX});
 );out center;`
 
-// Footfall estimates by OSM amenity/shop/leisure type
+const FORESTS_Q = `[out:json][timeout:60];(
+  way["landuse"="forest"](${BBOX});
+  way["natural"="wood"](${BBOX});
+  relation["landuse"="forest"](${BBOX});
+  relation["natural"="wood"](${BBOX});
+);out body;>;out skel qt;`
+
+const RESIDENTIAL_Q = `[out:json][timeout:60];(
+  way["landuse"="residential"](${BBOX});
+  relation["landuse"="residential"](${BBOX});
+);out body;>;out skel qt;`
+
+// ── Footfall + category maps ──────────────────────────────────────────────────
+
 const OSM_FOOTFALL = {
   hospital: 800, clinic: 300, doctors: 200, dentist: 120, pharmacy: 180, health_post: 100,
   school: 400, university: 600, college: 400, kindergarten: 150,
@@ -64,13 +69,13 @@ const OSM_HOURS = {
   fuel: 'Mo–Su 00:00–24:00', bank: 'Mo–Fr 09:00–17:00', post_office: 'Mo–Fr 08:00–18:00',
 }
 
-const CATEGORY_COLORS = {
+export const CATEGORY_COLORS = {
   culture: '#534AB7', commercial: '#BA7517', educational: '#185FA5',
-  leisure: '#1D9E75', healthcare: '#D62828',
+  leisure: '#1D9E75', healthcare: '#D62828', other: '#6B7280',
 }
-const CATEGORY_LABELS = {
+export const CATEGORY_LABELS = {
   culture: 'Culture', commercial: 'Commercial', educational: 'Educational',
-  leisure: 'Leisure', healthcare: 'Healthcare',
+  leisure: 'Leisure', healthcare: 'Healthcare', other: 'Other',
 }
 
 function osmAmenityToCategory(amenity, shop, leisure) {
@@ -78,8 +83,8 @@ function osmAmenityToCategory(amenity, shop, leisure) {
   if (['school','university','college','kindergarten'].includes(amenity)) return 'educational'
   if (['theatre','cinema','museum','arts_centre','library','community_centre','social_centre'].includes(amenity)) return 'culture'
   if (shop || ['fuel','bank','post_office','marketplace'].includes(amenity)) return 'commercial'
-  if (leisure || ['sports_centre','fitness_centre','swimming_pool','stadium','ice_rink'].includes(amenity)) return 'leisure'
-  return 'commercial'
+  if (leisure) return 'leisure'
+  return 'other'
 }
 
 function osmElementToVenue(el) {
@@ -91,15 +96,15 @@ function osmElementToVenue(el) {
   const shop    = props.shop || ''
   const leisure = props.leisure || ''
   const key     = amenity || leisure || shop
-  const footfall = OSM_FOOTFALL[key] ?? 100
-  const hours    = OSM_HOURS[key] ?? null
-  const category = osmAmenityToCategory(amenity, shop, leisure)
+  const footfall  = OSM_FOOTFALL[key] ?? 100
+  const hours     = OSM_HOURS[key] ?? null
+  const _category = osmAmenityToCategory(amenity, shop, leisure)
   return {
     id: `osm-${el.id}`,
     name: props.name || key || 'Facility',
     lat, lng,
-    category: category.charAt(0).toUpperCase() + category.slice(1),
-    _category: category,
+    category: _category.charAt(0).toUpperCase() + _category.slice(1),
+    _category,
     activityIntensity: footfall >= 500 ? 'High' : footfall >= 200 ? 'Medium' : 'Low',
     openingHours: hours || '—',
     _footfall: footfall,
@@ -120,7 +125,7 @@ function osmToGeoJSON(elements, type) {
   return { type: 'FeatureCollection', features }
 }
 
-function forestOsmToGeoJSON(data) {
+function osmPolygonToGeoJSON(data) {
   const nodeMap = {}
   ;(data.elements || []).forEach(el => {
     if (el.type === 'node') nodeMap[el.id] = [el.lon, el.lat]
@@ -129,12 +134,11 @@ function forestOsmToGeoJSON(data) {
   ;(data.elements || []).forEach(el => {
     if (el.type === 'way') {
       const coords = (el.nodes || []).map(id => nodeMap[id]).filter(Boolean)
-      if (coords.length >= 4) {
+      if (coords.length >= 4)
         features.push({ type: 'Feature',
           geometry: { type: 'Polygon', coordinates: [coords] },
-          properties: { name: el.tags?.name || '', _type: el.tags?.landuse || el.tags?.natural || 'forest' },
+          properties: { name: el.tags?.name || '' },
         })
-      }
     }
   })
   return { type: 'FeatureCollection', features }
@@ -201,157 +205,106 @@ function SectionHead({ children }) {
     </div>
   )
 }
-
 function Divider() {
   return <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '12px 0' }} />
 }
+const scaleBtn = {
+  width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(0,0,0,0.12)',
+  background: '#F5F5F7', cursor: 'pointer', fontFamily: 'inherit',
+  fontSize: 16, fontWeight: 500, color: '#1D1D1F', display: 'flex',
+  alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+}
 
-// ── Main sidebar ───────────────────────────────────────────────────────────────
-export default function IntermodalSidebar() {
+// ── IntermodalDataPanel — right panel (Data Layers) ───────────────────────────
+export function IntermodalDataPanel() {
   const {
-    venues, parks,
-    intermodalLoading, intermodalError, intermodalHubs,
-    intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
-    intermodalRawOsmFacilities, intermodalRawForests,
+    intermodalLoading, intermodalError,
+    intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings, intermodalRawOsmFacilities,
     intermodalShowBusStops, intermodalShowCarParkings, intermodalShowBikeParkings,
     intermodalShowFacilities, intermodalFacilityCategories, intermodalShowParksBase,
-    intermodalHubTypes, intermodalStatusFilter,
     intermodalShowFacilitiesRadius, intermodalShowGreeneryRadius,
     intermodalShowFacilitiesPoints, intermodalShowParksOverlay,
-    intermodalObjectScale,
-    setIntermodalLoading, setIntermodalError, setIntermodalHubs, setIntermodalRawData,
+    intermodalLoadProgress,
+    setIntermodalLoading, setIntermodalError, setIntermodalRawData, setIntermodalLoadProgress,
     toggleIntermodalShowBusStops, toggleIntermodalShowCarParkings, toggleIntermodalShowBikeParkings,
     toggleIntermodalShowFacilities, toggleIntermodalFacilityCategory, toggleIntermodalShowParksBase,
-    toggleIntermodalHubType, setIntermodalStatusFilter,
     toggleIntermodalFacilitiesRadius, toggleIntermodalGreeneryRadius,
     toggleIntermodalFacilitiesPoints, toggleIntermodalParksOverlay,
-    setIntermodalObjectScale,
   } = useAppStore()
 
-  const [loadProgress, setLoadProgress] = useState('')
   const dataLoaded = !!(intermodalRawBusStops && intermodalRawCarParkings)
 
-  // Auto-load when no data yet
+  const handleLoadData = useCallback(async () => {
+    setIntermodalLoading(true)
+    setIntermodalError(null)
+    setIntermodalLoadProgress('Loading data…')
+    try {
+      const [busRaw, carRaw, bikeRaw, facRaw, forestRaw, residentialRaw] = await Promise.all([
+        overpassFetch(BUS_STOPS_Q),
+        overpassFetch(CAR_PARKINGS_Q),
+        overpassFetch(BIKE_PARKINGS_Q),
+        overpassFetch(OSM_FACILITIES_Q),
+        overpassFetch(FORESTS_Q),
+        overpassFetch(RESIDENTIAL_Q),
+      ])
+      const busGJ         = osmToGeoJSON(busRaw.elements || [], 'bus')
+      const carGJ         = osmToGeoJSON(carRaw.elements || [], 'car')
+      const bikeGJ        = osmToGeoJSON(bikeRaw.elements || [], 'bike')
+      const osmFacs       = (facRaw.elements || []).map(osmElementToVenue).filter(Boolean)
+      const forestsGJ     = osmPolygonToGeoJSON(forestRaw)
+      const residentialGJ = osmPolygonToGeoJSON(residentialRaw)
+      setIntermodalRawData(busGJ, carGJ, bikeGJ, osmFacs, forestsGJ, residentialGJ)
+      setIntermodalLoadProgress('')
+    } catch (err) {
+      console.error('Intermodal load error:', err)
+      setIntermodalError('Failed to load OSM data. Check your connection.')
+      setIntermodalLoadProgress('')
+    } finally {
+      setIntermodalLoading(false)
+    }
+  }, [setIntermodalLoading, setIntermodalError, setIntermodalRawData, setIntermodalLoadProgress])
+
   useEffect(() => {
     if (dataLoaded || intermodalLoading) return
     handleLoadData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleLoadData = useCallback(async () => {
-    setIntermodalLoading(true)
-    setIntermodalError(null)
-    try {
-      setLoadProgress('Bus stops…')
-      const busRaw  = await overpassFetch(BUS_STOPS_Q)
-      const busGJ   = osmToGeoJSON(busRaw.elements || [], 'bus')
-
-      setLoadProgress('Car parkings…')
-      const carRaw  = await overpassFetch(CAR_PARKINGS_Q)
-      const carGJ   = osmToGeoJSON(carRaw.elements || [], 'car')
-
-      setLoadProgress('Bike parkings…')
-      const bikeRaw = await overpassFetch(BIKE_PARKINGS_Q)
-      const bikeGJ  = osmToGeoJSON(bikeRaw.elements || [], 'bike')
-
-      setLoadProgress('Facilities from OSM…')
-      const facRaw  = await overpassFetch(OSM_FACILITIES_Q)
-      const osmFacs = (facRaw.elements || []).map(osmElementToVenue).filter(Boolean)
-
-      setLoadProgress('Forests & woods…')
-      const forestRaw = await overpassFetch(FORESTS_Q)
-      const forestsGJ = forestOsmToGeoJSON(forestRaw)
-
-      setIntermodalRawData(busGJ, carGJ, bikeGJ, osmFacs, forestsGJ)
-      setLoadProgress('')
-    } catch (err) {
-      console.error('Intermodal load error:', err)
-      setIntermodalError('Failed to load OSM data. Check your connection.')
-      setLoadProgress('')
-    } finally {
-      setIntermodalLoading(false)
-    }
-  }, [setIntermodalLoading, setIntermodalError, setIntermodalRawData])
-
-  const handleRunAnalysis = useCallback(async () => {
-    if (!intermodalRawBusStops || !intermodalRawCarParkings) return
-    setIntermodalLoading(true)
-    setIntermodalError(null)
-    setIntermodalHubs([])
-    try {
-      setLoadProgress('Running algorithm…')
-      const allVenues = [...venues, ...(intermodalRawOsmFacilities || [])]
-      const parksFeatures = (parks?.features || [])
-      const forestFeatures = (intermodalRawForests?.features || [])
-      const greenGJ = { type: 'FeatureCollection', features: [...parksFeatures, ...forestFeatures] }
-      const hubs = runIntermodalAlgorithm(
-        allVenues, intermodalRawBusStops, intermodalRawCarParkings,
-        intermodalRawBikeParkings, greenGJ
-      )
-      setIntermodalHubs(hubs)
-      setLoadProgress('')
-    } catch (err) {
-      console.error('Algorithm error:', err)
-      setIntermodalError('Analysis failed. Try reloading data.')
-      setLoadProgress('')
-    } finally {
-      setIntermodalLoading(false)
-    }
-  }, [venues, parks, intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
-      intermodalRawOsmFacilities, intermodalRawForests, setIntermodalLoading, setIntermodalError, setIntermodalHubs])
-
-  const hubCounts = {
-    bus_bike:      intermodalHubs.filter(h => h.hubType === 'bus_bike').length,
-    auto_bike:     intermodalHubs.filter(h => h.hubType === 'auto_bike').length,
-    auto_bus_bike: intermodalHubs.filter(h => h.hubType === 'auto_bus_bike').length,
-    priority:      intermodalHubs.filter(h => h.priority === 'priority').length,
-    existing:      intermodalHubs.filter(h => h.status === 'existing').length,
-    proposed:      intermodalHubs.filter(h => h.status === 'proposed').length,
-  }
-
   const busCount  = intermodalRawBusStops?.features?.length ?? 0
   const carCount  = intermodalRawCarParkings?.features?.length ?? 0
   const bikeCount = intermodalRawBikeParkings?.features?.length ?? 0
-  const facCount  = (intermodalRawOsmFacilities?.length ?? 0) + venues.length
+  const facCount  = intermodalRawOsmFacilities?.length ?? 0
 
   return (
     <div style={{
-      position: 'absolute', top: 0, left: 0, width: 300, height: '100%',
+      position: 'absolute', top: 0, right: 0, width: 230, height: '100%',
       background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)', borderRight: '1px solid rgba(0,0,0,0.08)',
-      boxShadow: '4px 0 20px rgba(0,0,0,0.06)', zIndex: 20,
+      WebkitBackdropFilter: 'blur(20px)', borderLeft: '1px solid rgba(0,0,0,0.08)',
+      boxShadow: '-4px 0 20px rgba(0,0,0,0.06)', zIndex: 20,
       display: 'flex', flexDirection: 'column',
       fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
     }}>
-      {/* Header */}
-      <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: '#1D1D1F' }}>Intermodal Hub</div>
-        <div style={{ fontSize: 12, color: '#6E6E73' }}>Wolfsburg · Multi-modal transfer points</div>
+      <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F' }}>Layers</div>
       </div>
 
-      {/* Loading status bar */}
       {intermodalLoading && (
-        <div style={{ background: '#FFF3CD', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '6px 16px', fontSize: 12, color: '#856404', flexShrink: 0 }}>
-          {loadProgress || 'Loading…'}
+        <div style={{ background: '#FFF3CD', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '5px 14px', fontSize: 11, color: '#856404', flexShrink: 0 }}>
+          {intermodalLoadProgress || 'Loading…'}
         </div>
       )}
-
-      {/* Error */}
       {intermodalError && (
-        <div style={{ background: '#FEF2F2', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '8px 16px', fontSize: 12, color: '#EF4444', flexShrink: 0 }}>
+        <div style={{ background: '#FEF2F2', padding: '5px 14px', fontSize: 11, color: '#EF4444', flexShrink: 0 }}>
           {intermodalError}
-          <button onClick={handleLoadData} style={{ marginLeft: 8, fontFamily: 'inherit', fontSize: 11, color: '#0071E3', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+          <button onClick={handleLoadData} style={{ marginLeft: 6, fontFamily: 'inherit', fontSize: 11, color: '#0071E3', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
             Retry
           </button>
         </div>
       )}
 
-      {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 20px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px 16px' }}>
 
-        {/* ── DATA LAYERS ─────────────────────────────────────────────────────── */}
         <SectionHead>Data Layers</SectionHead>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 4 }}>
           <Toggle checked={intermodalShowBusStops} onChange={toggleIntermodalShowBusStops}
             label={`Bus stops${busCount ? ` (${busCount})` : ''}`} color="#EF4444" />
@@ -364,14 +317,14 @@ export default function IntermodalSidebar() {
             label={`Facilities${facCount ? ` (${facCount})` : ''}`} color="#F59E0B" />
 
           {intermodalShowFacilities && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, paddingLeft: 12, marginTop: 2 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingLeft: 10, marginTop: 2 }}>
               {Object.entries(CATEGORY_LABELS).map(([key, label]) => {
                 const active = intermodalFacilityCategories.has(key)
                 const color  = CATEGORY_COLORS[key]
                 return (
                   <button key={key} onClick={() => toggleIntermodalFacilityCategory(key)}
                     style={{
-                      fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 980,
+                      fontSize: 10, fontWeight: 500, padding: '2px 7px', borderRadius: 980,
                       fontFamily: 'inherit', cursor: 'pointer',
                       border: `1.5px solid ${active ? color : 'rgba(0,0,0,0.10)'}`,
                       background: active ? `${color}18` : 'transparent',
@@ -385,14 +338,14 @@ export default function IntermodalSidebar() {
           )}
 
           <Toggle checked={intermodalShowParksBase} onChange={toggleIntermodalShowParksBase}
-            label="Parks" color="#16A34A" />
+            label="Parks & Forests" color="#16A34A" />
         </div>
 
         {!dataLoaded && !intermodalLoading && (
           <button onClick={handleLoadData} style={{
-            width: '100%', padding: '7px 0', borderRadius: 8, fontSize: 12, fontWeight: 500,
+            width: '100%', padding: '6px 0', borderRadius: 8, fontSize: 12, fontWeight: 500,
             fontFamily: 'inherit', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.12)',
-            background: '#F5F5F7', color: '#1D1D1F', marginTop: 8,
+            background: '#F5F5F7', color: '#1D1D1F', marginTop: 6,
           }}>
             Reload OSM data
           </button>
@@ -400,9 +353,114 @@ export default function IntermodalSidebar() {
 
         <Divider />
 
-        {/* ── ANALYSIS ────────────────────────────────────────────────────────── */}
-        <SectionHead>Analysis</SectionHead>
+        <SectionHead>Radius Layers</SectionHead>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 4 }}>
+          <Toggle checked={intermodalShowFacilitiesRadius} onChange={toggleIntermodalFacilitiesRadius}
+            label="Facilities radius (1500 m)" color="#F59E0B" />
+          {intermodalShowFacilitiesRadius && (
+            <Toggle indent checked={intermodalShowFacilitiesPoints} onChange={toggleIntermodalFacilitiesPoints}
+              label="Show facility points" color="#F59E0B" />
+          )}
+          <Toggle checked={intermodalShowGreeneryRadius} onChange={toggleIntermodalGreeneryRadius}
+            label="Greenery radius (500 m)" color="#22C55E" />
+          {intermodalShowGreeneryRadius && (
+            <Toggle indent checked={intermodalShowParksOverlay} onChange={toggleIntermodalParksOverlay}
+              label="Show park areas" color="#22C55E" />
+          )}
+        </div>
 
+        <div style={{ fontSize: 10, color: '#AEAEB2', lineHeight: 1.5, marginTop: 12 }}>
+          OSM · Overpass API
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── IntermodalSidebar — left panel (Analysis) ─────────────────────────────────
+export default function IntermodalSidebar() {
+  const {
+    venues, parks,
+    intermodalLoading, intermodalError, intermodalHubs,
+    intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
+    intermodalRawOsmFacilities, intermodalRawForests, intermodalRawResidential,
+    intermodalHubTypes, intermodalStatusFilter,
+    intermodalObjectScale, intermodalLoadProgress,
+    setIntermodalLoading, setIntermodalError, setIntermodalHubs, setIntermodalLoadProgress,
+    toggleIntermodalHubType, setIntermodalStatusFilter,
+    setIntermodalObjectScale,
+  } = useAppStore()
+
+  const dataLoaded = !!(intermodalRawBusStops && intermodalRawCarParkings)
+
+  const handleRunAnalysis = useCallback(async () => {
+    if (!dataLoaded) return
+    setIntermodalLoading(true)
+    setIntermodalError(null)
+    setIntermodalHubs([])
+    setIntermodalLoadProgress('Running algorithm…')
+    try {
+      const allVenues = [...venues, ...(intermodalRawOsmFacilities || [])]
+      const greenGJ = {
+        type: 'FeatureCollection',
+        features: [...(parks?.features || []), ...(intermodalRawForests?.features || [])],
+      }
+      const hubs = runIntermodalAlgorithm(
+        allVenues, intermodalRawBusStops, intermodalRawCarParkings,
+        intermodalRawBikeParkings, greenGJ, intermodalRawResidential
+      )
+      setIntermodalHubs(hubs)
+      setIntermodalLoadProgress('')
+    } catch (err) {
+      console.error('Algorithm error:', err)
+      setIntermodalError('Analysis failed. Try reloading data.')
+      setIntermodalLoadProgress('')
+    } finally {
+      setIntermodalLoading(false)
+    }
+  }, [venues, parks, intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
+      intermodalRawOsmFacilities, intermodalRawForests, intermodalRawResidential,
+      setIntermodalLoading, setIntermodalError, setIntermodalHubs, setIntermodalLoadProgress])
+
+  const hubCounts = {
+    bus_bike:      intermodalHubs.filter(h => h.hubType === 'bus_bike').length,
+    auto_bike:     intermodalHubs.filter(h => h.hubType === 'auto_bike').length,
+    auto_bus_bike: intermodalHubs.filter(h => h.hubType === 'auto_bus_bike').length,
+    priority:      intermodalHubs.filter(h => h.priority === 'priority').length,
+    existing:      intermodalHubs.filter(h => h.status === 'existing').length,
+    proposed:      intermodalHubs.filter(h => h.status === 'proposed').length,
+  }
+
+  return (
+    <div style={{
+      position: 'absolute', top: 0, left: 0, width: 280, height: '100%',
+      background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)', borderRight: '1px solid rgba(0,0,0,0.08)',
+      boxShadow: '4px 0 20px rgba(0,0,0,0.06)', zIndex: 20,
+      display: 'flex', flexDirection: 'column',
+      fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
+    }}>
+      {/* Header */}
+      <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#1D1D1F' }}>Intermodal Hub</div>
+        <div style={{ fontSize: 12, color: '#6E6E73' }}>Wolfsburg · Multi-modal transfer points</div>
+      </div>
+
+      {intermodalLoading && (
+        <div style={{ background: '#FFF3CD', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '6px 16px', fontSize: 12, color: '#856404', flexShrink: 0 }}>
+          {intermodalLoadProgress || 'Loading…'}
+        </div>
+      )}
+      {intermodalError && !intermodalLoading && (
+        <div style={{ background: '#FEF2F2', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '8px 16px', fontSize: 12, color: '#EF4444', flexShrink: 0 }}>
+          {intermodalError}
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 20px' }}>
+
+        {/* ── ANALYSIS ─────────────────────────────────────────────────────── */}
+        <SectionHead>Analysis</SectionHead>
         <button onClick={handleRunAnalysis} disabled={intermodalLoading || !dataLoaded}
           style={{
             width: '100%', padding: '9px 0', borderRadius: 10, fontSize: 13, fontWeight: 600,
@@ -412,7 +470,7 @@ export default function IntermodalSidebar() {
             color: (intermodalLoading || !dataLoaded) ? '#999' : '#fff',
             transition: 'background 0.15s',
           }}>
-          {intermodalLoading && loadProgress === 'Running algorithm…' ? 'Running…'
+          {intermodalLoading && intermodalLoadProgress === 'Running algorithm…' ? 'Running…'
             : intermodalHubs.length ? 'Re-run Analysis' : 'Run Analysis'}
         </button>
 
@@ -440,9 +498,9 @@ export default function IntermodalSidebar() {
             <div style={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 7 }}>Hub Types</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
               {[
-                { type: 'bus_bike',      label: 'Bus + Bike',           color: '#EF4444' },
-                { type: 'auto_bike',     label: 'Auto + Bike',          color: '#6B7280' },
-                { type: 'auto_bus_bike', label: 'Auto + Bus + Bike',    color: '#7C3AED' },
+                { type: 'bus_bike',      label: 'Bus + Bike',        color: '#EF4444' },
+                { type: 'auto_bike',     label: 'Auto + Bike',       color: '#6B7280' },
+                { type: 'auto_bus_bike', label: 'Auto + Bus + Bike', color: '#7C3AED' },
               ].map(({ type, label, color }) => {
                 const active = intermodalHubTypes.has(type)
                 return (
@@ -490,26 +548,7 @@ export default function IntermodalSidebar() {
 
         <Divider />
 
-        {/* ── RADIUS LAYERS ───────────────────────────────────────────────────── */}
-        <SectionHead>Radius Layers</SectionHead>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 4 }}>
-          <Toggle checked={intermodalShowFacilitiesRadius} onChange={toggleIntermodalFacilitiesRadius}
-            label="Facilities radius (1500 m)" color="#F59E0B" />
-          {intermodalShowFacilitiesRadius && (
-            <Toggle indent checked={intermodalShowFacilitiesPoints} onChange={toggleIntermodalFacilitiesPoints}
-              label="Show facility points" color="#F59E0B" />
-          )}
-          <Toggle checked={intermodalShowGreeneryRadius} onChange={toggleIntermodalGreeneryRadius}
-            label="Greenery radius (500 m)" color="#22C55E" />
-          {intermodalShowGreeneryRadius && (
-            <Toggle indent checked={intermodalShowParksOverlay} onChange={toggleIntermodalParksOverlay}
-              label="Show park areas" color="#22C55E" />
-          )}
-        </div>
-
-        <Divider />
-
-        {/* ── LEGEND ──────────────────────────────────────────────────────────── */}
+        {/* ── LEGEND ─────────────────────────────────────────────────────────── */}
         {intermodalHubs.length > 0 && (
           <>
             <SectionHead>Legend</SectionHead>
@@ -541,18 +580,7 @@ export default function IntermodalSidebar() {
           </div>
           <button onClick={() => setIntermodalObjectScale(intermodalObjectScale + 0.25)} style={scaleBtn}>+</button>
         </div>
-
-        <div style={{ fontSize: 11, color: '#AEAEB2', lineHeight: 1.5, marginTop: 12 }}>
-          Data: OpenStreetMap · Overpass API
-        </div>
       </div>
     </div>
   )
-}
-
-const scaleBtn = {
-  width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(0,0,0,0.12)',
-  background: '#F5F5F7', cursor: 'pointer', fontFamily: 'inherit',
-  fontSize: 16, fontWeight: 500, color: '#1D1D1F', display: 'flex',
-  alignItems: 'center', justifyContent: 'center', flexShrink: 0,
 }

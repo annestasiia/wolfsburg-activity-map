@@ -11,7 +11,7 @@ import FacilityToolbar from './components/FacilityToolbar'
 import LeftSidebar from './components/LeftSidebar'
 import DistrictStatsPopup from './components/DistrictStatsPopup'
 import AnalysisInfoModal from './components/panels/AnalysisInfoModal'
-import IntermodalSidebar from './components/IntermodalSidebar'
+import IntermodalSidebar, { IntermodalDataPanel } from './components/IntermodalSidebar'
 import IntermodalHubPopup from './components/IntermodalHubPopup'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
@@ -66,6 +66,7 @@ export default function App() {
         )}
         {activeMode === 'greenery'    && <GreenerySidebar />}
         {activeMode === 'intermodal' && <IntermodalSidebar />}
+        {activeMode === 'intermodal' && <IntermodalDataPanel />}
         {activeMode === 'intermodal' && <IntermodalHubPopup />}
         <DistrictStatsPopup />
         <AnalysisInfoModal />

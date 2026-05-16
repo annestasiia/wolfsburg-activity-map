@@ -1,5 +1,5 @@
 // Intermodal Hub Algorithm — Wolfsburg
-// Steps: 1 (score) → 2 (filter) → 3 (greedy select) → 4 (merge) → 5 (priority)
+// Steps: 1 (score) → 2 (filter) → 3 (greedy select density) → 4 (merge) → 5 (priority)
 
 const R_EARTH = 6371000 // metres
 
@@ -46,14 +46,14 @@ function getFootfall(venue) {
 }
 
 // ── Step 1: Score one candidate (bus stop or car parking) ─────────────────────
-function scoreCandidate(lat, lng, type, label, facilities, parks, bikeParkings) {
+function scoreCandidate(lat, lng, type, label, facilities, parks, bikeParkings, residential) {
   let score = 0
   const conditions = []
   const nearbyFacilities = []
   let nearbyParkName = null
   let hasExistingBike = false
 
-  // Condition 1 — facilities within 1500 m
+  // A1 — facilities within 1500 m
   let footfallSum = 0
   for (const f of facilities) {
     const d = haversineM(lat, lng, f.lat, f.lng)
@@ -74,7 +74,7 @@ function scoreCandidate(lat, lng, type, label, facilities, parks, bikeParkings) 
     conditions.push('A1')
   }
 
-  // Condition 2 — park polygon within 500 m
+  // A2 — park polygon within 500 m
   for (const park of (parks?.features ?? [])) {
     if (circleIntersectsPolygon(lat, lng, 500, park)) {
       score += 1
@@ -84,7 +84,7 @@ function scoreCandidate(lat, lng, type, label, facilities, parks, bikeParkings) 
     }
   }
 
-  // Condition 3 — existing bike parking within 200 m
+  // A3 — existing bike parking within 200 m
   for (const bp of (bikeParkings?.features ?? [])) {
     const [bLng, bLat] = bp.geometry.coordinates
     if (haversineM(lat, lng, bLat, bLng) <= 200) {
@@ -95,20 +95,29 @@ function scoreCandidate(lat, lng, type, label, facilities, parks, bikeParkings) 
     }
   }
 
+  // A4 — residential zone within 300 m
+  for (const zone of (residential?.features ?? [])) {
+    if (circleIntersectsPolygon(lat, lng, 300, zone)) {
+      score += 0.5
+      conditions.push('A4')
+      break
+    }
+  }
+
   return { type, label, lat, lng, score, conditions, nearbyFacilities, nearbyParkName, hasExistingBike, _footfallSum: footfallSum }
 }
 
 // ── Step 1 applied to GeoJSON feature collections ─────────────────────────────
 
-function candidatesFromBusStops(busStopsGeoJSON, facilities, parks, bikeParkings) {
+function candidatesFromBusStops(busStopsGeoJSON, facilities, parks, bikeParkings, residential) {
   return (busStopsGeoJSON?.features ?? []).map(f => {
     const [lng, lat] = f.geometry.coordinates
     const label = f.properties?.name || f.properties?.ref || 'Bus stop'
-    return scoreCandidate(lat, lng, 'bus', label, facilities, parks, bikeParkings)
+    return scoreCandidate(lat, lng, 'bus', label, facilities, parks, bikeParkings, residential)
   })
 }
 
-function candidatesFromCarParkings(carParkingsGeoJSON, facilities, parks, bikeParkings) {
+function candidatesFromCarParkings(carParkingsGeoJSON, facilities, parks, bikeParkings, residential) {
   return (carParkingsGeoJSON?.features ?? []).map(f => {
     let lat, lng
     if (f.geometry.type === 'Point') {
@@ -119,18 +128,34 @@ function candidatesFromCarParkings(carParkingsGeoJSON, facilities, parks, bikePa
       lat = ring.reduce((s, c) => s + c[1], 0) / (ring.length || 1)
     }
     const label = f.properties?.name || 'Car parking'
-    return scoreCandidate(lat, lng, 'car', label, facilities, parks, bikeParkings)
+    return scoreCandidate(lat, lng, 'car', label, facilities, parks, bikeParkings, residential)
   })
 }
 
 // ── Step 2: Filter score > 0 ──────────────────────────────────────────────────
 
-// ── Step 3: Greedy selection from unified pool ────────────────────────────────
-function greedySelect(candidates, exclusionRadiusM = 1000) {
+// ── Step 3: Density-based greedy selection ────────────────────────────────────
+// Top 30% scores → 400 m exclusion radius
+// Middle 40% scores → 700 m exclusion radius
+// Bottom 30% scores → 1200 m exclusion radius
+function greedySelectDensity(candidates) {
+  if (!candidates.length) return []
   const sorted = [...candidates].sort((a, b) => b.score - a.score || b._footfallSum - a._footfallSum)
+  const n = sorted.length
+
+  const highIdx = Math.max(0, Math.ceil(0.3 * n) - 1)
+  const midIdx  = Math.max(highIdx, Math.ceil(0.7 * n) - 1)
+  const highThreshold = sorted[highIdx].score
+  const midThreshold  = sorted[midIdx].score
+
+  const getRadius = (score) =>
+    score >= highThreshold ? 400 :
+    score >= midThreshold  ? 700 : 1200
+
   const selected = []
   for (const c of sorted) {
-    const blocked = selected.some(s => haversineM(c.lat, c.lng, s.lat, s.lng) <= exclusionRadiusM)
+    const radius = getRadius(c.score)
+    const blocked = selected.some(s => haversineM(c.lat, c.lng, s.lat, s.lng) <= radius)
     if (!blocked) selected.push(c)
   }
   return selected
@@ -202,7 +227,7 @@ function assignPriority(hubs) {
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────────
-export function runIntermodalAlgorithm(venues, busStopsGeoJSON, carParkingsGeoJSON, bikeParkingsGeoJSON, parksGeoJSON) {
+export function runIntermodalAlgorithm(venues, busStopsGeoJSON, carParkingsGeoJSON, bikeParkingsGeoJSON, parksGeoJSON, residentialGeoJSON) {
   // Attach computed footfall to every venue (no pre-filtering)
   const facilities = venues.map(v => ({
     ...v,
@@ -210,14 +235,14 @@ export function runIntermodalAlgorithm(venues, busStopsGeoJSON, carParkingsGeoJS
     _activeHours: (v.openingHours && v.openingHours !== '—') ? v.openingHours : null,
   }))
 
-  const busCandidates = candidatesFromBusStops(busStopsGeoJSON, facilities, parksGeoJSON, bikeParkingsGeoJSON)
-  const carCandidates = candidatesFromCarParkings(carParkingsGeoJSON, facilities, parksGeoJSON, bikeParkingsGeoJSON)
+  const busCandidates  = candidatesFromBusStops(busStopsGeoJSON, facilities, parksGeoJSON, bikeParkingsGeoJSON, residentialGeoJSON)
+  const carCandidates  = candidatesFromCarParkings(carParkingsGeoJSON, facilities, parksGeoJSON, bikeParkingsGeoJSON, residentialGeoJSON)
 
   // Step 2: filter
   const allCandidates = [...busCandidates, ...carCandidates].filter(c => c.score > 0)
 
-  // Step 3: greedy select from unified pool
-  const selected = greedySelect(allCandidates, 1000)
+  // Step 3: density-based greedy select from unified pool
+  const selected = greedySelectDensity(allCandidates)
 
   // Step 4: merge bus+car pairs
   const merged = mergeSelected(selected)

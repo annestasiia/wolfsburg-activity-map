@@ -237,13 +237,15 @@ export const useAppStore = create((set) => ({
   intermodalRawBikeParkings: null,
   intermodalRawOsmFacilities: null,
   intermodalRawForests: null,
+  intermodalRawResidential: null,
+  intermodalLoadProgress: '',
 
   // base layer toggles (data layers section)
   intermodalShowBusStops: false,
   intermodalShowCarParkings: false,
   intermodalShowBikeParkings: false,
   intermodalShowFacilities: false,
-  intermodalFacilityCategories: new Set(['culture', 'commercial', 'educational', 'leisure', 'healthcare']),
+  intermodalFacilityCategories: new Set(['culture', 'commercial', 'educational', 'leisure', 'healthcare', 'other']),
   intermodalShowParksBase: false,
 
   // hub type filter (which pie-chart types to show)
@@ -267,12 +269,14 @@ export const useAppStore = create((set) => ({
   setIntermodalLoading: (val) => set({ intermodalLoading: val }),
   setIntermodalError:   (msg) => set({ intermodalError: msg }),
   setIntermodalHubs:    (hubs) => set({ intermodalHubs: hubs }),
-  setIntermodalRawData: (busStops, carParkings, bikeParkings, osmFacilities, forests) => set({
+  setIntermodalLoadProgress: (msg) => set({ intermodalLoadProgress: msg }),
+  setIntermodalRawData: (busStops, carParkings, bikeParkings, osmFacilities, forests, residential) => set({
     intermodalRawBusStops: busStops,
     intermodalRawCarParkings: carParkings,
     intermodalRawBikeParkings: bikeParkings,
     intermodalRawOsmFacilities: osmFacilities,
     intermodalRawForests: forests ?? null,
+    intermodalRawResidential: residential ?? null,
   }),
 
   toggleIntermodalShowBusStops:     () => set(s => ({ intermodalShowBusStops:     !s.intermodalShowBusStops     })),
@@ -401,7 +405,7 @@ export const useAppStore = create((set) => ({
     intermodalShowCarParkings: false,
     intermodalShowBikeParkings: false,
     intermodalShowFacilities: false,
-    intermodalFacilityCategories: new Set(['culture', 'commercial', 'educational', 'leisure', 'healthcare']),
+    intermodalFacilityCategories: new Set(['culture', 'commercial', 'educational', 'leisure', 'healthcare', 'other']),
     intermodalShowParksBase: false,
     intermodalHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
     intermodalStatusFilter: 'all',
@@ -411,6 +415,8 @@ export const useAppStore = create((set) => ({
     intermodalShowParksOverlay: false,
     intermodalObjectScale: 1.0,
     intermodalSelectedHub: null,
+    intermodalLoadProgress: '',
+    intermodalRawResidential: null,
     greenSocialActiveAnalysis: null,
     showSocialAmenities: false,
     showGreenSocialMap: true,
