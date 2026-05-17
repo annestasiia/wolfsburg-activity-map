@@ -228,6 +228,25 @@ export const useAppStore = create((set) => ({
     encounterWeights: { green: 35, social: 30, transit: 20, paths: 15 },
   }),
 
+  // ── Local GeoJSON library (loaded once from public/ on app start) ────────────
+  localBusStops: null,
+  localCarParkings: null,
+  localBikeParkings: null,
+  localFacilities: null,
+  localHistoric: null,
+  localParksForests: null,
+
+  setLocalBusStops:    (v) => set({ localBusStops: v }),
+  setLocalCarParkings:  (v) => set({ localCarParkings: v }),
+  setLocalBikeParkings: (v) => set({ localBikeParkings: v }),
+  setLocalFacilities:   (v) => set({ localFacilities: v }),
+  setLocalHistoric:     (v) => set({ localHistoric: v }),
+  setLocalParksForests: (v) => set({ localParksForests: v }),
+
+  // ── Intermodal density config ─────────────────────────────────────────────────
+  densityConfig: { high: 400, medium: 700, low: 1000 },
+  setDensityConfig: (key, val) => set(s => ({ densityConfig: { ...s.densityConfig, [key]: Math.max(50, Math.min(3000, val)) } })),
+
   // ── Intermodal Hub ────────────────────────────────────────────────────────
   intermodalLoading: false,
   intermodalError: null,

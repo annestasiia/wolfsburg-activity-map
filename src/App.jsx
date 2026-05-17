@@ -22,7 +22,12 @@ import forestData from './data/forest.json'
 import buildingsData from './data/buildings.json'
 
 export default function App() {
-  const { setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways, activeMode, setSelectedFacilityVenueId } = useAppStore()
+  const {
+    setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways,
+    activeMode, setSelectedFacilityVenueId,
+    setLocalBusStops, setLocalCarParkings, setLocalBikeParkings,
+    setLocalFacilities, setLocalHistoric, setLocalParksForests,
+  } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
 
   useEffect(() => {
@@ -40,7 +45,23 @@ export default function App() {
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setFootways(data) })
       .catch(() => {})
-  }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways])
+    // Local GeoJSON library
+    const localFiles = [
+      ['wolfsburg_bus_stops.geojson',    setLocalBusStops],
+      ['wolfsburg_car_parking.geojson',  setLocalCarParkings],
+      ['wolfsburg_bike_parking.geojson', setLocalBikeParkings],
+      ['wolfsburg_facilities.geojson',   setLocalFacilities],
+      ['wolfsburg_historic.geojson',     setLocalHistoric],
+      ['wolfsburg_parks_forests.geojson',setLocalParksForests],
+    ]
+    for (const [filename, setter] of localFiles) {
+      fetch(`${import.meta.env.BASE_URL}${filename}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setter(data) })
+        .catch(() => {})
+    }
+  }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways,
+      setLocalBusStops, setLocalCarParkings, setLocalBikeParkings, setLocalFacilities, setLocalHistoric, setLocalParksForests])
 
   const handleVenueClick = useCallback((props) => {
     if (activeMode === 'facilities') {

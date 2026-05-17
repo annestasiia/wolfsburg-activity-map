@@ -351,6 +351,8 @@ export default function MapView({ onVenueClick }) {
     radStatusFilter, radShowGaps,
     setRadSelectedNode, setRadSelectedEdge,
     radRawHistoric,
+    // Local GeoJSON library
+    localBusStops, localCarParkings, localBikeParkings, localFacilities, localHistoric, localParksForests,
     // Export trigger
     exportPNGTrigger,
   } = useAppStore()
@@ -1991,6 +1993,67 @@ export default function MapView({ onVenueClick }) {
     if (map.getLayer('rad-historic-circle'))
       map.setLayoutProperty('rad-historic-circle', 'visibility', isActive ? 'visible' : 'none')
   }, [mapReady, activeMode, radShowHistoric, radRawHistoric])
+
+  // ── Rad Network — local data layers (bus stops, car parkings, bike parkings, facilities, parks) ──
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const isRad = activeMode === 'rad'
+    const empty = { type: 'FeatureCollection', features: [] }
+
+    const ensureCircleLayer = (id, color, radius = 5) => {
+      if (!map.getSource(id)) map.addSource(id, { type: 'geojson', data: empty })
+      if (!map.getLayer(`${id}-circle`)) {
+        map.addLayer({ id: `${id}-circle`, type: 'circle', source: id,
+          paint: { 'circle-radius': radius, 'circle-color': color, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-opacity': 0.85 },
+          layout: { visibility: 'none' },
+        })
+      }
+    }
+    const ensurePolygonLayer = (id, fillColor, lineColor) => {
+      if (!map.getSource(id)) map.addSource(id, { type: 'geojson', data: empty })
+      if (!map.getLayer(`${id}-fill`)) {
+        map.addLayer({ id: `${id}-fill`, type: 'fill', source: id,
+          paint: { 'fill-color': fillColor, 'fill-opacity': 0.25 },
+          layout: { visibility: 'none' },
+        })
+      }
+      if (!map.getLayer(`${id}-line`)) {
+        map.addLayer({ id: `${id}-line`, type: 'line', source: id,
+          paint: { 'line-color': lineColor, 'line-width': 1, 'line-opacity': 0.5 },
+          layout: { visibility: 'none' },
+        })
+      }
+    }
+
+    ensureCircleLayer('rad-l-bus',  '#FF453A', 5)
+    ensureCircleLayer('rad-l-car',  '#6B7280', 5)
+    ensureCircleLayer('rad-l-bike', '#22C55E', 5)
+    ensureCircleLayer('rad-l-fac',  '#FF9F0A', 6)
+    ensureCircleLayer('rad-l-hist', '#BF5AF2', 6)
+    ensurePolygonLayer('rad-l-parks', '#16A34A', '#15803D')
+
+    const setData = (srcId, gj) => { if (map.getSource(srcId)) map.getSource(srcId).setData(gj || empty) }
+    setData('rad-l-bus',   localBusStops)
+    setData('rad-l-car',   localCarParkings)
+    setData('rad-l-bike',  localBikeParkings)
+    setData('rad-l-fac',   localFacilities)
+    setData('rad-l-hist',  localHistoric)
+    setData('rad-l-parks', localParksForests)
+
+    const setVis = (layerId, show) => {
+      if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', show ? 'visible' : 'none')
+    }
+    setVis('rad-l-bus-circle',  isRad && radShowBusStops)
+    setVis('rad-l-car-circle',  isRad && radShowCarParkings)
+    setVis('rad-l-bike-circle', isRad && radShowBikeParkings)
+    setVis('rad-l-fac-circle',  isRad && radShowFacilities)
+    setVis('rad-l-hist-circle', isRad && radShowHistoric)
+    setVis('rad-l-parks-fill',  isRad && radShowParks)
+    setVis('rad-l-parks-line',  isRad && radShowParks)
+  }, [mapReady, activeMode,
+      localBusStops, localCarParkings, localBikeParkings, localFacilities, localHistoric, localParksForests,
+      radShowBusStops, radShowCarParkings, radShowBikeParkings, radShowFacilities, radShowHistoric, radShowParks])
 
   // ── Export trigger from TopBar ────────────────────────────────────────────
   useEffect(() => {

@@ -222,7 +222,32 @@ const scaleBtn = {
   alignItems: 'center', justifyContent: 'center', flexShrink: 0,
 }
 
-// ── IntermodalDataPanel — right panel (Data Layers) ───────────────────────────
+function geojsonFacilityToVenue(feature) {
+  const props = feature.properties || {}
+  if (!feature.geometry?.coordinates) return null
+  const [lng, lat] = feature.geometry.coordinates
+  if (!lat || !lng) return null
+  const amenity = props.amenity || ''
+  const shop    = props.shop || ''
+  const leisure = props.leisure || ''
+  const key     = amenity || leisure || shop
+  const footfall  = OSM_FOOTFALL[key] ?? 100
+  const hours     = OSM_HOURS[key] ?? null
+  const _category = osmAmenityToCategory(amenity, shop, leisure)
+  return {
+    id: `osm-${props._id || props._osmId || Math.random().toString(36).slice(2)}`,
+    name: props.name || key || 'Facility',
+    lat, lng,
+    category: _category.charAt(0).toUpperCase() + _category.slice(1),
+    _category,
+    activityIntensity: footfall >= 500 ? 'High' : footfall >= 200 ? 'Medium' : 'Low',
+    openingHours: hours || '—',
+    _footfall: footfall,
+    _activeHours: hours,
+  }
+}
+
+// ── IntermodalDataPanel — right panel (Data Layers + Density) ─────────────────
 export function IntermodalDataPanel() {
   const {
     intermodalLoading, intermodalError,
@@ -237,49 +262,38 @@ export function IntermodalDataPanel() {
     toggleIntermodalShowFacilities, toggleIntermodalFacilityCategory, toggleIntermodalShowParksBase,
     toggleIntermodalFacilitiesRadius, toggleIntermodalGreeneryRadius,
     toggleIntermodalFacilitiesPoints, toggleIntermodalParksOverlay,
+    localBusStops, localCarParkings, localBikeParkings, localFacilities, localParksForests,
+    densityConfig, setDensityConfig,
   } = useAppStore()
 
   const dataLoaded = !!(intermodalRawBusStops && intermodalRawCarParkings)
 
   const handleLoadData = useCallback(async () => {
+    if (!localBusStops) return
     setIntermodalLoading(true)
     setIntermodalError(null)
-    setIntermodalLoadProgress('Loading transport data…')
+    setIntermodalLoadProgress('Loading residential zones…')
     try {
-      // 2 batches of 3 to avoid Overpass rate limiting
-      const [busRaw, carRaw, bikeRaw] = await Promise.all([
-        overpassFetch(BUS_STOPS_Q),
-        overpassFetch(CAR_PARKINGS_Q),
-        overpassFetch(BIKE_PARKINGS_Q),
-      ])
-      setIntermodalLoadProgress('Loading facilities & land use…')
-      const [facRaw, forestRaw, residentialRaw] = await Promise.all([
-        overpassFetch(OSM_FACILITIES_Q),
-        overpassFetch(FORESTS_Q),
-        overpassFetch(RESIDENTIAL_Q),
-      ])
-      const busGJ         = osmToGeoJSON(busRaw.elements || [], 'bus')
-      const carGJ         = osmToGeoJSON(carRaw.elements || [], 'car')
-      const bikeGJ        = osmToGeoJSON(bikeRaw.elements || [], 'bike')
-      const osmFacs       = (facRaw.elements || []).map(osmElementToVenue).filter(Boolean)
-      const forestsGJ     = osmPolygonToGeoJSON(forestRaw)
+      const residentialRaw = await overpassFetch(RESIDENTIAL_Q)
+      const osmFacs       = (localFacilities?.features || []).map(geojsonFacilityToVenue).filter(Boolean)
       const residentialGJ = osmPolygonToGeoJSON(residentialRaw)
-      setIntermodalRawData(busGJ, carGJ, bikeGJ, osmFacs, forestsGJ, residentialGJ)
+      setIntermodalRawData(localBusStops, localCarParkings, localBikeParkings, osmFacs, localParksForests, residentialGJ)
       setIntermodalLoadProgress('')
     } catch (err) {
       console.error('Intermodal load error:', err)
-      setIntermodalError('Failed to load OSM data. Check your connection.')
+      setIntermodalError('Failed to load residential data. Check your connection.')
       setIntermodalLoadProgress('')
     } finally {
       setIntermodalLoading(false)
     }
-  }, [setIntermodalLoading, setIntermodalError, setIntermodalRawData, setIntermodalLoadProgress])
+  }, [localBusStops, localCarParkings, localBikeParkings, localFacilities, localParksForests,
+      setIntermodalLoading, setIntermodalError, setIntermodalRawData, setIntermodalLoadProgress])
 
   useEffect(() => {
-    if (dataLoaded || intermodalLoading) return
+    if (!localBusStops || dataLoaded || intermodalLoading) return
     handleLoadData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [localBusStops])
 
   const busCount  = intermodalRawBusStops?.features?.length ?? 0
   const carCount  = intermodalRawCarParkings?.features?.length ?? 0
@@ -380,8 +394,40 @@ export function IntermodalDataPanel() {
           )}
         </div>
 
+        <Divider />
+
+        <SectionHead>Density Config</SectionHead>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 4 }}>
+          {[
+            { key: 'high',   label: 'High density (top 30%)',  color: '#EF4444' },
+            { key: 'medium', label: 'Medium density (mid 40%)', color: '#F59E0B' },
+            { key: 'low',    label: 'Low density (bottom 30%)', color: '#6B7280' },
+          ].map(({ key, label, color }) => (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 4, background: color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: '#6E6E73', flex: 1, lineHeight: 1.3 }}>{label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <input
+                  type="number" min={50} max={3000} step={50}
+                  value={densityConfig[key]}
+                  onChange={e => setDensityConfig(key, Number(e.target.value))}
+                  style={{
+                    width: 56, padding: '3px 6px', borderRadius: 6, fontSize: 12,
+                    border: '1px solid rgba(0,0,0,0.15)', fontFamily: 'inherit',
+                    color: '#1D1D1F', background: '#fff', textAlign: 'right',
+                  }}
+                />
+                <span style={{ fontSize: 10, color: '#AEAEB2' }}>m</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 10, color: '#AEAEB2', lineHeight: 1.5, marginTop: 6 }}>
+          Exclusion radius per score tier · Re-run Analysis to apply
+        </div>
+
         <div style={{ fontSize: 10, color: '#AEAEB2', lineHeight: 1.5, marginTop: 12 }}>
-          OSM · Overpass API
+          Local GeoJSON library · OSM Overpass (residential)
         </div>
       </div>
     </div>
@@ -397,6 +443,7 @@ export default function IntermodalSidebar() {
     intermodalRawOsmFacilities, intermodalRawForests, intermodalRawResidential,
     intermodalHubTypes, intermodalStatusFilter,
     intermodalObjectScale, intermodalLoadProgress,
+    densityConfig,
     setIntermodalLoading, setIntermodalError, setIntermodalHubs, setIntermodalLoadProgress,
     toggleIntermodalHubType, setIntermodalStatusFilter,
     setIntermodalObjectScale,
@@ -418,7 +465,7 @@ export default function IntermodalSidebar() {
       }
       const hubs = runIntermodalAlgorithm(
         allVenues, intermodalRawBusStops, intermodalRawCarParkings,
-        intermodalRawBikeParkings, greenGJ, intermodalRawResidential
+        intermodalRawBikeParkings, greenGJ, intermodalRawResidential, densityConfig
       )
       setIntermodalHubs(hubs)
       setIntermodalLoadProgress('')
@@ -430,7 +477,7 @@ export default function IntermodalSidebar() {
       setIntermodalLoading(false)
     }
   }, [venues, parks, intermodalRawBusStops, intermodalRawCarParkings, intermodalRawBikeParkings,
-      intermodalRawOsmFacilities, intermodalRawForests, intermodalRawResidential,
+      intermodalRawOsmFacilities, intermodalRawForests, intermodalRawResidential, densityConfig,
       setIntermodalLoading, setIntermodalError, setIntermodalHubs, setIntermodalLoadProgress])
 
   const hubCounts = {
