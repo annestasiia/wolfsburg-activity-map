@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react'
 import { useAppStore } from '../store/appStore'
 import { runRadAlgorithm } from '../utils/radAlgorithm'
+import { makePieSVG } from './IntermodalSidebar'
 
 const OVERPASS = 'https://overpass-api.de/api/interpreter'
 const BBOX = '52.32,10.57,52.60,10.98'
@@ -25,9 +26,9 @@ async function overpassFetch(query) {
 }
 
 // ── UI primitives ─────────────────────────────────────────────────────────────
-function Toggle({ checked, onChange, label, color }) {
+function Toggle({ checked, onChange, label, color, indent = false }) {
   return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#1D1D1F' }}>
+    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#1D1D1F', paddingLeft: indent ? 16 : 0 }}>
       <div onClick={onChange} style={{
         width: 32, height: 18, borderRadius: 9, flexShrink: 0, cursor: 'pointer',
         background: checked ? (color || '#0071E3') : '#E0E0E0', position: 'relative', transition: 'background 0.2s',
@@ -52,60 +53,25 @@ function SectionHead({ children }) {
 
 function Divider() { return <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '12px 0' }} /> }
 
-const NODE_TYPE_COLOR = {
-  hub: '#1D1D1F', city_center: '#0071E3', village_center: '#5856D6',
-  facility: '#FF9F0A', historic: '#BF5AF2', bike_parking: '#32ADE6', bus_stop: '#FF453A',
-}
-
 const ROUTE_COLOR = { 'A': '#064E3B', 'B': '#15803D', 'C': '#4ADE80', 'B/C': '#86EFAC' }
 
-// ── Rad Sidebar (left panel) ─────────────────────────────────────────────────
+// ── Rad Sidebar (left panel — analysis only) ──────────────────────────────────
 export default function RadSidebar() {
   const {
     venues, roads, footways,
-    parks, intermodalRawForests,
     intermodalHubs, intermodalRawBusStops, intermodalRawBikeParkings,
 
     radNodes, radEdges, radGaps, radLoading, radError, radLoadProgress,
     radRawHistoric, radRawVillages,
-    radShowBusStops, radShowCarParkings, radShowBikeParkings,
-    radShowFacilities, radShowHistoric, radShowParks,
-    radHubTypes, radShowAutoRoads, radShowPedestrianRoads, radShowCycling,
     radStatusFilter, radShowGaps,
-    radSelectedNode, radSelectedEdge,
 
     setRadNodes, setRadEdges, setRadGaps,
     setRadLoading, setRadError, setRadLoadProgress,
-    setRadRawData,
-    toggleRadShowBusStops, toggleRadShowCarParkings, toggleRadShowBikeParkings,
-    toggleRadShowFacilities, toggleRadShowHistoric, toggleRadShowParks,
-    toggleRadHubType, toggleRadShowAutoRoads, toggleRadShowPedestrianRoads, toggleRadShowCycling,
     setRadStatusFilter, toggleRadShowGaps,
     setRadSelectedNode, setRadSelectedEdge,
   } = useAppStore()
 
-  const dataLoaded = !!(radRawHistoric && radRawVillages)
   const hasHubs = intermodalHubs.length > 0
-
-  const handleLoadData = useCallback(async () => {
-    setRadLoading(true)
-    setRadError(null)
-    setRadLoadProgress('Loading historic & settlement data…')
-    try {
-      const [historicRaw, villagesRaw] = await Promise.all([
-        overpassFetch(HISTORIC_Q),
-        overpassFetch(VILLAGES_Q),
-      ])
-      setRadRawData(historicRaw.elements || [], villagesRaw.elements || [])
-      setRadLoadProgress('')
-    } catch (err) {
-      console.error('Rad load error:', err)
-      setRadError('Failed to load OSM data. Check your connection.')
-      setRadLoadProgress('')
-    } finally {
-      setRadLoading(false)
-    }
-  }, [setRadLoading, setRadError, setRadLoadProgress, setRadRawData])
 
   const handleRunAnalysis = useCallback(async () => {
     if (!hasHubs) return
@@ -113,7 +79,6 @@ export default function RadSidebar() {
     setRadError(null)
     setRadLoadProgress('Building road graph…')
     try {
-      // small yield to browser before heavy computation
       await new Promise(r => setTimeout(r, 20))
       setRadLoadProgress('Running Dijkstra routing…')
       await new Promise(r => setTimeout(r, 10))
@@ -138,25 +103,22 @@ export default function RadSidebar() {
       intermodalRawBikeParkings, intermodalRawBusStops, roads, footways,
       setRadLoading, setRadError, setRadLoadProgress, setRadNodes, setRadEdges, setRadGaps])
 
-  const hubCount   = radEdges.filter(e => e.route_type === 'B' || e.route_type === 'B/C').length
-  const villCount  = radEdges.filter(e => e.route_type === 'A').length
-  const histCount  = radEdges.filter(e => e.route_type === 'C').length
-  const gapCount   = radGaps.length
-
-  const sidebarStyle = {
-    position: 'absolute', top: 0, left: 0, bottom: 0,
-    width: 260, zIndex: 20,
-    background: 'rgba(255,255,255,0.96)',
-    backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-    boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
-    borderRight: '1px solid rgba(0,0,0,0.06)',
-    fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
-    display: 'flex', flexDirection: 'column', overflow: 'hidden',
-  }
+  const hubCount  = radEdges.filter(e => e.route_type === 'B' || e.route_type === 'B/C').length
+  const villCount = radEdges.filter(e => e.route_type === 'A').length
+  const histCount = radEdges.filter(e => e.route_type === 'C').length
+  const gapCount  = radGaps.length
 
   return (
-    <div style={sidebarStyle}>
-      {/* Header */}
+    <div style={{
+      position: 'absolute', top: 0, left: 0, bottom: 0,
+      width: 260, zIndex: 20,
+      background: 'rgba(255,255,255,0.96)',
+      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
+      borderRight: '1px solid rgba(0,0,0,0.06)',
+      fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    }}>
       <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1D1D1F', letterSpacing: '-0.02em' }}>Rad Network</div>
         <div style={{ fontSize: 12, color: '#6E6E73', marginTop: 2 }}>Bike route network analysis</div>
@@ -164,80 +126,12 @@ export default function RadSidebar() {
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
 
-        {/* No hubs warning */}
         {!hasHubs && (
           <div style={{ background: '#FFF3CD', border: '1px solid #FBBF24', borderRadius: 10, padding: '10px 12px', fontSize: 12, color: '#78350F', marginBottom: 12 }}>
             ⚠ Please run <strong>Intermodal Hub</strong> analysis first — rad network is built on top of hub locations.
           </div>
         )}
 
-        {/* Data loading */}
-        <SectionHead>OSM Data</SectionHead>
-        {!dataLoaded ? (
-          <button
-            onClick={handleLoadData}
-            disabled={radLoading}
-            style={{ width: '100%', padding: '9px 0', borderRadius: 10, border: 'none',
-              background: radLoading ? '#E5E5EA' : '#0071E3', color: radLoading ? '#AEAEB2' : '#fff',
-              fontSize: 13, fontWeight: 600, cursor: radLoading ? 'default' : 'pointer', letterSpacing: '-0.01em' }}>
-            {radLoading ? 'Loading…' : 'Load Historic & Villages'}
-          </button>
-        ) : (
-          <div style={{ fontSize: 12, color: '#34C759', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <span>✓</span> {(radRawHistoric || []).length} historic sites · {(radRawVillages || []).length} settlements
-          </div>
-        )}
-
-        {radLoadProgress && (
-          <div style={{ fontSize: 12, color: '#0071E3', marginTop: 6 }}>{radLoadProgress}</div>
-        )}
-        {radError && (
-          <div style={{ fontSize: 12, color: '#FF453A', marginTop: 6 }}>{radError}</div>
-        )}
-
-        <Divider />
-
-        {/* Data Layers */}
-        <SectionHead>Data Layers</SectionHead>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Toggle checked={radShowBusStops}    onChange={toggleRadShowBusStops}    label="Bus stops"      color="#FF453A" />
-          <Toggle checked={radShowCarParkings} onChange={toggleRadShowCarParkings} label="Car parking"    color="#6B7280" />
-          <Toggle checked={radShowBikeParkings} onChange={toggleRadShowBikeParkings} label="Bike parking" color="#32ADE6" />
-          <Toggle checked={radShowFacilities}  onChange={toggleRadShowFacilities}  label="Facilities"     color="#FF9F0A" />
-          <Toggle checked={radShowHistoric}    onChange={toggleRadShowHistoric}    label="Historical amenities" color="#BF5AF2" />
-          <Toggle checked={radShowParks}       onChange={toggleRadShowParks}       label="Parks & Forests" color="#30D158" />
-        </div>
-
-        {/* Hub types */}
-        <div style={{ marginTop: 12, fontSize: 12, color: '#6E6E73', marginBottom: 6 }}>Hub types</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {[
-            { id: 'bus_bike',      label: 'Bus + Bike',        c: '#EF4444' },
-            { id: 'auto_bike',     label: 'Auto + Bike',       c: '#6B7280' },
-            { id: 'auto_bus_bike', label: 'Auto + Bus + Bike', c: '#5856D6' },
-          ].map(({ id, label, c }) => (
-            <label key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer', color: '#1D1D1F' }}>
-              <input type="checkbox" checked={radHubTypes.has(id)} onChange={() => toggleRadHubType(id)}
-                style={{ accentColor: c, width: 13, height: 13 }} />
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: c, flexShrink: 0 }} />
-              {label}
-            </label>
-          ))}
-        </div>
-
-        <Divider />
-
-        {/* Roads */}
-        <SectionHead>Roads</SectionHead>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Toggle checked={radShowAutoRoads}       onChange={toggleRadShowAutoRoads}       label="Auto roads"       color="#AEAEB2" />
-          <Toggle checked={radShowPedestrianRoads} onChange={toggleRadShowPedestrianRoads} label="Pedestrian paths" color="#32ADE6" />
-          <Toggle checked={radShowCycling}         onChange={toggleRadShowCycling}         label="Cycling paths (OSM)" color="#10B981" />
-        </div>
-
-        <Divider />
-
-        {/* Analysis */}
         <SectionHead>Analysis</SectionHead>
         <button
           onClick={handleRunAnalysis}
@@ -250,7 +144,13 @@ export default function RadSidebar() {
           {radLoading ? 'Computing routes…' : 'Run Analysis'}
         </button>
 
-        {/* Results summary */}
+        {radLoadProgress && (
+          <div style={{ fontSize: 12, color: '#0071E3', marginTop: 6 }}>{radLoadProgress}</div>
+        )}
+        {radError && (
+          <div style={{ fontSize: 12, color: '#FF453A', marginTop: 6 }}>{radError}</div>
+        )}
+
         {radNodes.length > 0 && (
           <>
             <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
@@ -271,7 +171,6 @@ export default function RadSidebar() {
 
             <Divider />
 
-            {/* Status filter */}
             <SectionHead>Status</SectionHead>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[['all', 'All routes'], ['existing', 'Existing (has cycleway)'], ['proposed', 'Needs infrastructure']].map(([val, lbl]) => (
@@ -291,7 +190,6 @@ export default function RadSidebar() {
 
         <Divider />
 
-        {/* Legend */}
         <SectionHead>Route legend</SectionHead>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {[
@@ -311,21 +209,171 @@ export default function RadSidebar() {
           </div>
         </div>
 
-        <div style={{ marginTop: 12 }}>
-          <SectionHead>Node types</SectionHead>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {Object.entries({
-              hub: 'Intermodal Hub', city_center: 'City Center',
-              village_center: 'Village/District', facility: 'Top Facility',
-              historic: 'Historic site', bike_parking: 'Bike parking', bus_stop: 'Bus stop',
-            }).map(([type, label]) => (
-              <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#1D1D1F' }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: NODE_TYPE_COLOR[type] || '#6B7280', flexShrink: 0, display: 'inline-block' }} />
-                {label}
-              </div>
-            ))}
+      </div>
+    </div>
+  )
+}
+
+// ── RadDataPanel (right panel — data layers, roads, heatmap, intermodal hubs) ──
+export function RadDataPanel() {
+  const {
+    radLoading, radError, radLoadProgress,
+    radRawHistoric, radRawVillages,
+    radShowBusStops, radShowCarParkings, radShowBikeParkings,
+    radShowFacilities, radShowHistoric, radShowParks,
+    radHubTypes, intermodalHubs,
+    radShowAutoRoads, radShowPedestrianRoads, radShowCycling,
+    radShowAutoHeatmap, radShowPedHeatmap,
+
+    setRadLoading, setRadError, setRadLoadProgress, setRadRawData,
+    toggleRadShowBusStops, toggleRadShowCarParkings, toggleRadShowBikeParkings,
+    toggleRadShowFacilities, toggleRadShowHistoric, toggleRadShowParks,
+    toggleRadHubType,
+    toggleRadShowAutoRoads, toggleRadShowPedestrianRoads, toggleRadShowCycling,
+    toggleRadShowAutoHeatmap, toggleRadShowPedHeatmap,
+  } = useAppStore()
+
+  const dataLoaded = !!(radRawHistoric && radRawVillages)
+
+  const handleLoadData = useCallback(async () => {
+    setRadLoading(true)
+    setRadError(null)
+    setRadLoadProgress('Loading historic & settlement data…')
+    try {
+      const [historicRaw, villagesRaw] = await Promise.all([
+        overpassFetch(HISTORIC_Q),
+        overpassFetch(VILLAGES_Q),
+      ])
+      setRadRawData(historicRaw.elements || [], villagesRaw.elements || [])
+      setRadLoadProgress('')
+    } catch (err) {
+      console.error('Rad load error:', err)
+      setRadError('Failed to load OSM data. Check your connection.')
+      setRadLoadProgress('')
+    } finally {
+      setRadLoading(false)
+    }
+  }, [setRadLoading, setRadError, setRadLoadProgress, setRadRawData])
+
+  const HUB_TYPES = [
+    { id: 'bus_bike',      label: 'Bus + Bike' },
+    { id: 'auto_bike',     label: 'Auto + Bike' },
+    { id: 'auto_bus_bike', label: 'Auto + Bus + Bike' },
+  ]
+
+  return (
+    <div style={{
+      position: 'absolute', top: 0, right: 0, width: 260, height: '100%',
+      background: 'rgba(255,255,255,0.96)',
+      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      borderLeft: '1px solid rgba(0,0,0,0.08)',
+      boxShadow: '-4px 0 20px rgba(0,0,0,0.06)', zIndex: 20,
+      display: 'flex', flexDirection: 'column',
+      fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
+    }}>
+      <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#1D1D1F', letterSpacing: '-0.02em' }}>Data & Layers</div>
+        <div style={{ fontSize: 12, color: '#6E6E73', marginTop: 2 }}>Map overlays for Rad Network</div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+
+        {/* OSM Data loading */}
+        <SectionHead>OSM Data</SectionHead>
+        {!dataLoaded ? (
+          <button
+            onClick={handleLoadData}
+            disabled={radLoading}
+            style={{ width: '100%', padding: '9px 0', borderRadius: 10, border: 'none',
+              background: radLoading ? '#E5E5EA' : '#0071E3', color: radLoading ? '#AEAEB2' : '#fff',
+              fontSize: 13, fontWeight: 600, cursor: radLoading ? 'default' : 'pointer', letterSpacing: '-0.01em' }}>
+            {radLoading ? 'Loading…' : 'Load Historic & Villages'}
+          </button>
+        ) : (
+          <div style={{ fontSize: 12, color: '#34C759', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <span>✓</span> {(radRawHistoric || []).length} historic sites · {(radRawVillages || []).length} settlements
           </div>
+        )}
+        {radLoadProgress && (
+          <div style={{ fontSize: 12, color: '#0071E3', marginTop: 6 }}>{radLoadProgress}</div>
+        )}
+        {radError && (
+          <div style={{ fontSize: 12, color: '#FF453A', marginTop: 6 }}>{radError}</div>
+        )}
+
+        <Divider />
+
+        {/* Data Layers */}
+        <SectionHead>Data Layers</SectionHead>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Toggle checked={radShowBusStops}     onChange={toggleRadShowBusStops}     label="Bus stops"            color="#FF453A" />
+          <Toggle checked={radShowCarParkings}  onChange={toggleRadShowCarParkings}  label="Car parking"          color="#6B7280" />
+          <Toggle checked={radShowBikeParkings} onChange={toggleRadShowBikeParkings} label="Bike parking"         color="#32ADE6" />
+          <Toggle checked={radShowFacilities}   onChange={toggleRadShowFacilities}   label="Facilities"           color="#FF9F0A" />
+          <Toggle checked={radShowHistoric}     onChange={toggleRadShowHistoric}     label="Historical amenities" color="#BF5AF2" />
+          <Toggle checked={radShowParks}        onChange={toggleRadShowParks}        label="Parks & Forests"      color="#30D158" />
         </div>
+
+        <Divider />
+
+        {/* Intermodal Hubs */}
+        <SectionHead>Intermodal Hubs</SectionHead>
+        {intermodalHubs.length === 0 ? (
+          <div style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 8 }}>Run Intermodal Hub analysis first</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {HUB_TYPES.map(({ id, label }) => (
+              <label key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer', color: '#1D1D1F' }}>
+                <input type="checkbox" checked={radHubTypes.has(id)} onChange={() => toggleRadHubType(id)}
+                  style={{ accentColor: '#1D1D1F', width: 13, height: 13, flexShrink: 0 }} />
+                <span
+                  dangerouslySetInnerHTML={{ __html: makePieSVG(id, 'standard', 20) }}
+                  style={{ flexShrink: 0, lineHeight: 0 }}
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+            <div style={{ fontSize: 11, color: '#AEAEB2' }}>{intermodalHubs.length} hubs loaded</div>
+          </div>
+        )}
+
+        <Divider />
+
+        {/* Roads */}
+        <SectionHead>Roads</SectionHead>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Toggle checked={radShowAutoRoads}       onChange={toggleRadShowAutoRoads}       label="Auto roads"       color="#AEAEB2" />
+          {radShowAutoRoads && (
+            <Toggle checked={radShowAutoHeatmap} onChange={toggleRadShowAutoHeatmap} label="Heatmap (by type)" color="#EF4444" indent />
+          )}
+          <Toggle checked={radShowPedestrianRoads} onChange={toggleRadShowPedestrianRoads} label="Pedestrian paths" color="#32ADE6" />
+          {radShowPedestrianRoads && (
+            <Toggle checked={radShowPedHeatmap} onChange={toggleRadShowPedHeatmap} label="Heatmap (activity)" color="#F59E0B" indent />
+          )}
+          <Toggle checked={radShowCycling}         onChange={toggleRadShowCycling}         label="Cycling paths"    color="#10B981" />
+        </div>
+
+        {/* Heatmap legend */}
+        {radShowAutoHeatmap && (
+          <>
+            <div style={{ marginTop: 10, fontSize: 11, color: '#6E6E73', marginBottom: 6 }}>Road type colors</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {[
+                { color: '#EF4444', label: 'Motorway / Trunk' },
+                { color: '#F59E0B', label: 'Primary' },
+                { color: '#84CC16', label: 'Secondary' },
+                { color: '#22D3EE', label: 'Tertiary' },
+                { color: '#60A5FA', label: 'Residential' },
+                { color: '#9CA3AF', label: 'Other' },
+              ].map(({ color, label }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+                  <div style={{ width: 20, height: 3, borderRadius: 2, background: color, flexShrink: 0 }} />
+                  <span style={{ color: '#1D1D1F' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
       </div>
     </div>
@@ -340,9 +388,14 @@ export function RadNodePopup() {
 
   const connectedEdges = [...radEdges, ...radGaps].filter(e => e.from === node.id || e.to === node.id)
 
+  const NODE_TYPE_COLOR = {
+    hub: '#1D1D1F', city_center: '#0071E3', village_center: '#5856D6',
+    facility: '#FF9F0A', historic: '#BF5AF2', bike_parking: '#32ADE6', bus_stop: '#FF453A',
+  }
+
   return (
     <div style={{
-      position: 'absolute', top: 16, right: 246, zIndex: 30, width: 300,
+      position: 'absolute', top: 16, right: 276, zIndex: 30, width: 300,
       background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       borderRadius: 16, boxShadow: '0 12px 40px rgba(0,0,0,0.14)', border: '1px solid rgba(0,0,0,0.08)',
       fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif', overflow: 'hidden',

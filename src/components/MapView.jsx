@@ -348,6 +348,7 @@ export default function MapView({ onVenueClick }) {
     radShowBusStops, radShowCarParkings, radShowBikeParkings,
     radShowFacilities, radShowHistoric, radShowParks,
     radHubTypes, radShowAutoRoads, radShowPedestrianRoads, radShowCycling,
+    radShowAutoHeatmap, radShowPedHeatmap,
     radStatusFilter, radShowGaps,
     setRadSelectedNode, setRadSelectedEdge,
     radRawHistoric,
@@ -2065,6 +2066,109 @@ export default function MapView({ onVenueClick }) {
   }, [mapReady, activeMode,
       localBusStops, localCarParkings, localBikeParkings, localFacilities, localHistoric, localParksForests, localCycling,
       radShowBusStops, radShowCarParkings, radShowBikeParkings, radShowFacilities, radShowHistoric, radShowParks, radShowCycling])
+
+  // ── Rad Network — road layers (auto roads + pedestrian paths + heatmaps) ──
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    const isRad = activeMode === 'rad'
+
+    const setVis = (layerId, show) => {
+      if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', show ? 'visible' : 'none')
+    }
+
+    // Auto roads layers (uses existing 'roads' source from mobility mode)
+    if (map.getSource('roads')) {
+      if (!map.getLayer('rad-auto-roads-line')) {
+        map.addLayer({ id: 'rad-auto-roads-line', type: 'line', source: 'roads',
+          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+          paint: { 'line-color': '#AEAEB2', 'line-width': 1, 'line-opacity': 0.7 },
+        })
+      }
+      if (!map.getLayer('rad-auto-roads-heat')) {
+        map.addLayer({ id: 'rad-auto-roads-heat', type: 'line', source: 'roads',
+          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+          paint: {
+            'line-color': ['match', ['get', 'highway'],
+              'motorway', '#EF4444', 'motorway_link', '#EF4444',
+              'trunk', '#F97316', 'trunk_link', '#F97316',
+              'primary', '#F59E0B', 'primary_link', '#F59E0B',
+              'secondary', '#84CC16', 'secondary_link', '#84CC16',
+              'tertiary', '#22D3EE', 'tertiary_link', '#22D3EE',
+              'residential', '#60A5FA',
+              'living_street', '#A78BFA',
+              '#9CA3AF',
+            ],
+            'line-width': ['match', ['get', 'highway'],
+              'motorway', 3, 'motorway_link', 2,
+              'trunk', 2.5, 'trunk_link', 2,
+              'primary', 2, 'primary_link', 1.5,
+              'secondary', 1.5, 'tertiary', 1.2,
+              1,
+            ],
+            'line-opacity': 0.85,
+          },
+        })
+      }
+      setVis('rad-auto-roads-line', isRad && radShowAutoRoads && !radShowAutoHeatmap)
+      setVis('rad-auto-roads-heat', isRad && radShowAutoRoads && radShowAutoHeatmap)
+    }
+
+    // Pedestrian path layers (uses existing 'footways' source)
+    if (map.getSource('footways')) {
+      if (!map.getLayer('rad-ped-roads-line')) {
+        map.addLayer({ id: 'rad-ped-roads-line', type: 'line', source: 'footways',
+          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+          paint: { 'line-color': '#32ADE6', 'line-width': 1, 'line-opacity': 0.7 },
+        })
+      }
+      if (!map.getLayer('rad-ped-roads-heat')) {
+        map.addLayer({ id: 'rad-ped-roads-heat', type: 'line', source: 'footways',
+          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+          paint: {
+            'line-color': '#F59E0B',
+            'line-width': ['match', ['get', 'footway'], 'crossing', 2, 'steps', 1.5, 1],
+            'line-opacity': 0.8,
+          },
+        })
+      }
+      setVis('rad-ped-roads-line', isRad && radShowPedestrianRoads && !radShowPedHeatmap)
+      setVis('rad-ped-roads-heat', isRad && radShowPedestrianRoads && radShowPedHeatmap)
+    }
+  }, [mapReady, activeMode, roads, footways,
+      radShowAutoRoads, radShowPedestrianRoads, radShowAutoHeatmap, radShowPedHeatmap])
+
+  // ── Rad Network — intermodal hub markers ─────────────────────────────────
+  const radHubMarkersRef = useRef([])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+
+    radHubMarkersRef.current.forEach(m => m.remove())
+    radHubMarkersRef.current = []
+
+    if (activeMode !== 'rad' || !intermodalHubs.length) return
+
+    const markers = intermodalHubs
+      .filter(hub => radHubTypes.has(hub.hubType))
+      .map(hub => {
+        const size = hub.priority === 'priority' ? 36 : 26
+        const el = document.createElement('div')
+        el.innerHTML = makePieSVG(hub.hubType, hub.priority, size)
+        el.style.cssText = `cursor:default;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));width:${size}px;height:${size}px`
+        el.title = `${hub.hubType.replace(/_/g, ' ')} hub`
+        return new maplibregl.Marker({ element: el, anchor: 'center' })
+          .setLngLat([hub.lng, hub.lat])
+          .addTo(map)
+      })
+
+    radHubMarkersRef.current = markers
+    return () => {
+      markers.forEach(m => m.remove())
+      radHubMarkersRef.current = []
+    }
+  }, [mapReady, activeMode, intermodalHubs, radHubTypes])
 
   // ── Export trigger from TopBar ────────────────────────────────────────────
   useEffect(() => {

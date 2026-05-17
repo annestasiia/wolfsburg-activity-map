@@ -337,6 +337,7 @@ export const useAppStore = create((set) => ({
   radShowFacilities: false, radShowHistoric: false, radShowParks: false,
   radHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
   radShowAutoRoads: false, radShowPedestrianRoads: false, radShowCycling: false,
+  radShowAutoHeatmap: false, radShowPedHeatmap: false,
   radStatusFilter: 'all', radShowGaps: false,
   radSelectedNode: null, radSelectedEdge: null,
 
@@ -360,6 +361,8 @@ export const useAppStore = create((set) => ({
   toggleRadShowAutoRoads:      () => set(s => ({ radShowAutoRoads:      !s.radShowAutoRoads      })),
   toggleRadShowPedestrianRoads:() => set(s => ({ radShowPedestrianRoads:!s.radShowPedestrianRoads})),
   toggleRadShowCycling:        () => set(s => ({ radShowCycling:        !s.radShowCycling        })),
+  toggleRadShowAutoHeatmap:    () => set(s => ({ radShowAutoHeatmap:    !s.radShowAutoHeatmap    })),
+  toggleRadShowPedHeatmap:     () => set(s => ({ radShowPedHeatmap:     !s.radShowPedHeatmap     })),
   toggleRadShowGaps:           () => set(s => ({ radShowGaps:           !s.radShowGaps           })),
   toggleRadHubType: (type) => set(s => {
     const next = new Set(s.radHubTypes)
@@ -486,6 +489,7 @@ export const useAppStore = create((set) => ({
     radShowFacilities: false, radShowHistoric: false, radShowParks: false,
     radHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
     radShowAutoRoads: false, radShowPedestrianRoads: false, radShowCycling: false,
+    radShowAutoHeatmap: false, radShowPedHeatmap: false,
     radStatusFilter: 'all', radShowGaps: false,
     radSelectedNode: null, radSelectedEdge: null,
     radLoadProgress: '',
