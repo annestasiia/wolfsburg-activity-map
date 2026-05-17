@@ -235,6 +235,7 @@ export const useAppStore = create((set) => ({
   localFacilities: null,
   localHistoric: null,
   localParksForests: null,
+  localCycling: null,
 
   setLocalBusStops:    (v) => set({ localBusStops: v }),
   setLocalCarParkings:  (v) => set({ localCarParkings: v }),
@@ -242,6 +243,7 @@ export const useAppStore = create((set) => ({
   setLocalFacilities:   (v) => set({ localFacilities: v }),
   setLocalHistoric:     (v) => set({ localHistoric: v }),
   setLocalParksForests: (v) => set({ localParksForests: v }),
+  setLocalCycling:      (v) => set({ localCycling: v }),
 
   // ── Intermodal density config ─────────────────────────────────────────────────
   densityConfig: { high: 400, medium: 700, low: 1000 },
@@ -334,7 +336,7 @@ export const useAppStore = create((set) => ({
   radShowBusStops: false, radShowCarParkings: false, radShowBikeParkings: false,
   radShowFacilities: false, radShowHistoric: false, radShowParks: false,
   radHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
-  radShowAutoRoads: false, radShowPedestrianRoads: false,
+  radShowAutoRoads: false, radShowPedestrianRoads: false, radShowCycling: false,
   radStatusFilter: 'all', radShowGaps: false,
   radSelectedNode: null, radSelectedEdge: null,
 
@@ -357,6 +359,7 @@ export const useAppStore = create((set) => ({
   toggleRadShowParks:          () => set(s => ({ radShowParks:          !s.radShowParks          })),
   toggleRadShowAutoRoads:      () => set(s => ({ radShowAutoRoads:      !s.radShowAutoRoads      })),
   toggleRadShowPedestrianRoads:() => set(s => ({ radShowPedestrianRoads:!s.radShowPedestrianRoads})),
+  toggleRadShowCycling:        () => set(s => ({ radShowCycling:        !s.radShowCycling        })),
   toggleRadShowGaps:           () => set(s => ({ radShowGaps:           !s.radShowGaps           })),
   toggleRadHubType: (type) => set(s => {
     const next = new Set(s.radHubTypes)
@@ -482,7 +485,7 @@ export const useAppStore = create((set) => ({
     radShowBusStops: false, radShowCarParkings: false, radShowBikeParkings: false,
     radShowFacilities: false, radShowHistoric: false, radShowParks: false,
     radHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
-    radShowAutoRoads: false, radShowPedestrianRoads: false,
+    radShowAutoRoads: false, radShowPedestrianRoads: false, radShowCycling: false,
     radStatusFilter: 'all', radShowGaps: false,
     radSelectedNode: null, radSelectedEdge: null,
     radLoadProgress: '',

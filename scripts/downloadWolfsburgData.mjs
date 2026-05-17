@@ -134,7 +134,7 @@ async function downloadHistoric() {
 }
 
 async function downloadParksForests() {
-  console.log('\n[6/6] Parks & Forests')
+  console.log('\n[6/7] Parks & Forests')
   const data = await overpassFetch(`[out:json][timeout:90];(
     way["leisure"~"park|recreation_ground|garden|nature_reserve"](${BBOX});
     relation["leisure"~"park|recreation_ground|garden|nature_reserve"](${BBOX});
@@ -142,6 +142,21 @@ async function downloadParksForests() {
     way["natural"~"wood|scrub|grassland|heath"](${BBOX});
   );out geom;`)
   await save('wolfsburg_parks_forests.geojson', toPolygonGJ(data.elements))
+}
+
+async function downloadCycling() {
+  console.log('\n[7/7] Cycling routes & infrastructure')
+  const data = await overpassFetch(`[out:json][timeout:60];(
+    way["highway"="cycleway"](${BBOX});
+    way["cycleway"~"lane|track|shared_lane|opposite_lane|opposite_track"](${BBOX});
+    way["cycleway:right"~"lane|track"](${BBOX});
+    way["cycleway:left"~"lane|track"](${BBOX});
+    way["cycleway:both"~"lane|track"](${BBOX});
+    way["bicycle"="designated"]["highway"~"path|track|footway"](${BBOX});
+    way["bicycle"="yes"]["highway"~"path|track"](${BBOX});
+    way["highway"~"path|track"]["bicycle"~"yes|designated|permissive"](${BBOX});
+  );out geom;`)
+  await save('wolfsburg_cycling.geojson', toLineGJ(data.elements))
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -154,7 +169,8 @@ try {
   await downloadBikeParking();  await delay(4000)
   await downloadFacilities();   await delay(6000)
   await downloadHistoric();     await delay(4000)
-  await downloadParksForests();
+  await downloadParksForests(); await delay(6000)
+  await downloadCycling();
   console.log('\n=== All downloads complete ===')
 } catch (err) {
   console.error('\nDownload failed:', err.message)

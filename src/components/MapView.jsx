@@ -347,12 +347,12 @@ export default function MapView({ onVenueClick }) {
     radNodes, radEdges, radGaps,
     radShowBusStops, radShowCarParkings, radShowBikeParkings,
     radShowFacilities, radShowHistoric, radShowParks,
-    radHubTypes, radShowAutoRoads, radShowPedestrianRoads,
+    radHubTypes, radShowAutoRoads, radShowPedestrianRoads, radShowCycling,
     radStatusFilter, radShowGaps,
     setRadSelectedNode, setRadSelectedEdge,
     radRawHistoric,
     // Local GeoJSON library
-    localBusStops, localCarParkings, localBikeParkings, localFacilities, localHistoric, localParksForests,
+    localBusStops, localCarParkings, localBikeParkings, localFacilities, localHistoric, localParksForests, localCycling,
     // Export trigger
     exportPNGTrigger,
   } = useAppStore()
@@ -2033,27 +2033,38 @@ export default function MapView({ onVenueClick }) {
     ensureCircleLayer('rad-l-hist', '#BF5AF2', 6)
     ensurePolygonLayer('rad-l-parks', '#16A34A', '#15803D')
 
+    // Cycling: line layer
+    if (!map.getSource('rad-l-cycling')) map.addSource('rad-l-cycling', { type: 'geojson', data: empty })
+    if (!map.getLayer('rad-l-cycling-line')) {
+      map.addLayer({ id: 'rad-l-cycling-line', type: 'line', source: 'rad-l-cycling',
+        paint: { 'line-color': '#10B981', 'line-width': 1.5, 'line-opacity': 0.75 },
+        layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+      })
+    }
+
     const setData = (srcId, gj) => { if (map.getSource(srcId)) map.getSource(srcId).setData(gj || empty) }
-    setData('rad-l-bus',   localBusStops)
-    setData('rad-l-car',   localCarParkings)
-    setData('rad-l-bike',  localBikeParkings)
-    setData('rad-l-fac',   localFacilities)
-    setData('rad-l-hist',  localHistoric)
-    setData('rad-l-parks', localParksForests)
+    setData('rad-l-bus',     localBusStops)
+    setData('rad-l-car',     localCarParkings)
+    setData('rad-l-bike',    localBikeParkings)
+    setData('rad-l-fac',     localFacilities)
+    setData('rad-l-hist',    localHistoric)
+    setData('rad-l-parks',   localParksForests)
+    setData('rad-l-cycling', localCycling)
 
     const setVis = (layerId, show) => {
       if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', show ? 'visible' : 'none')
     }
-    setVis('rad-l-bus-circle',  isRad && radShowBusStops)
-    setVis('rad-l-car-circle',  isRad && radShowCarParkings)
-    setVis('rad-l-bike-circle', isRad && radShowBikeParkings)
-    setVis('rad-l-fac-circle',  isRad && radShowFacilities)
-    setVis('rad-l-hist-circle', isRad && radShowHistoric)
-    setVis('rad-l-parks-fill',  isRad && radShowParks)
-    setVis('rad-l-parks-line',  isRad && radShowParks)
+    setVis('rad-l-bus-circle',    isRad && radShowBusStops)
+    setVis('rad-l-car-circle',    isRad && radShowCarParkings)
+    setVis('rad-l-bike-circle',   isRad && radShowBikeParkings)
+    setVis('rad-l-fac-circle',    isRad && radShowFacilities)
+    setVis('rad-l-hist-circle',   isRad && radShowHistoric)
+    setVis('rad-l-parks-fill',    isRad && radShowParks)
+    setVis('rad-l-parks-line',    isRad && radShowParks)
+    setVis('rad-l-cycling-line',  isRad && radShowCycling)
   }, [mapReady, activeMode,
-      localBusStops, localCarParkings, localBikeParkings, localFacilities, localHistoric, localParksForests,
-      radShowBusStops, radShowCarParkings, radShowBikeParkings, radShowFacilities, radShowHistoric, radShowParks])
+      localBusStops, localCarParkings, localBikeParkings, localFacilities, localHistoric, localParksForests, localCycling,
+      radShowBusStops, radShowCarParkings, radShowBikeParkings, radShowFacilities, radShowHistoric, radShowParks, radShowCycling])
 
   // ── Export trigger from TopBar ────────────────────────────────────────────
   useEffect(() => {

@@ -70,7 +70,7 @@ export default function RadSidebar() {
     radRawHistoric, radRawVillages,
     radShowBusStops, radShowCarParkings, radShowBikeParkings,
     radShowFacilities, radShowHistoric, radShowParks,
-    radHubTypes, radShowAutoRoads, radShowPedestrianRoads,
+    radHubTypes, radShowAutoRoads, radShowPedestrianRoads, radShowCycling,
     radStatusFilter, radShowGaps,
     radSelectedNode, radSelectedEdge,
 
@@ -79,7 +79,7 @@ export default function RadSidebar() {
     setRadRawData,
     toggleRadShowBusStops, toggleRadShowCarParkings, toggleRadShowBikeParkings,
     toggleRadShowFacilities, toggleRadShowHistoric, toggleRadShowParks,
-    toggleRadHubType, toggleRadShowAutoRoads, toggleRadShowPedestrianRoads,
+    toggleRadHubType, toggleRadShowAutoRoads, toggleRadShowPedestrianRoads, toggleRadShowCycling,
     setRadStatusFilter, toggleRadShowGaps,
     setRadSelectedNode, setRadSelectedEdge,
   } = useAppStore()
@@ -232,6 +232,7 @@ export default function RadSidebar() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Toggle checked={radShowAutoRoads}       onChange={toggleRadShowAutoRoads}       label="Auto roads"       color="#AEAEB2" />
           <Toggle checked={radShowPedestrianRoads} onChange={toggleRadShowPedestrianRoads} label="Pedestrian paths" color="#32ADE6" />
+          <Toggle checked={radShowCycling}         onChange={toggleRadShowCycling}         label="Cycling paths (OSM)" color="#10B981" />
         </div>
 
         <Divider />
