@@ -7,13 +7,13 @@ import VenuePopup from './components/VenuePopup'
 import GreenerySidebar from './components/GreenerySidebar'
 import MobilityToolbar from './components/MobilityToolbar'
 import MobilityLeftBar from './components/MobilityLeftBar'
-import FacilityToolbar from './components/FacilityToolbar'
 import LeftSidebar from './components/LeftSidebar'
 import DistrictStatsPopup from './components/DistrictStatsPopup'
 import AnalysisInfoModal from './components/panels/AnalysisInfoModal'
 import IntermodalSidebar, { IntermodalDataPanel } from './components/IntermodalSidebar'
 import IntermodalHubPopup from './components/IntermodalHubPopup'
 import RadSidebar, { RadDataPanel, RadNodePopup, RadEdgePopup } from './components/RadSidebar'
+import TransportPoolPanel from './components/TransportPoolPanel'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -80,7 +80,6 @@ export default function App() {
         {activeMode === 'mobility'   && <MobilityLeftBar />}
         {activeMode === 'mobility'   && <MobilityToolbar />}
         {activeMode === 'facilities' && <LeftSidebar />}
-        {activeMode === 'facilities' && <FacilityToolbar />}
         {selectedVenue && activeMode !== 'facilities' && (
           <VenuePopup
             venue={selectedVenue}
@@ -88,6 +87,8 @@ export default function App() {
           />
         )}
         {activeMode === 'greenery'    && <GreenerySidebar />}
+        {activeMode === 'greenery'    && <TransportPoolPanel />}
+        {activeMode === 'facilities'  && <TransportPoolPanel />}
         {activeMode === 'intermodal' && <IntermodalSidebar />}
         {activeMode === 'intermodal' && <IntermodalDataPanel />}
         {activeMode === 'intermodal' && <IntermodalHubPopup />}

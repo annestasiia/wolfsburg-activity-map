@@ -40,12 +40,14 @@ export const useAppStore = create((set) => ({
 
   // ── Automobile options ────────────────────────────────────────────────────
   autoShowRegional: true,
+  autoShowRoutes: true,
   autoShowHeatmap: false,
   autoShowParking: false,
   autoParkingGeoJSON: null,
 
   // ── Transit (Public Transport) options ────────────────────────────────────
   transitShowRegional: true,
+  transitShowRoutes: true,
   transitShowHeatmap: false,
   transitShowBusStops: false,
   transitStopsGeoJSON: null,
@@ -141,8 +143,8 @@ export const useAppStore = create((set) => ({
     mobilityScoresPerMode: {},
     mobilityOverlayPerMode: {},
     mobilityHighlightRoute: null,
-    autoShowRegional: true, autoShowHeatmap: false, autoShowParking: false,
-    transitShowRegional: true, transitShowHeatmap: false, transitShowBusStops: false,
+    autoShowRegional: true, autoShowRoutes: true, autoShowHeatmap: false, autoShowParking: false,
+    transitShowRegional: true, transitShowRoutes: true, transitShowHeatmap: false, transitShowBusStops: false,
     cyclingShowRegional: true, cyclingShowRoutes: true,
     cyclingShowLeisureRoutes: true, cyclingShowBikeParking: false,
     cyclingHighlightLeisureRoute: null,
@@ -173,12 +175,14 @@ export const useAppStore = create((set) => ({
 
   // ── Automobile setters ────────────────────────────────────────────────────
   toggleAutoShowRegional: () => set(s => ({ autoShowRegional: !s.autoShowRegional })),
+  toggleAutoShowRoutes:   () => set(s => ({ autoShowRoutes:   !s.autoShowRoutes   })),
   toggleAutoShowHeatmap:  () => set(s => ({ autoShowHeatmap:  !s.autoShowHeatmap  })),
   toggleAutoShowParking:  () => set(s => ({ autoShowParking:  !s.autoShowParking  })),
   setAutoParkingGeoJSON:  (gj) => set({ autoParkingGeoJSON: gj }),
 
   // ── Transit setters ───────────────────────────────────────────────────────
   toggleTransitShowRegional: () => set(s => ({ transitShowRegional: !s.transitShowRegional })),
+  toggleTransitShowRoutes:   () => set(s => ({ transitShowRoutes:   !s.transitShowRoutes   })),
   toggleTransitShowHeatmap:  () => set(s => ({ transitShowHeatmap:  !s.transitShowHeatmap  })),
   toggleTransitShowBusStops: () => set(s => ({ transitShowBusStops: !s.transitShowBusStops })),
   setTransitStopsGeoJSON:    (gj) => set({ transitStopsGeoJSON: gj }),

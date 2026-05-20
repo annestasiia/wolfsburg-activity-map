@@ -313,10 +313,10 @@ export default function MapView({ onVenueClick }) {
     setMobilityScoresForMode, setMobilityOverlayForMode,
     setMobilityHighlightRoute,
     // Automobile
-    autoShowRegional, autoShowHeatmap, autoShowParking,
+    autoShowRegional, autoShowRoutes, autoShowHeatmap, autoShowParking,
     autoParkingGeoJSON, setAutoParkingGeoJSON,
     // Transit
-    transitShowRegional, transitShowHeatmap, transitShowBusStops,
+    transitShowRegional, transitShowRoutes, transitShowHeatmap, transitShowBusStops,
     transitStopsGeoJSON, setTransitStopsGeoJSON,
     // Cycling
     cyclingShowRegional, cyclingShowRoutes, cyclingShowLeisureRoutes, cyclingShowBikeParking,
@@ -803,7 +803,7 @@ export default function MapView({ onVenueClick }) {
     if (!map.getSource('auto-overlay')) {
       map.addSource('auto-overlay', { type: 'geojson', data: sourceData })
       map.addLayer({ id: 'auto-overlay', type: 'line', source: 'auto-overlay',
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': active && autoShowRoutes ? 'visible' : 'none' },
         paint: { 'line-color': lineColor, 'line-width': lineWidth, 'line-opacity': lineOpacity },
       }, getBeforeLayer())
     } else {
@@ -812,11 +812,11 @@ export default function MapView({ onVenueClick }) {
         map.setPaintProperty('auto-overlay', 'line-color',   lineColor)
         map.setPaintProperty('auto-overlay', 'line-width',   lineWidth)
         map.setPaintProperty('auto-overlay', 'line-opacity', lineOpacity)
-        map.setLayoutProperty('auto-overlay', 'visibility', active ? 'visible' : 'none')
+        map.setLayoutProperty('auto-overlay', 'visibility', active && autoShowRoutes ? 'visible' : 'none')
         try { map.moveLayer('auto-overlay', getBeforeLayer()) } catch (_) {}
       }
     }
-  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, autoShowHeatmap, selectedDay, selectedTime, activeMode])
+  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, autoShowRoutes, autoShowHeatmap, selectedDay, selectedTime, activeMode])
 
   // ── Transport: render route overlay ───────────────────────────────────────
   useEffect(() => {
@@ -840,7 +840,7 @@ export default function MapView({ onVenueClick }) {
     if (!map.getSource('transport-overlay')) {
       map.addSource('transport-overlay', { type: 'geojson', data: geoJSON })
       map.addLayer({ id: 'transport-overlay', type: 'line', source: 'transport-overlay',
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': active && transitShowRoutes ? 'visible' : 'none' },
         paint: { 'line-color': tColor, 'line-width': 1.8, 'line-opacity': opacity },
       }, 'venue-circles')
     } else {
@@ -849,10 +849,10 @@ export default function MapView({ onVenueClick }) {
         map.setPaintProperty('transport-overlay', 'line-color',   tColor)
         map.setPaintProperty('transport-overlay', 'line-width',   transitShowHeatmap ? 2.5 : 1.8)
         map.setPaintProperty('transport-overlay', 'line-opacity', opacity)
-        map.setLayoutProperty('transport-overlay', 'visibility',  active ? 'visible' : 'none')
+        map.setLayoutProperty('transport-overlay', 'visibility',  active && transitShowRoutes ? 'visible' : 'none')
       }
     }
-  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, transitShowHeatmap, selectedDay, selectedTime, activeMode])
+  }, [mapReady, mobilityOverlayPerMode, activeMobilityModes, transitShowRoutes, transitShowHeatmap, selectedDay, selectedTime, activeMode])
 
   // ── Cycling: render cycling paths overlay ──────────────────────────────────
   useEffect(() => {
@@ -2072,69 +2072,76 @@ export default function MapView({ onVenueClick }) {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
     const isRad = activeMode === 'rad'
+    const empty = { type: 'FeatureCollection', features: [] }
 
     const setVis = (layerId, show) => {
       if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', show ? 'visible' : 'none')
     }
 
-    // Auto roads layers (uses existing 'roads' source from mobility mode)
-    if (map.getSource('roads')) {
-      if (!map.getLayer('rad-auto-roads-line')) {
-        map.addLayer({ id: 'rad-auto-roads-line', type: 'line', source: 'roads',
-          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
-          paint: { 'line-color': '#AEAEB2', 'line-width': 1, 'line-opacity': 0.7 },
-        })
-      }
-      if (!map.getLayer('rad-auto-roads-heat')) {
-        map.addLayer({ id: 'rad-auto-roads-heat', type: 'line', source: 'roads',
-          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
-          paint: {
-            'line-color': ['match', ['get', 'highway'],
-              'motorway', '#EF4444', 'motorway_link', '#EF4444',
-              'trunk', '#F97316', 'trunk_link', '#F97316',
-              'primary', '#F59E0B', 'primary_link', '#F59E0B',
-              'secondary', '#84CC16', 'secondary_link', '#84CC16',
-              'tertiary', '#22D3EE', 'tertiary_link', '#22D3EE',
-              'residential', '#60A5FA',
-              'living_street', '#A78BFA',
-              '#9CA3AF',
-            ],
-            'line-width': ['match', ['get', 'highway'],
-              'motorway', 3, 'motorway_link', 2,
-              'trunk', 2.5, 'trunk_link', 2,
-              'primary', 2, 'primary_link', 1.5,
-              'secondary', 1.5, 'tertiary', 1.2,
-              1,
-            ],
-            'line-opacity': 0.85,
-          },
-        })
-      }
-      setVis('rad-auto-roads-line', isRad && radShowAutoRoads && !radShowAutoHeatmap)
-      setVis('rad-auto-roads-heat', isRad && radShowAutoRoads && radShowAutoHeatmap)
+    // Auto roads — dedicated source from local wolfsburg_roads.geojson
+    if (!map.getSource('rad-auto-roads')) {
+      map.addSource('rad-auto-roads', { type: 'geojson', data: roads || empty })
+    } else if (roads) {
+      map.getSource('rad-auto-roads').setData(roads)
     }
+    if (!map.getLayer('rad-auto-roads-line')) {
+      map.addLayer({ id: 'rad-auto-roads-line', type: 'line', source: 'rad-auto-roads',
+        layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+        paint: { 'line-color': '#AEAEB2', 'line-width': 1, 'line-opacity': 0.7 },
+      })
+    }
+    if (!map.getLayer('rad-auto-roads-heat')) {
+      map.addLayer({ id: 'rad-auto-roads-heat', type: 'line', source: 'rad-auto-roads',
+        layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+        paint: {
+          'line-color': ['match', ['get', 'highway'],
+            'motorway', '#EF4444', 'motorway_link', '#EF4444',
+            'trunk', '#F97316', 'trunk_link', '#F97316',
+            'primary', '#F59E0B', 'primary_link', '#F59E0B',
+            'secondary', '#84CC16', 'secondary_link', '#84CC16',
+            'tertiary', '#22D3EE', 'tertiary_link', '#22D3EE',
+            'residential', '#60A5FA',
+            'living_street', '#A78BFA',
+            '#9CA3AF',
+          ],
+          'line-width': ['match', ['get', 'highway'],
+            'motorway', 3, 'motorway_link', 2,
+            'trunk', 2.5, 'trunk_link', 2,
+            'primary', 2, 'primary_link', 1.5,
+            'secondary', 1.5, 'tertiary', 1.2,
+            1,
+          ],
+          'line-opacity': 0.85,
+        },
+      })
+    }
+    setVis('rad-auto-roads-line', isRad && radShowAutoRoads && !radShowAutoHeatmap)
+    setVis('rad-auto-roads-heat', isRad && radShowAutoRoads && radShowAutoHeatmap)
 
-    // Pedestrian path layers (uses existing 'footways' source)
-    if (map.getSource('footways')) {
-      if (!map.getLayer('rad-ped-roads-line')) {
-        map.addLayer({ id: 'rad-ped-roads-line', type: 'line', source: 'footways',
-          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
-          paint: { 'line-color': '#32ADE6', 'line-width': 1, 'line-opacity': 0.7 },
-        })
-      }
-      if (!map.getLayer('rad-ped-roads-heat')) {
-        map.addLayer({ id: 'rad-ped-roads-heat', type: 'line', source: 'footways',
-          layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
-          paint: {
-            'line-color': '#F59E0B',
-            'line-width': ['match', ['get', 'footway'], 'crossing', 2, 'steps', 1.5, 1],
-            'line-opacity': 0.8,
-          },
-        })
-      }
-      setVis('rad-ped-roads-line', isRad && radShowPedestrianRoads && !radShowPedHeatmap)
-      setVis('rad-ped-roads-heat', isRad && radShowPedestrianRoads && radShowPedHeatmap)
+    // Pedestrian paths — dedicated source from local wolfsburg_footways.geojson
+    if (!map.getSource('rad-footways')) {
+      map.addSource('rad-footways', { type: 'geojson', data: footways || empty })
+    } else if (footways) {
+      map.getSource('rad-footways').setData(footways)
     }
+    if (!map.getLayer('rad-ped-roads-line')) {
+      map.addLayer({ id: 'rad-ped-roads-line', type: 'line', source: 'rad-footways',
+        layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+        paint: { 'line-color': '#32ADE6', 'line-width': 1, 'line-opacity': 0.7 },
+      })
+    }
+    if (!map.getLayer('rad-ped-roads-heat')) {
+      map.addLayer({ id: 'rad-ped-roads-heat', type: 'line', source: 'rad-footways',
+        layout: { 'line-cap': 'round', 'line-join': 'round', visibility: 'none' },
+        paint: {
+          'line-color': '#F59E0B',
+          'line-width': ['match', ['get', 'highway'], 'steps', 1.5, 'path', 1.2, 1],
+          'line-opacity': 0.8,
+        },
+      })
+    }
+    setVis('rad-ped-roads-line', isRad && radShowPedestrianRoads && !radShowPedHeatmap)
+    setVis('rad-ped-roads-heat', isRad && radShowPedestrianRoads && radShowPedHeatmap)
   }, [mapReady, activeMode, roads, footways,
       radShowAutoRoads, radShowPedestrianRoads, radShowAutoHeatmap, radShowPedHeatmap])
 
@@ -2179,13 +2186,16 @@ export default function MapView({ onVenueClick }) {
     if (!mapRef.current) return
     const map = mapRef.current
     const mapCanvas = map.getCanvas()
-    const pr = MAP_PIXEL_RATIO
+    const container = map.getContainer()
+    // Compute actual device pixel ratio dynamically — avoids mismatch with MAP_PIXEL_RATIO constant
+    const pr = mapCanvas.width / container.offsetWidth
 
     const offscreen = document.createElement('canvas')
     offscreen.width  = mapCanvas.width
     offscreen.height = mapCanvas.height
     const ctx = offscreen.getContext('2d')
-    ctx.drawImage(mapCanvas, 0, 0)
+    // Explicit dimensions required — WebGL canvas may otherwise be drawn at CSS size (1×)
+    ctx.drawImage(mapCanvas, 0, 0, mapCanvas.width, mapCanvas.height)
 
     // Composite pie-chart markers (DOM elements not captured by toDataURL)
     const state = useAppStore.getState()
@@ -2197,15 +2207,19 @@ export default function MapView({ onVenueClick }) {
         return true
       })
       const scale = state.intermodalObjectScale ?? 1.0
-      await Promise.all(visibleHubs.map(hub => new Promise(resolve => {
+      // Pre-compute screen positions synchronously before any async work so map state is consistent
+      const hubItems = visibleHubs.map(hub => {
         const baseSize = hub.priority === 'priority' ? 40 : 30
         const size = Math.round(baseSize * scale)
+        const pt = map.project([hub.lng, hub.lat])
+        return { hub, size, pt }
+      })
+      await Promise.all(hubItems.map(({ hub, size, pt }) => new Promise(resolve => {
         const svg  = makePieSVG(hub.hubType, hub.priority, size)
         const blob = new Blob([svg], { type: 'image/svg+xml' })
         const blobUrl = URL.createObjectURL(blob)
         const img = new Image()
         img.onload = () => {
-          const pt = map.project([hub.lng, hub.lat])
           ctx.drawImage(img, (pt.x - size / 2) * pr, (pt.y - size / 2) * pr, size * pr, size * pr)
           URL.revokeObjectURL(blobUrl)
           resolve()
