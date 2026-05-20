@@ -135,13 +135,11 @@ export const useAppStore = create((set) => ({
   setShowNotes:    (val)  => set({ showNotes: val }),
   setSelectedFacilityVenueId: (id) => set({ selectedFacilityVenueId: id }),
 
-  // ── Mode switch: reset mobility state; intermodal data is cached ─────────
+  // ── Mode switch: overlay/score data is preserved as cache across mode changes ─
   setActiveMode: (mode) => set({
     activeMode: mode,
     selectedFacilityVenueId: null,
     activeMobilityModes: new Set(),
-    mobilityScoresPerMode: {},
-    mobilityOverlayPerMode: {},
     mobilityHighlightRoute: null,
     autoShowRegional: true, autoShowRoutes: true, autoShowHeatmap: false, autoShowParking: false,
     transitShowRegional: true, transitShowRoutes: true, transitShowHeatmap: false, transitShowBusStops: false,

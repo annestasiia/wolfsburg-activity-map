@@ -1061,7 +1061,7 @@ export default function MapView({ onVenueClick }) {
       const lineId = `boundary-line-${name}`
       if (!map.getLayer(fillId)) return
 
-      if (hasMobilityScores && showRegional && activeMode !== 'facilities') {
+      if (hasMobilityScores && showRegional && activeMode === 'mobility') {
         const normScore = scores[name] ?? 0
         map.setLayoutProperty(fillId, 'visibility', 'visible')
         map.setLayoutProperty(lineId, 'visibility', 'none')
