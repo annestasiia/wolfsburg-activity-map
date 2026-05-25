@@ -221,14 +221,14 @@ export function RadDataPanel() {
     radRawHistoric, radRawVillages,
     radShowBusStops, radShowCarParkings, radShowBikeParkings,
     radShowFacilities, radShowHistoric, radShowParks,
-    radHubTypes, intermodalHubs,
+    radHubTypes, radHubObjectScale, intermodalHubs,
     radShowAutoRoads, radShowPedestrianRoads, radShowCycling,
     radShowAutoHeatmap, radShowPedHeatmap,
 
     setRadLoading, setRadError, setRadLoadProgress, setRadRawData,
     toggleRadShowBusStops, toggleRadShowCarParkings, toggleRadShowBikeParkings,
     toggleRadShowFacilities, toggleRadShowHistoric, toggleRadShowParks,
-    toggleRadHubType,
+    toggleRadHubType, setRadHubObjectScale,
     toggleRadShowAutoRoads, toggleRadShowPedestrianRoads, toggleRadShowCycling,
     toggleRadShowAutoHeatmap, toggleRadShowPedHeatmap,
   } = useAppStore()
@@ -334,6 +334,16 @@ export function RadDataPanel() {
               </label>
             ))}
             <div style={{ fontSize: 11, color: '#AEAEB2' }}>{intermodalHubs.length} hubs loaded</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <span style={{ fontSize: 11, color: '#6E6E73', minWidth: 36 }}>Size</span>
+              <button
+                onClick={() => setRadHubObjectScale((radHubObjectScale ?? 1) - 0.25)}
+                style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)', background: '#F5F5F7', cursor: 'pointer', fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1D1D1F', flexShrink: 0 }}>−</button>
+              <span style={{ fontSize: 12, color: '#1D1D1F', minWidth: 38, textAlign: 'center' }}>×{(radHubObjectScale ?? 1).toFixed(2)}</span>
+              <button
+                onClick={() => setRadHubObjectScale((radHubObjectScale ?? 1) + 0.25)}
+                style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)', background: '#F5F5F7', cursor: 'pointer', fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1D1D1F', flexShrink: 0 }}>+</button>
+            </div>
           </div>
         )}
 

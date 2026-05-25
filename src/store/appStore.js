@@ -338,6 +338,7 @@ export const useAppStore = create((set) => ({
   radShowBusStops: false, radShowCarParkings: false, radShowBikeParkings: false,
   radShowFacilities: false, radShowHistoric: false, radShowParks: false,
   radHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
+  radHubObjectScale: 1.0,
   radShowAutoRoads: false, radShowPedestrianRoads: false, radShowCycling: false,
   radShowAutoHeatmap: false, radShowPedHeatmap: false,
   radStatusFilter: 'all', radShowGaps: false,
@@ -371,6 +372,7 @@ export const useAppStore = create((set) => ({
     next.has(type) ? next.delete(type) : next.add(type)
     return { radHubTypes: next }
   }),
+  setRadHubObjectScale: (v) => set({ radHubObjectScale: Math.max(0.5, Math.min(2.0, v)) }),
 
   // ── Export trigger (TopBar → MapView) ────────────────────────────────────
   exportPNGTrigger: 0,
@@ -490,6 +492,7 @@ export const useAppStore = create((set) => ({
     radShowBusStops: false, radShowCarParkings: false, radShowBikeParkings: false,
     radShowFacilities: false, radShowHistoric: false, radShowParks: false,
     radHubTypes: new Set(['bus_bike', 'auto_bike', 'auto_bus_bike']),
+    radHubObjectScale: 1.0,
     radShowAutoRoads: false, radShowPedestrianRoads: false, radShowCycling: false,
     radShowAutoHeatmap: false, radShowPedHeatmap: false,
     radStatusFilter: 'all', radShowGaps: false,

@@ -347,7 +347,8 @@ export default function MapView({ onVenueClick }) {
     radNodes, radEdges, radGaps,
     radShowBusStops, radShowCarParkings, radShowBikeParkings,
     radShowFacilities, radShowHistoric, radShowParks,
-    radHubTypes, radShowAutoRoads, radShowPedestrianRoads, radShowCycling,
+    radHubTypes, radHubObjectScale,
+    radShowAutoRoads, radShowPedestrianRoads, radShowCycling,
     radShowAutoHeatmap, radShowPedHeatmap,
     radStatusFilter, radShowGaps,
     setRadSelectedNode, setRadSelectedEdge,
@@ -2157,10 +2158,11 @@ export default function MapView({ onVenueClick }) {
 
     if (activeMode !== 'rad' || !intermodalHubs.length) return
 
+    const scale = radHubObjectScale ?? 1
     const markers = intermodalHubs
       .filter(hub => radHubTypes.has(hub.hubType))
       .map(hub => {
-        const size = hub.priority === 'priority' ? 36 : 26
+        const size = Math.round((hub.priority === 'priority' ? 36 : 26) * scale)
         const el = document.createElement('div')
         el.innerHTML = makePieSVG(hub.hubType, hub.priority, size)
         el.style.cssText = `cursor:default;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));width:${size}px;height:${size}px`
@@ -2175,7 +2177,7 @@ export default function MapView({ onVenueClick }) {
       markers.forEach(m => m.remove())
       radHubMarkersRef.current = []
     }
-  }, [mapReady, activeMode, intermodalHubs, radHubTypes])
+  }, [mapReady, activeMode, intermodalHubs, radHubTypes, radHubObjectScale])
 
   // ── Export trigger from TopBar ────────────────────────────────────────────
   useEffect(() => {
@@ -2199,16 +2201,8 @@ export default function MapView({ onVenueClick }) {
 
     // Composite pie-chart markers (DOM elements not captured by toDataURL)
     const state = useAppStore.getState()
-    if (state.activeMode === 'intermodal' && state.intermodalHubs.length) {
-      const visibleHubs = state.intermodalHubs.filter(hub => {
-        if (!state.intermodalHubTypes.has(hub.hubType)) return false
-        if (state.intermodalStatusFilter === 'existing' && hub.status !== 'existing') return false
-        if (state.intermodalStatusFilter === 'proposed' && hub.status !== 'proposed') return false
-        return true
-      })
-      const scale = state.intermodalObjectScale ?? 1.0
-      // Pre-compute screen positions synchronously before any async work so map state is consistent
-      const hubItems = visibleHubs.map(hub => {
+    const drawHubMarkers = async (hubs, scale) => {
+      const hubItems = hubs.map(hub => {
         const baseSize = hub.priority === 'priority' ? 40 : 30
         const size = Math.round(baseSize * scale)
         const pt = map.project([hub.lng, hub.lat])
@@ -2227,6 +2221,19 @@ export default function MapView({ onVenueClick }) {
         img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve() }
         img.src = blobUrl
       })))
+    }
+
+    if (state.activeMode === 'intermodal' && state.intermodalHubs.length) {
+      const visibleHubs = state.intermodalHubs.filter(hub => {
+        if (!state.intermodalHubTypes.has(hub.hubType)) return false
+        if (state.intermodalStatusFilter === 'existing' && hub.status !== 'existing') return false
+        if (state.intermodalStatusFilter === 'proposed' && hub.status !== 'proposed') return false
+        return true
+      })
+      await drawHubMarkers(visibleHubs, state.intermodalObjectScale ?? 1.0)
+    } else if (state.activeMode === 'rad' && state.intermodalHubs.length) {
+      const visibleHubs = state.intermodalHubs.filter(hub => state.radHubTypes.has(hub.hubType))
+      await drawHubMarkers(visibleHubs, state.radHubObjectScale ?? 1.0)
     }
 
     // Draw scale bar (bottom-center)
