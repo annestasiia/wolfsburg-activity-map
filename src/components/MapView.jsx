@@ -295,6 +295,7 @@ export default function MapView({ onVenueClick }) {
 
   const activeMobilityModesRef = useRef(new Set())
   const activeModeRef          = useRef('mobility')
+  const positronLayerIdsRef    = useRef([])
 
   const {
     districtBoundaries, selectedDistricts,
@@ -380,6 +381,9 @@ export default function MapView({ onVenueClick }) {
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right')
 
     map.on('load', () => {
+      // Capture positron built-in layer IDs before adding any custom layers
+      positronLayerIdsRef.current = map.getStyle().layers.map(l => l.id)
+
       map.addSource('venues', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
 
       map.addLayer({
@@ -480,7 +484,7 @@ export default function MapView({ onVenueClick }) {
         type: 'raster',
         source: 'satellite',
         layout: { visibility: 'none' },
-        paint: { 'raster-opacity': 1.0 },
+        paint: { 'raster-opacity': 1.0, 'raster-brightness-max': 0.62 },
       }, firstNonBg)
 
       setMapReady(true)
@@ -1126,9 +1130,9 @@ export default function MapView({ onVenueClick }) {
       map.getSource('all-borders').setData(allGeoJSON)
     }
 
-    if (map.getLayer('all-borders-line'))
+    if (map.getLayer('all-borders-line') && activeMode !== 'earth')
       map.setLayoutProperty('all-borders-line', 'visibility', showAllBorders ? 'visible' : 'none')
-  }, [mapReady, districtBoundaries, showAllBorders])
+  }, [mapReady, districtBoundaries, showAllBorders, activeMode])
 
   // ── Grid overlay (1 km dashed lines, zoom-adaptive spacing) ─────────────────
   useEffect(() => {
@@ -1167,13 +1171,37 @@ export default function MapView({ onVenueClick }) {
     mapRef.current.flyTo({ center: WOLFSBURG.center, zoom: WOLFSBURG.zoom })
   }, [mapReady, mapResetViewTrigger])
 
-  // ── Satellite layer (Earth mode) ───────────────────────────────────────────
+  // ── Satellite layer + Earth mode: hide positron, show sat, bright borders ──
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
-    if (!map.getLayer('satellite-raster')) return
-    map.setLayoutProperty('satellite-raster', 'visibility', activeMode === 'earth' ? 'visible' : 'none')
-  }, [mapReady, activeMode])
+    const isEarth = activeMode === 'earth'
+
+    // Toggle satellite raster
+    if (map.getLayer('satellite-raster'))
+      map.setLayoutProperty('satellite-raster', 'visibility', isEarth ? 'visible' : 'none')
+
+    // Hide/restore all positron built-in layers
+    for (const id of positronLayerIdsRef.current) {
+      if (map.getLayer(id))
+        map.setLayoutProperty(id, 'visibility', isEarth ? 'none' : 'visible')
+    }
+
+    // District borders: force visible + bright white in Earth mode
+    if (map.getLayer('all-borders-line')) {
+      if (isEarth) {
+        map.setLayoutProperty('all-borders-line', 'visibility', 'visible')
+        map.setPaintProperty('all-borders-line', 'line-color', 'rgba(255,255,255,0.90)')
+        map.setPaintProperty('all-borders-line', 'line-width', 2.0)
+        map.setPaintProperty('all-borders-line', 'line-opacity', 1.0)
+      } else {
+        map.setPaintProperty('all-borders-line', 'line-color', '#4A4A52')
+        map.setPaintProperty('all-borders-line', 'line-width', 1.5)
+        map.setPaintProperty('all-borders-line', 'line-opacity', 0.75)
+        map.setLayoutProperty('all-borders-line', 'visibility', showAllBorders ? 'visible' : 'none')
+      }
+    }
+  }, [mapReady, activeMode, districtBoundaries, showAllBorders])
 
   // ── District name labels ───────────────────────────────────────────────────
   useEffect(() => {
