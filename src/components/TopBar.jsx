@@ -8,6 +8,7 @@ const MODES = [
   { id: 'greenery',   label: 'Greenery'   },
   { id: 'intermodal', label: 'Intermodal Hub' },
   { id: 'rad',        label: 'Rad Network' },
+  { id: 'earth',      label: 'Earth'       },
 ]
 
 const pillStyle = (active) => ({
@@ -33,6 +34,7 @@ export default function TopBar() {
     activeMode, setActiveMode,
     selectedDay, selectedTime,
     showAllBorders, toggleShowAllBorders,
+    showDistrictNames, toggleDistrictNames,
     showGrid, toggleShowGrid,
     resetAll,
     incrementExportTrigger,
@@ -73,6 +75,16 @@ export default function TopBar() {
           <line x1="1" y1="4" x2="12" y2="4" /><line x1="1" y1="9" x2="12" y2="9" />
         </svg>
         Grid
+      </button>
+
+      {/* Districts name labels toggle */}
+      <button onClick={toggleDistrictNames} style={pillStyle(showDistrictNames)} title="Show district names on map">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="1.5" y="3" width="10" height="7" rx="1.5" />
+          <line x1="4" y1="6.5" x2="9" y2="6.5" />
+          <line x1="4" y1="8.5" x2="7" y2="8.5" />
+        </svg>
+        Districts
       </button>
 
       {/* Show all district borders */}

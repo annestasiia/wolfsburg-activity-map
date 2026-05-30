@@ -465,6 +465,24 @@ export default function MapView({ onVenueClick }) {
         paint: { 'line-color': '#707070', 'line-width': 1.0, 'line-opacity': 0.65, 'line-dasharray': [4, 4] },
       })
 
+      // Satellite raster for Earth mode — inserted after background so it covers the white fill
+      // but positron roads/labels render on top (hybrid view)
+      map.addSource('satellite', {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        attribution: '© Esri, Maxar, Earthstar Geographics',
+      })
+      const styleLayers = map.getStyle().layers
+      const firstNonBg = styleLayers.length > 1 ? styleLayers[1].id : undefined
+      map.addLayer({
+        id: 'satellite-raster',
+        type: 'raster',
+        source: 'satellite',
+        layout: { visibility: 'none' },
+        paint: { 'raster-opacity': 1.0 },
+      }, firstNonBg)
+
       setMapReady(true)
     })
 
@@ -1148,6 +1166,14 @@ export default function MapView({ onVenueClick }) {
     if (!mapReady || !mapRef.current || mapResetViewTrigger === 0) return
     mapRef.current.flyTo({ center: WOLFSBURG.center, zoom: WOLFSBURG.zoom })
   }, [mapReady, mapResetViewTrigger])
+
+  // ── Satellite layer (Earth mode) ───────────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    if (!map.getLayer('satellite-raster')) return
+    map.setLayoutProperty('satellite-raster', 'visibility', activeMode === 'earth' ? 'visible' : 'none')
+  }, [mapReady, activeMode])
 
   // ── District name labels ───────────────────────────────────────────────────
   useEffect(() => {
