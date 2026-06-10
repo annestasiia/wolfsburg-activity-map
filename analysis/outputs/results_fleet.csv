@@ -1,0 +1,6 @@
+Mode,Trips_day,Peak_hour_trips,On_street_peak,Fleet_total,Charging_needed,Source
+Auto Bus,9589,1483,24,33,10,UITP urban bus benchmarks
+Auto Shuttle,12985,2008,42,55,17,UITP benchmarks
+Car-Share EV,6849,1059,152,175,53,Share Now / Stadtmobil data
+Auto Pod,14848,2297,307,369,111,MOIA Hamburg analogue
+E-Bike,13807,2136,534,641,321,Nextbike operational data

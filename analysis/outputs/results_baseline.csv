@@ -1,0 +1,11 @@
+Metric,Value,Source
+Population (residents),17400.0,WOKS 2023
+Workers in zone,18000.0,WOKS 2025
+Daily visitors,7080.0,MiD 2017 estimate
+D_total (trips/day),104100.0,MiD 2017 formula
+D_internal (trips/day),67665.0,65% of D_total
+Car trips/day,64542.0,MiD 2017
+Car vehicles/day,49647.69,MiD 2017
+Transit trips/day,10410.0,MiD 2017
+Walking trips/day,20820.0,MiD 2017
+Cycling trips/day,8328.0,MiD 2017
