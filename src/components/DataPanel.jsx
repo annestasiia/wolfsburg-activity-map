@@ -49,47 +49,80 @@ const BASELINE_RESULTS = [
   { metric: 'Cycling trips/day',       value: cycling_trips,        source: 'MiD 2017' },
 ]
 
-// ─── FLEET CALCULATION (Post-Car Wolfsburg) ───────────────────────────────────
+// ─── FLEET CALCULATION v2 (Post-Car Wolfsburg) ───────────────────────────────
 const ZONE_AREA_KM2 = 4.0
 const CARS_REPLACED = 49648
 
-const NEW_MODAL = {
-  e_bike:             { share: 0.25, label: 'E-Bike',         color: '#27AE60' },
-  autonomous_shuttle: { share: 0.18, label: 'Auto Shuttle',   color: '#8E44AD' },
-  autonomous_bus:     { share: 0.10, label: 'Auto Bus',       color: '#2C3E50' },
-  autonomous_pod:     { share: 0.10, label: 'Auto Pod',       color: '#2980B9' },
-  car_sharing_ev:     { share: 0.07, label: 'Car-Share EV',   color: '#E67E22' },
+const MODE_META = {
+  e_bike:             { label: 'E-Bike',       color: '#27AE60' },
+  autonomous_shuttle: { label: 'Auto Shuttle', color: '#8E44AD' },
+  autonomous_bus:     { label: 'Auto Bus',     color: '#2C3E50' },
+  autonomous_pod:     { label: 'Auto Pod',     color: '#2980B9' },
+  car_sharing_ev:     { label: 'Car-Share EV', color: '#E67E22' },
 }
 
 const FLEET_PARAMS = {
-  e_bike:             { capacity: 1,    turnover: 7,  peak_factor: 1.35, trip_h: 0.25, source: 'Nextbike operational data' },
-  autonomous_shuttle: { capacity: 12,   turnover: 40, peak_factor: 1.40, trip_h: 0.25, source: 'UITP autonomous shuttle benchmarks' },
-  autonomous_bus:     { capacity: 25,   turnover: 18, peak_factor: 1.45, trip_h: 0.40, source: 'UITP urban bus benchmarks' },
-  autonomous_pod:     { capacity: 1.5,  turnover: 22, peak_factor: 1.30, trip_h: 0.20, source: 'MOIA Hamburg analogue' },
-  car_sharing_ev:     { capacity: 3.5,  turnover: 5,  peak_factor: 1.25, trip_h: 0.50, source: 'Share Now / Stadtmobil data' },
+  e_bike:             { capacity: 1,    trip_h: 0.25, peak_factor: 1.20, source: 'Nextbike operational data' },
+  autonomous_shuttle: { capacity: 12,   trip_h: 0.25, peak_factor: 1.30, source: 'UITP benchmarks' },
+  autonomous_bus:     { capacity: 25,   trip_h: 0.40, peak_factor: 1.35, source: 'UITP urban bus benchmarks' },
+  autonomous_pod:     { capacity: 1.5,  trip_h: 0.20, peak_factor: 1.20, source: 'MOIA Hamburg analogue' },
+  car_sharing_ev:     { capacity: 3.5,  trip_h: 0.50, peak_factor: 1.15, source: 'Share Now / Stadtmobil data' },
 }
 
 const ceil = Math.ceil
-const transport_share_total = 1 - 0.30   // walking = 0.30
+
+// Step 1 — trip flow decomposition
+const inbound_worker_trips  = WORKERS * T_WORKER  * 0.50
+const inbound_visitor_trips = visitors * T_VISITOR * 0.80
+const inbound_trips         = inbound_worker_trips + inbound_visitor_trips
+
+const resident_trips        = total_residents * T_RESIDENT
+const internal_worker_trips = WORKERS * T_WORKER  * 0.50
+const internal_visitor_trips= visitors * T_VISITOR * 0.20
+const internal_other_trips  = internal_worker_trips + internal_visitor_trips
+const all_internal_trips    = resident_trips + internal_other_trips
+
+const WALKING_SHARE_INTERNAL = 0.60
+const transport_internal    = all_internal_trips * (1 - WALKING_SHARE_INTERNAL)
+const walking_filtered      = all_internal_trips * WALKING_SHARE_INTERNAL
+const D_transport           = inbound_trips + transport_internal
+const reduction_pct         = ((D_total - D_transport) / D_total * 100).toFixed(1)
+
+// Step 2 — modal split by flow type
+const INBOUND_MODAL  = { autonomous_bus: 0.35, autonomous_shuttle: 0.25, car_sharing_ev: 0.25, autonomous_pod: 0.15 }
+const INTERNAL_MODAL = { e_bike: 0.45, autonomous_pod: 0.35, autonomous_shuttle: 0.20 }
+
+const trips_by_mode = {}
+for (const [m, s] of Object.entries(INBOUND_MODAL))
+  trips_by_mode[m] = (trips_by_mode[m] || 0) + inbound_trips * s
+for (const [m, s] of Object.entries(INTERNAL_MODAL))
+  trips_by_mode[m] = (trips_by_mode[m] || 0) + transport_internal * s
+
+// Step 3 — fleet from peak hour
+const mode_shares       = Object.fromEntries(Object.entries(trips_by_mode).map(([m, t]) => [m, t / D_transport]))
+const peak_trips_by_mode= Object.fromEntries(Object.entries(mode_shares).map(([m, s]) => [m, peak_hour_trips * s]))
 
 const fleet = {}
-for (const [mode, { share }] of Object.entries(NEW_MODAL)) {
-  const trips   = D_internal * share
-  const p       = FLEET_PARAMS[mode]
-  const base    = ceil(trips / (p.turnover * p.capacity))
-  const peak    = ceil(base  * p.peak_factor)
-  const mode_share_transport = share / transport_share_total
-  const peak_trips_mode      = peak_hour_trips * mode_share_transport
-  const on_street            = ceil((peak_trips_mode / p.capacity) * p.trip_h)
-  const charging             = mode === 'e_bike'
-    ? ceil(peak * 0.50)
-    : ceil(peak * 0.30)
-  fleet[mode] = { trips: D_internal * share, base, peak, on_street, charging, density: +(peak / ZONE_AREA_KM2).toFixed(1) }
+for (const mode of Object.keys(MODE_META)) {
+  const p          = FLEET_PARAMS[mode]
+  const pt         = peak_trips_by_mode[mode] || 0
+  const on_street  = ceil((pt / p.capacity) * p.trip_h)
+  const fleet_total_mode = ceil(on_street * p.peak_factor)
+  const charging   = mode === 'e_bike' ? ceil(fleet_total_mode * 0.50) : ceil(fleet_total_mode * 0.30)
+  fleet[mode] = {
+    trips:      trips_by_mode[mode] || 0,
+    peak_hour:  pt,
+    on_street,
+    total:      fleet_total_mode,
+    charging,
+    inbound:    inbound_trips * (INBOUND_MODAL[mode] || 0),
+    internal:   transport_internal * (INTERNAL_MODAL[mode] || 0),
+  }
 }
 
-const total_fleet    = Object.values(fleet).reduce((s, f) => s + f.peak, 0)
-const total_charging = Object.values(fleet).reduce((s, f) => s + f.charging, 0)
-const total_on_street= Object.values(fleet).reduce((s, f) => s + f.on_street, 0)
+const total_fleet     = Object.values(fleet).reduce((s, f) => s + f.total, 0)
+const total_charging  = Object.values(fleet).reduce((s, f) => s + f.charging, 0)
+const total_on_street = Object.values(fleet).reduce((s, f) => s + f.on_street, 0)
 const replacement_ratio = (CARS_REPLACED / total_fleet).toFixed(1)
 
 // ─── SHARED UTILS ─────────────────────────────────────────────────────────────
@@ -250,38 +283,106 @@ function ResultsTable({ rows }) {
 }
 
 // ─── FLEET CHARTS ─────────────────────────────────────────────────────────────
+function FlowDecompositionChart() {
+  const flows = [
+    { label: 'Inbound',          value: inbound_trips,      color: '#E63946', sub: 'cross-boundary' },
+    { label: 'Internal transport',value: transport_internal, color: '#2980B9', sub: 'needs vehicle' },
+    { label: 'Walking (filtered)',value: walking_filtered,   color: '#AEAEB2', sub: '60% of internal' },
+  ]
+  const maxVal = D_total
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* D_total bar */}
+      <div style={{ padding: '10px 14px', background: '#1D1D1F', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>D_total</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: '#E63946' }}>{fmt(D_total)} trips/day</span>
+      </div>
+
+      {/* Three flows */}
+      {flows.map(({ label, value, color, sub }) => (
+        <div key={label}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <div>
+              <span style={{ fontSize: 13, color: '#1D1D1F', fontWeight: 500 }}>{label}</span>
+              <span style={{ fontSize: 11, color: '#AEAEB2', marginLeft: 8 }}>{sub}</span>
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 700, color }}>{fmt(value)}</span>
+          </div>
+          <div style={{ height: 10, background: '#E8E8ED', borderRadius: 5, overflow: 'hidden' }}>
+            <div style={{ width: `${(value/maxVal)*100}%`, height: '100%', background: color, borderRadius: 5 }} />
+          </div>
+        </div>
+      ))}
+
+      {/* D_transport result */}
+      <div style={{ padding: '10px 14px', background: 'rgba(10,126,69,0.07)', border: '1px solid rgba(10,126,69,0.20)', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#0A7E45' }}>D_transport (net)</span>
+          <span style={{ fontSize: 11, color: '#AEAEB2', marginLeft: 8 }}>inbound + internal transport</span>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#0A7E45' }}>{fmt(D_transport)}</div>
+          <div style={{ fontSize: 11, color: '#AEAEB2' }}>−{reduction_pct}% vs D_total</div>
+        </div>
+      </div>
+
+      {/* Mode trip split */}
+      <div style={{ marginTop: 8 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#6E6E73', marginBottom: 10, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          Trips/day by mode
+        </div>
+        {Object.entries(MODE_META).map(([mode, { label, color }]) => {
+          const f    = fleet[mode]
+          const maxT = Math.max(...Object.values(fleet).map(x => x.trips))
+          return (
+            <div key={mode} style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                  <span style={{ fontSize: 13, color: '#1D1D1F' }}>{label}</span>
+                  {f.inbound > 0 && <span style={{ fontSize: 10, color: '#E63946', background: 'rgba(230,57,70,0.08)', padding: '1px 6px', borderRadius: 4 }}>inbound</span>}
+                  {f.internal > 0 && <span style={{ fontSize: 10, color: '#2980B9', background: 'rgba(41,128,185,0.08)', padding: '1px 6px', borderRadius: 4 }}>internal</span>}
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, color }}>{fmt(f.trips)}</span>
+              </div>
+              <div style={{ height: 7, background: '#E8E8ED', borderRadius: 4, overflow: 'hidden', display: 'flex' }}>
+                {f.inbound > 0 && <div style={{ width: `${(f.inbound/maxT)*100}%`, background: color, opacity: 0.45 }} />}
+                {f.internal > 0 && <div style={{ width: `${(f.internal/maxT)*100}%`, background: color, opacity: 0.90 }} />}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function FleetModeCards() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
-      {Object.entries(NEW_MODAL).map(([key, { label, color }]) => {
+      {Object.entries(MODE_META).map(([key, { label, color }]) => {
         const f = fleet[key]
         return (
           <div key={key} style={{
             background: '#fff', borderRadius: 14, padding: '14px 14px',
-            border: `1.5px solid ${color}30`,
-            borderTop: `3px solid ${color}`,
+            border: `1.5px solid ${color}30`, borderTop: `3px solid ${color}`,
             boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
           }}>
             <div style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>{label}</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#1D1D1F', letterSpacing: '-0.02em', lineHeight: 1 }}>{fmt(f.peak)}</div>
-            <div style={{ fontSize: 10, color: '#AEAEB2', marginTop: 2, marginBottom: 10 }}>peak units</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#1D1D1F', letterSpacing: '-0.02em', lineHeight: 1 }}>{fmt(f.total)}</div>
+            <div style={{ fontSize: 10, color: '#AEAEB2', marginTop: 2, marginBottom: 10 }}>total fleet</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: '#6E6E73' }}>Base</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#3D3D3F' }}>{fmt(f.base)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: '#6E6E73' }}>On street</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#3D3D3F' }}>{fmt(f.on_street)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: '#6E6E73' }}>Charging</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#3D3D3F' }}>{fmt(f.charging)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: '#6E6E73' }}>Trips/day</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#3D3D3F' }}>{fmt(f.trips)}</span>
-              </div>
+              {[
+                ['On-street peak', f.on_street],
+                ['Peak/hour trips', f.peak_hour],
+                ['Charging pts',   f.charging],
+                ['Trips/day',      f.trips],
+              ].map(([lbl, val]) => (
+                <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, color: '#6E6E73' }}>{lbl}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#3D3D3F' }}>{fmt(val)}</span>
+                </div>
+              ))}
             </div>
           </div>
         )
@@ -290,45 +391,38 @@ function FleetModeCards() {
   )
 }
 
-function FleetBaseVsPeakChart() {
-  const modes = Object.keys(NEW_MODAL)
-  const maxVal = Math.max(...modes.map(m => fleet[m].peak))
+function FleetOnStreetVsTotalChart() {
+  const modes  = Object.keys(MODE_META)
+  const maxVal = Math.max(...modes.map(m => fleet[m].total))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {modes.map(mode => {
-        const { label, color } = NEW_MODAL[mode]
-        const { base, peak } = fleet[mode]
+        const { label, color } = MODE_META[mode]
+        const { on_street, total } = fleet[mode]
         return (
           <div key={mode}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
               <span style={{ fontSize: 13, color: '#1D1D1F', fontWeight: 500 }}>{label}</span>
               <span style={{ fontSize: 12, color: '#6E6E73' }}>
-                {fmt(base)} <span style={{ color: '#AEAEB2' }}>base</span>
-                {'  →  '}
-                <span style={{ fontWeight: 700, color }}>{fmt(peak)}</span> <span style={{ color: '#AEAEB2' }}>peak</span>
+                <span style={{ fontWeight: 700, color }}>{fmt(on_street)}</span>
+                <span style={{ color: '#AEAEB2' }}> on-street  →  </span>
+                <span style={{ fontWeight: 700, color: '#1D1D1F' }}>{fmt(total)}</span>
+                <span style={{ color: '#AEAEB2' }}> total</span>
               </span>
             </div>
             <div style={{ position: 'relative', height: 20 }}>
               <div style={{ position: 'absolute', inset: 0, background: '#E8E8ED', borderRadius: 5 }} />
-              <div style={{
-                position: 'absolute', left: 0, top: 0, bottom: 0,
-                width: `${(peak/maxVal)*100}%`,
-                background: color, opacity: 0.35, borderRadius: 5,
-              }} />
-              <div style={{
-                position: 'absolute', left: 0, top: 3, bottom: 3,
-                width: `${(base/maxVal)*100}%`,
-                background: color, borderRadius: 4,
-              }} />
+              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(total/maxVal)*100}%`, background: color, opacity: 0.30, borderRadius: 5 }} />
+              <div style={{ position: 'absolute', left: 0, top: 3, bottom: 3, width: `${(on_street/maxVal)*100}%`, background: color, borderRadius: 4 }} />
             </div>
           </div>
         )
       })}
       <div style={{ display: 'flex', gap: 18, marginTop: 4 }}>
-        {[['full bar (light)','Peak fleet'],['inner bar (solid)','Base fleet']].map(([desc,label]) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 24, height: 8, background: '#6E6E73', borderRadius: 2, opacity: desc.includes('light') ? 0.35 : 1 }} />
-            <span style={{ fontSize: 11, color: '#6E6E73' }}>{label}</span>
+        {[['solid','On-street at peak hour'],['light (wide)','Total fleet (with reserve)']].map(([t,l]) => (
+          <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 24, height: 8, background: '#6E6E73', borderRadius: 2, opacity: t==='light (wide)' ? 0.30 : 1 }} />
+            <span style={{ fontSize: 11, color: '#6E6E73' }}>{l}</span>
           </div>
         ))}
       </div>
@@ -337,11 +431,11 @@ function FleetBaseVsPeakChart() {
 }
 
 function ReplacementChart() {
-  const modes = Object.keys(NEW_MODAL)
+  const modes = Object.keys(MODE_META)
   const scaleMax = Math.max(CARS_REPLACED, total_fleet) * 1.08
   const barW = 110
 
-  const segments = modes.map(m => ({ mode: m, ...NEW_MODAL[m], val: fleet[m].peak }))
+  const segments = modes.map(m => ({ mode: m, ...MODE_META[m], val: fleet[m].total }))
 
   return (
     <div style={{ display: 'flex', gap: 32, alignItems: 'flex-end' }}>
@@ -439,13 +533,13 @@ function DotMatrix() {
   }
 
   // colour for fleet dots: cycle through modes by proportion
-  const modeOrder = Object.keys(NEW_MODAL)
-  const modeDots  = modeOrder.map(m => Math.ceil(fleet[m].peak / UNIT))
+  const modeOrder = Object.keys(MODE_META)
+  const modeDots  = modeOrder.map(m => Math.ceil(fleet[m].total / UNIT))
   const fleetColorFn = (idx) => {
     let acc = 0
     for (let i = 0; i < modeOrder.length; i++) {
       acc += modeDots[i]
-      if (idx < acc) return NEW_MODAL[modeOrder[i]].color
+      if (idx < acc) return MODE_META[modeOrder[i]].color
     }
     return '#ccc'
   }
@@ -479,8 +573,8 @@ function DotMatrix() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 10 }}>
           {modeOrder.map(m => (
             <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 9, height: 9, borderRadius: '50%', background: NEW_MODAL[m].color }} />
-              <span style={{ fontSize: 11, color: '#6E6E73' }}>{NEW_MODAL[m].label}</span>
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: MODE_META[m].color }} />
+              <span style={{ fontSize: 11, color: '#6E6E73' }}>{MODE_META[m].label}</span>
             </div>
           ))}
         </div>
@@ -490,12 +584,12 @@ function DotMatrix() {
 }
 
 function ChargingChart() {
-  const modes  = Object.keys(NEW_MODAL)
+  const modes  = Object.keys(MODE_META)
   const maxVal = Math.max(...modes.map(m => fleet[m].charging))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {modes.map(mode => {
-        const { label, color } = NEW_MODAL[mode]
+        const { label, color } = MODE_META[mode]
         const val = fleet[mode].charging
         return (
           <div key={mode}>
@@ -523,12 +617,12 @@ function ChargingChart() {
 
 function FleetSummaryGrid() {
   const cards = [
-    { label: 'Total fleet (peak)',   value: fmt(total_fleet),       sub: 'all modes combined',         color: '#0071E3' },
+    { label: 'D_transport (net)',    value: fmt(D_transport),       sub: `−${reduction_pct}% vs D_total`, color: '#0A7E45' },
+    { label: 'Total fleet',          value: fmt(total_fleet),       sub: 'all modes · peak',           color: '#0071E3' },
     { label: 'Cars replaced',        value: fmt(CARS_REPLACED),     sub: 'baseline private cars/day',  color: '#E63946' },
-    { label: 'Replacement ratio',    value: `1 : ${replacement_ratio}`, sub: 'shared → private cars', color: '#0A7E45' },
+    { label: 'Replacement ratio',    value: `1 : ${replacement_ratio}`, sub: 'shared → private cars', color: '#7C3AED' },
     { label: 'Total charging pts',   value: fmt(total_charging),    sub: 'simultaneous',               color: '#8E44AD' },
-    { label: 'On-street peak',       value: fmt(total_on_street),   sub: 'vehicles at 08:00',          color: '#E67E22' },
-    { label: 'Zone coverage',        value: `${(total_fleet/ZONE_AREA_KM2).toFixed(1)}`, sub: 'units per km²', color: '#2980B9' },
+    { label: 'Walking filtered',     value: `${(WALKING_SHARE_INTERNAL*100).toFixed(0)}%`, sub: 'of internal trips · not transported', color: '#2D6A4F' },
   ]
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -547,18 +641,14 @@ function FleetSummaryGrid() {
 }
 
 function FleetResultsTable() {
-  const rows = Object.entries(NEW_MODAL).map(([mode, { label }]) => {
-    const f = fleet[mode]
-    return { mode, label, ...f }
-  })
+  const rows = Object.entries(MODE_META).map(([mode, { label }]) => ({ mode, label, ...fleet[mode] }))
   const cols = [
-    { key: 'label',      head: 'Mode',           align: 'left'  },
-    { key: 'trips',      head: 'Trips/day',       align: 'right' },
-    { key: 'base',       head: 'Fleet base',      align: 'right' },
-    { key: 'peak',       head: 'Fleet peak',      align: 'right' },
-    { key: 'on_street',  head: 'On street (peak)',align: 'right' },
-    { key: 'charging',   head: 'Charging pts',    align: 'right' },
-    { key: 'density',    head: 'Units/km²',       align: 'right' },
+    { key: 'label',     head: 'Mode',              align: 'left'  },
+    { key: 'trips',     head: 'Trips/day',          align: 'right' },
+    { key: 'peak_hour', head: 'Peak hour',          align: 'right' },
+    { key: 'on_street', head: 'On-street (peak)',   align: 'right' },
+    { key: 'total',     head: 'Fleet total',        align: 'right' },
+    { key: 'charging',  head: 'Charging pts',       align: 'right' },
   ]
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -579,16 +669,15 @@ function FleetResultsTable() {
             <tr key={row.mode} style={{ background: i%2===0 ? 'transparent' : 'rgba(0,0,0,0.02)' }}>
               <td style={{ padding: '9px 10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: NEW_MODAL[row.mode].color, flexShrink: 0 }} />
+                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: MODE_META[row.mode].color, flexShrink: 0 }} />
                   <span style={{ color: '#1D1D1F', fontWeight: 500 }}>{row.label}</span>
                 </div>
               </td>
               <td style={{ padding: '9px 10px', textAlign: 'right', color: '#1D1D1F', fontVariantNumeric: 'tabular-nums' }}>{fmt(row.trips)}</td>
-              <td style={{ padding: '9px 10px', textAlign: 'right', color: '#6E6E73', fontVariantNumeric: 'tabular-nums' }}>{row.base}</td>
-              <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, color: NEW_MODAL[row.mode].color, fontVariantNumeric: 'tabular-nums' }}>{row.peak}</td>
+              <td style={{ padding: '9px 10px', textAlign: 'right', color: '#6E6E73', fontVariantNumeric: 'tabular-nums' }}>{fmt(row.peak_hour)}</td>
               <td style={{ padding: '9px 10px', textAlign: 'right', color: '#1D1D1F', fontVariantNumeric: 'tabular-nums' }}>{row.on_street}</td>
+              <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, color: MODE_META[row.mode].color, fontVariantNumeric: 'tabular-nums' }}>{row.total}</td>
               <td style={{ padding: '9px 10px', textAlign: 'right', color: '#1D1D1F', fontVariantNumeric: 'tabular-nums' }}>{row.charging}</td>
-              <td style={{ padding: '9px 10px', textAlign: 'right', color: '#6E6E73', fontVariantNumeric: 'tabular-nums' }}>{row.density}</td>
             </tr>
           ))}
         </tbody>
@@ -606,8 +695,9 @@ const NAV = [
   { href: '#hourly',       label: 'Hourly distribution' },
   { href: '#baseline-tbl', label: 'Baseline table' },
   { href: '#fleet',        label: '— Fleet sizing' },
+  { href: '#flow',         label: 'Trip flow' },
   { href: '#fleet-cards',  label: 'Mode cards' },
-  { href: '#fleet-chart',  label: 'Base vs peak' },
+  { href: '#fleet-chart',  label: 'On-street vs total' },
   { href: '#replacement',  label: 'Replacement' },
   { href: '#dot-matrix',   label: 'Dot matrix' },
   { href: '#charging',     label: 'Charging points' },
@@ -770,15 +860,21 @@ export default function DataPanel() {
           <FleetSummaryGrid />
         </div>
 
+        <div id="flow" style={{ marginBottom: 16 }}>
+          <SectionBlock title="Trip Flow Decomposition" subtitle="D_total → inbound / internal transport / walking · modal split by flow type" accent="#2980B9">
+            <FlowDecompositionChart />
+          </SectionBlock>
+        </div>
+
         <div id="fleet-cards" style={{ marginBottom: 16 }}>
-          <SectionBlock title="Fleet by Mode" subtitle="Base → peak units · daily trips · on-street at peak hour · charging points" accent="#0A7E45">
+          <SectionBlock title="Fleet by Mode" subtitle="On-street peak · total with reserve · trips/day · charging points" accent="#0A7E45">
             <FleetModeCards />
           </SectionBlock>
         </div>
 
         <div id="fleet-chart" style={{ marginBottom: 16 }}>
-          <SectionBlock title="Base vs Peak Fleet" subtitle="Base = daily demand / (turnover × capacity) · Peak = base × peak factor" accent="#27AE60">
-            <FleetBaseVsPeakChart />
+          <SectionBlock title="On-street Peak vs Total Fleet" subtitle="On-street = (peak trips / capacity) × duration · Total = on-street × peak factor" accent="#27AE60">
+            <FleetOnStreetVsTotalChart />
           </SectionBlock>
         </div>
 
