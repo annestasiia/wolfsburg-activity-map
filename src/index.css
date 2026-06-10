@@ -182,6 +182,8 @@ html, body, #root {
 .mode-btn.facilities.active:hover  { background: #1557A0; }
 .mode-btn.greenery.active:hover    { background: #1B4332; }
 .mode-btn.intermodal.active:hover  { background: #6D28D9; }
+.mode-btn.data.active              { background: #0A7E45; box-shadow: 0 2px 8px rgba(10,126,69,0.35); }
+.mode-btn.data.active:hover        { background: #076135; }
 
 .top-bar-meta {
   font-size: 14px;

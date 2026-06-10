@@ -14,6 +14,7 @@ import IntermodalSidebar, { IntermodalDataPanel } from './components/IntermodalS
 import IntermodalHubPopup from './components/IntermodalHubPopup'
 import RadSidebar, { RadDataPanel, RadNodePopup, RadEdgePopup } from './components/RadSidebar'
 import TransportPoolPanel from './components/TransportPoolPanel'
+import DataPanel from './components/DataPanel'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -96,6 +97,7 @@ export default function App() {
         {activeMode === 'rad' && <RadDataPanel />}
         {activeMode === 'rad' && <RadNodePopup />}
         {activeMode === 'rad' && <RadEdgePopup />}
+        {activeMode === 'data' && <DataPanel />}
         <DistrictStatsPopup />
         <AnalysisInfoModal />
       </main>

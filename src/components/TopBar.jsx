@@ -9,6 +9,7 @@ const MODES = [
   { id: 'intermodal', label: 'Intermodal Hub' },
   { id: 'rad',        label: 'Rad Network' },
   { id: 'earth',      label: 'Earth'       },
+  { id: 'data',       label: 'Data'        },
 ]
 
 const pillStyle = (active) => ({

@@ -79,7 +79,7 @@ export default function BottomBar() {
     }
   }, [activeBottomPanel, setActiveBottomPanel])
 
-  if (activeMode === 'greenery' || activeMode === 'intermodal') return null
+  if (activeMode === 'greenery' || activeMode === 'intermodal' || activeMode === 'data') return null
 
   const ActivePanel = activeBottomPanel ? PANELS[activeBottomPanel] : null
 
