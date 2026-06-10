@@ -1,0 +1,16 @@
+tier,mode,fleet_at_tier,fleet_per_hub,hub_count
+Hub L,E-Bike,0,0,6
+Hub L,Auto Shuttle,28,6,6
+Hub L,Auto Bus,33,7,6
+Hub L,Auto Pod,111,23,6
+Hub L,Car-Share EV,175,35,6
+Hub M,E-Bike,193,13,19
+Hub M,Auto Shuttle,28,2,19
+Hub M,Auto Bus,0,0,19
+Hub M,Auto Pod,185,12,19
+Hub M,Car-Share EV,0,0,19
+Hub S,E-Bike,449,13,43
+Hub S,Auto Shuttle,0,0,43
+Hub S,Auto Bus,0,0,43
+Hub S,Auto Pod,74,3,43
+Hub S,Car-Share EV,0,0,43

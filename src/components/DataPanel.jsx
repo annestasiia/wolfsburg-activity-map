@@ -125,6 +125,63 @@ const total_charging  = Object.values(fleet).reduce((s, f) => s + f.charging, 0)
 const total_on_street = Object.values(fleet).reduce((s, f) => s + f.on_street, 0)
 const replacement_ratio = (CARS_REPLACED / total_fleet).toFixed(1)
 
+// ─── HUB NETWORK (Step 3 · coverage + fleet distribution) ────────────────────
+const HUB_S_RADIUS = 200
+const HUB_M_RADIUS = 400
+const hub_zone_m2  = ZONE_AREA_KM2 * 1_000_000
+
+const hub_s_area       = Math.PI * HUB_S_RADIUS ** 2
+const hub_s_count      = ceil((hub_zone_m2 / hub_s_area) * 1.35)
+
+const hub_m_area          = Math.PI * HUB_M_RADIUS ** 2
+const hub_m_from_geometry = ceil((hub_zone_m2 / hub_m_area) * 1.35)
+const hub_m_from_shuttle  = ceil(fleet.autonomous_shuttle.total / 3)
+const hub_m_count         = Math.max(hub_m_from_geometry, hub_m_from_shuttle)
+
+const hub_l_from_fleet = ceil((fleet.autonomous_bus.total + fleet.car_sharing_ev.total) / 8)
+const hub_l_count      = Math.min(Math.max(hub_l_from_fleet, 3), 6)
+
+const HUB_COUNTS  = { hub_l: hub_l_count, hub_m: hub_m_count, hub_s: hub_s_count }
+const HUB_COLORS_UI = { hub_l: '#1A1A1A', hub_m: '#2D6A4F', hub_s: '#95B8A0' }
+const HUB_LABELS_UI = { hub_l: 'Hub L',  hub_m: 'Hub M',   hub_s: 'Hub S' }
+const TIERS = ['hub_l', 'hub_m', 'hub_s']
+
+const HUB_DISTRIBUTION = {
+  car_sharing_ev:     { hub_l: 1.00, hub_m: 0.00, hub_s: 0.00 },
+  autonomous_bus:     { hub_l: 1.00, hub_m: 0.00, hub_s: 0.00 },
+  autonomous_shuttle: { hub_l: 0.50, hub_m: 0.50, hub_s: 0.00 },
+  autonomous_pod:     { hub_l: 0.30, hub_m: 0.50, hub_s: 0.20 },
+  e_bike:             { hub_l: 0.00, hub_m: 0.30, hub_s: 0.70 },
+}
+
+const fleet_at_tier = {}
+const fleet_per_hub = {}
+for (const tier of TIERS) {
+  fleet_at_tier[tier] = {}
+  fleet_per_hub[tier] = {}
+  for (const mode of Object.keys(MODE_META)) {
+    const share = HUB_DISTRIBUTION[mode]?.[tier] || 0
+    fleet_at_tier[tier][mode] = ceil(fleet[mode].total * share)
+    fleet_per_hub[tier][mode] = ceil(fleet_at_tier[tier][mode] / HUB_COUNTS[tier] * 1.20)
+  }
+}
+
+const HUB_CHARGING_RATE = { e_bike: 0.50, autonomous_pod: 0.30, autonomous_shuttle: 0.30, autonomous_bus: 0.30, car_sharing_ev: 0.30 }
+const HUB_FOOTPRINT_M2  = { e_bike: 2, autonomous_pod: 8, autonomous_shuttle: 30, autonomous_bus: 55, car_sharing_ev: 12 }
+
+const hub_charging_per  = {}
+const hub_footprint_per = {}
+for (const tier of TIERS) {
+  hub_charging_per[tier]  = Object.keys(MODE_META).reduce((sum, mode) =>
+    sum + ceil((fleet_per_hub[tier][mode] || 0) * HUB_CHARGING_RATE[mode]), 0)
+  hub_footprint_per[tier] = Object.keys(MODE_META).reduce((sum, mode) =>
+    sum + (fleet_per_hub[tier][mode] || 0) * HUB_FOOTPRINT_M2[mode], 0)
+}
+
+const hub_total_charging  = TIERS.reduce((s, t) => s + hub_charging_per[t]  * HUB_COUNTS[t], 0)
+const hub_total_footprint = TIERS.reduce((s, t) => s + hub_footprint_per[t] * HUB_COUNTS[t], 0)
+const hub_footprint_pct   = (hub_total_footprint / hub_zone_m2 * 100).toFixed(2)
+
 // ─── SHARED UTILS ─────────────────────────────────────────────────────────────
 const fmt = n => Math.round(n).toLocaleString('de-DE')
 
@@ -686,6 +743,299 @@ function FleetResultsTable() {
   )
 }
 
+// ─── HUB COMPONENTS ──────────────────────────────────────────────────────────
+function HubSummaryGrid() {
+  const cards = [
+    { label: 'Hub L', value: hub_l_count, sub: 'large interchange hubs',  color: HUB_COLORS_UI.hub_l },
+    { label: 'Hub M', value: hub_m_count, sub: 'district mobility hubs',   color: HUB_COLORS_UI.hub_m },
+    { label: 'Hub S', value: hub_s_count, sub: 'neighbourhood micro-hubs', color: HUB_COLORS_UI.hub_s },
+    { label: 'Total Charging', value: fmt(hub_total_charging), sub: 'charging points (all hubs)', color: '#2980B9', raw: true },
+    { label: 'Hub Footprint',  value: fmt(hub_total_footprint), sub: `m²  (${hub_footprint_pct}% of zone)`, color: '#E67E22', raw: true },
+    { label: 'Total Fleet',    value: fmt(total_fleet), sub: 'vehicles + bikes', color: '#8E44AD', raw: true },
+  ]
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      {cards.map(({ label, value, sub, color, raw }) => (
+        <div key={label} style={{
+          background: '#fff', borderRadius: 14, padding: '16px 18px',
+          border: `1px solid ${color}22`,
+          borderTop: `3px solid ${color}`,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+        }}>
+          <div style={{ fontSize: 26, fontWeight: 300, color, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            {raw ? value : value}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F', marginTop: 6 }}>{label}</div>
+          <div style={{ fontSize: 11, color: '#AEAEB2', marginTop: 2 }}>{sub}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function HubHeatmapChart() {
+  const modes = Object.keys(MODE_META)
+  const allVals = TIERS.flatMap(t => modes.map(m => fleet_per_hub[t][m] || 0))
+  const maxVal  = Math.max(...allVals)
+
+  const cellColor = (val) => {
+    if (val === 0) return '#F5F5F7'
+    const ratio = val / maxVal
+    // interpolate white → #2D6A4F
+    const r = Math.round(255 + (45  - 255) * ratio)
+    const g = Math.round(255 + (106 - 255) * ratio)
+    const b = Math.round(255 + (79  - 255) * ratio)
+    return `rgb(${r},${g},${b})`
+  }
+
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ borderCollapse: 'separate', borderSpacing: 4, width: '100%' }}>
+        <thead>
+          <tr>
+            <th style={{ width: 120, textAlign: 'left', fontSize: 11, color: '#AEAEB2', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', padding: '0 8px 8px' }} />
+            {TIERS.map(t => (
+              <th key={t} style={{
+                textAlign: 'center', fontSize: 12, fontWeight: 700,
+                color: HUB_COLORS_UI[t], padding: '0 0 8px',
+                letterSpacing: '-0.01em',
+              }}>
+                {HUB_LABELS_UI[t]}<br />
+                <span style={{ fontWeight: 400, color: '#AEAEB2', fontSize: 10 }}>{HUB_COUNTS[t]} hubs</span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {modes.map(mode => (
+            <tr key={mode}>
+              <td style={{ fontSize: 12, color: '#1D1D1F', padding: '0 8px 0 0', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: MODE_META[mode].color, flexShrink: 0 }} />
+                  {MODE_META[mode].label}
+                </div>
+              </td>
+              {TIERS.map(t => {
+                const val = fleet_per_hub[t][mode] || 0
+                const bg  = cellColor(val)
+                const isDark = val / maxVal > 0.5
+                return (
+                  <td key={t} style={{
+                    textAlign: 'center', padding: '10px 6px',
+                    background: bg, borderRadius: 8,
+                    fontSize: 14, fontWeight: 700,
+                    color: isDark ? '#fff' : (val > 0 ? '#1A1A1A' : '#AEAEB2'),
+                    minWidth: 80,
+                  }}>
+                    {val > 0 ? val : '–'}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ fontSize: 11, color: '#AEAEB2', marginTop: 10 }}>Units per single hub · incl. 20% reserve</div>
+    </div>
+  )
+}
+
+function HubStackedBarChart() {
+  const modes = Object.keys(MODE_META)
+  const tierTotals = TIERS.map(t => modes.reduce((s, m) => s + (fleet_at_tier[t][m] || 0), 0))
+  const maxTotal   = Math.max(...tierTotals)
+  const BAR_H = 180
+
+  return (
+    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-end' }}>
+      {TIERS.map((tier, ti) => {
+        const total = tierTotals[ti]
+        const barH  = Math.round((total / maxTotal) * BAR_H)
+        let offset  = 0
+        return (
+          <div key={tier} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+            {/* Bar */}
+            <div style={{ height: BAR_H, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', width: '100%' }}>
+              <div style={{ height: barH, width: '100%', borderRadius: '8px 8px 0 0', overflow: 'hidden', display: 'flex', flexDirection: 'column-reverse' }}>
+                {modes.map(mode => {
+                  const val = fleet_at_tier[tier][mode] || 0
+                  if (val === 0) return null
+                  const segH = (val / total) * barH
+                  return (
+                    <div key={mode} title={`${MODE_META[mode].label}: ${val}`} style={{
+                      height: segH, background: MODE_META[mode].color, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {segH > 20 && <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>{val}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            {/* X label */}
+            <div style={{ marginTop: 8, textAlign: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: HUB_COLORS_UI[tier] }}>{HUB_LABELS_UI[tier]}</div>
+              <div style={{ fontSize: 11, color: '#6E6E73' }}>{HUB_COUNTS[tier]} hubs · {fmt(total)} total</div>
+            </div>
+          </div>
+        )
+      })}
+      {/* Legend */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 40 }}>
+        {modes.map(mode => (
+          <div key={mode} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ width: 10, height: 10, background: MODE_META[mode].color, borderRadius: 2, flexShrink: 0 }} />
+            <span style={{ fontSize: 12, color: '#3D3D3F' }}>{MODE_META[mode].label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const HUB_CARD_MODES = {
+  hub_l: ['car_sharing_ev', 'autonomous_bus', 'autonomous_shuttle', 'autonomous_pod'],
+  hub_m: ['autonomous_shuttle', 'autonomous_pod', 'e_bike'],
+  hub_s: ['e_bike', 'autonomous_pod'],
+}
+const HUB_CARD_DESC = {
+  hub_l: 'Large interchange hub · parking garage / transit node',
+  hub_m: 'District mobility hub · street-level, covered',
+  hub_s: 'Neighbourhood micro-hub · on-street docking',
+}
+
+function HubProfileCards() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      {TIERS.map(tier => {
+        const color = HUB_COLORS_UI[tier]
+        const cardModes = HUB_CARD_MODES[tier]
+        return (
+          <div key={tier} style={{
+            background: '#fff', borderRadius: 16,
+            border: `1.5px solid ${color}`,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+            overflow: 'hidden',
+          }}>
+            {/* Header */}
+            <div style={{ background: color, padding: '14px 18px' }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>
+                {HUB_LABELS_UI[tier]}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
+                {HUB_COUNTS[tier]} hubs
+              </div>
+            </div>
+            {/* Description */}
+            <div style={{ padding: '12px 18px 0', fontSize: 11, color: '#6E6E73', lineHeight: 1.5 }}>
+              {HUB_CARD_DESC[tier]}
+            </div>
+            {/* Fleet rows */}
+            <div style={{ padding: '12px 18px' }}>
+              {cardModes.map(mode => {
+                const qty = fleet_per_hub[tier][mode] || 0
+                if (qty === 0) return null
+                return (
+                  <div key={mode} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '7px 0', borderBottom: '1px solid rgba(0,0,0,0.05)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: MODE_META[mode].color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 13, color: '#1D1D1F' }}>{MODE_META[mode].label}</span>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1D1D1F' }}>{qty}</span>
+                  </div>
+                )
+              })}
+              {/* Infrastructure */}
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+                {[
+                  { label: 'Charging points', value: hub_charging_per[tier] },
+                  { label: 'Footprint',        value: `${hub_footprint_per[tier].toLocaleString('de-DE')} m²` },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                    <span style={{ fontSize: 12, color: '#6E6E73' }}>{label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: color }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function HubInfraTable() {
+  const modes = Object.keys(MODE_META)
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <thead>
+          <tr style={{ borderBottom: '1px solid #E8E8ED' }}>
+            <th style={{ textAlign: 'left',  padding: '8px 10px', fontWeight: 600, color: '#6E6E73', fontSize: 11, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Mode</th>
+            {TIERS.map(t => (
+              <th key={t} colSpan={2} style={{
+                textAlign: 'center', padding: '8px 6px',
+                fontWeight: 700, color: HUB_COLORS_UI[t], fontSize: 11,
+                letterSpacing: '0.04em', textTransform: 'uppercase',
+                borderLeft: '1px solid #E8E8ED',
+              }}>
+                {HUB_LABELS_UI[t]} ({HUB_COUNTS[t]} hubs)
+              </th>
+            ))}
+          </tr>
+          <tr style={{ borderBottom: '1px solid #E8E8ED', background: 'rgba(0,0,0,0.02)' }}>
+            <th style={{ padding: '5px 10px' }} />
+            {TIERS.map(t => [
+              <th key={`${t}-total`} style={{ textAlign: 'right', padding: '5px 6px', fontSize: 10, color: '#6E6E73', fontWeight: 600, borderLeft: '1px solid #E8E8ED' }}>Tier total</th>,
+              <th key={`${t}-hub`}   style={{ textAlign: 'right', padding: '5px 6px', fontSize: 10, color: '#6E6E73', fontWeight: 600 }}>Per hub</th>,
+            ])}
+          </tr>
+        </thead>
+        <tbody>
+          {modes.map((mode, i) => (
+            <tr key={mode} style={{ background: i%2===0 ? 'transparent' : 'rgba(0,0,0,0.02)' }}>
+              <td style={{ padding: '9px 10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: MODE_META[mode].color, flexShrink: 0 }} />
+                  <span style={{ color: '#1D1D1F', fontWeight: 500 }}>{MODE_META[mode].label}</span>
+                </div>
+              </td>
+              {TIERS.map(t => [
+                <td key={`${t}-total`} style={{ padding: '9px 6px', textAlign: 'right', color: '#6E6E73', borderLeft: '1px solid rgba(0,0,0,0.04)', fontVariantNumeric: 'tabular-nums' }}>
+                  {fleet_at_tier[t][mode] || 0}
+                </td>,
+                <td key={`${t}-hub`} style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 700, color: fleet_per_hub[t][mode] > 0 ? HUB_COLORS_UI[t] : '#AEAEB2', fontVariantNumeric: 'tabular-nums' }}>
+                  {fleet_per_hub[t][mode] > 0 ? fleet_per_hub[t][mode] : '–'}
+                </td>,
+              ])}
+            </tr>
+          ))}
+          {/* Charging row */}
+          <tr style={{ borderTop: '2px solid #E8E8ED', background: 'rgba(41,128,185,0.04)' }}>
+            <td style={{ padding: '9px 10px', fontSize: 12, fontWeight: 600, color: '#2980B9' }}>Charging pts / hub</td>
+            {TIERS.map(t => [
+              <td key={`${t}-total`} style={{ padding: '9px 6px', textAlign: 'right', color: '#AEAEB2', borderLeft: '1px solid rgba(0,0,0,0.04)' }}>–</td>,
+              <td key={`${t}-hub`}   style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 700, color: '#2980B9' }}>{hub_charging_per[t]}</td>,
+            ])}
+          </tr>
+          {/* Footprint row */}
+          <tr style={{ background: 'rgba(230,126,34,0.04)' }}>
+            <td style={{ padding: '9px 10px', fontSize: 12, fontWeight: 600, color: '#E67E22' }}>Footprint / hub (m²)</td>
+            {TIERS.map(t => [
+              <td key={`${t}-total`} style={{ padding: '9px 6px', textAlign: 'right', color: '#AEAEB2', borderLeft: '1px solid rgba(0,0,0,0.04)' }}>–</td>,
+              <td key={`${t}-hub`}   style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 700, color: '#E67E22' }}>{fmt(hub_footprint_per[t])}</td>,
+            ])}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 // ─── LEFT NAV ─────────────────────────────────────────────────────────────────
 const NAV = [
   { href: '#overview',     label: 'Overview' },
@@ -702,6 +1052,12 @@ const NAV = [
   { href: '#dot-matrix',   label: 'Dot matrix' },
   { href: '#charging',     label: 'Charging points' },
   { href: '#fleet-tbl',    label: 'Fleet table' },
+  { href: '#hubs',         label: '— Hub Network' },
+  { href: '#hub-summary',  label: 'Hub summary' },
+  { href: '#hub-heatmap',  label: 'Fleet heatmap' },
+  { href: '#hub-bars',     label: 'Fleet by tier' },
+  { href: '#hub-cards',    label: 'Hub profiles' },
+  { href: '#hub-infra',    label: 'Infrastructure' },
 ]
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
@@ -755,6 +1111,7 @@ export default function DataPanel() {
             <div>KBA 2023</div>
             <div>UITP benchmarks</div>
             <div>MOIA Hamburg</div>
+            <div>Hub geometry calc</div>
           </div>
         </div>
       </div>
@@ -902,6 +1259,49 @@ export default function DataPanel() {
           </SectionBlock>
         </div>
 
+        {/* ── PART 3: HUB NETWORK ── */}
+        <Divider label="Part 3 · Hub Network" />
+
+        <div id="hubs" style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#AEAEB2', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Part 3 · Hub Network
+          </div>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1D1D1F', margin: 0, letterSpacing: '-0.02em' }}>
+            Hub Count &amp; Fleet Distribution
+          </h2>
+          <p style={{ fontSize: 13, color: '#6E6E73', marginTop: 6, lineHeight: 1.5 }}>
+            {hub_l_count} large · {hub_m_count} district · {hub_s_count} micro-hubs · zone {ZONE_AREA_KM2} km² · {fmt(hub_total_footprint)} m² total footprint
+          </p>
+        </div>
+
+        <div id="hub-summary" style={{ marginBottom: 20, marginTop: 20 }}>
+          <HubSummaryGrid />
+        </div>
+
+        <div id="hub-heatmap" style={{ marginBottom: 16 }}>
+          <SectionBlock title="Fleet per Hub — Heatmap" subtitle="Units on a single hub · incl. 20% reserve · darker = more vehicles" accent="#2D6A4F">
+            <HubHeatmapChart />
+          </SectionBlock>
+        </div>
+
+        <div id="hub-bars" style={{ marginBottom: 16 }}>
+          <SectionBlock title="Total Fleet by Hub Tier" subtitle="All vehicles assigned to each tier · stacked by mode" accent="#1A1A1A">
+            <HubStackedBarChart />
+          </SectionBlock>
+        </div>
+
+        <div id="hub-cards" style={{ marginBottom: 16 }}>
+          <SectionBlock title="Hub Profile Cards" subtitle="Vehicle mix, charging points and footprint per single hub" accent="#95B8A0">
+            <HubProfileCards />
+          </SectionBlock>
+        </div>
+
+        <div id="hub-infra" style={{ marginBottom: 16 }}>
+          <SectionBlock title="Infrastructure Table" subtitle="Tier total · per-hub allocation · charging points · footprint" accent="#E67E22">
+            <HubInfraTable />
+          </SectionBlock>
+        </div>
+
         {/* ── Sources ── */}
         <div style={{
           padding: '16px 20px', background: 'rgba(0,0,0,0.03)',
@@ -911,10 +1311,13 @@ export default function DataPanel() {
             <strong style={{ color: '#6E6E73' }}>Data sources · Baseline:</strong>{' '}
             MiD 2017 (Mobilität in Deutschland, BMVI) · WOKS Wolfsburg 2023/2025 · KBA 2023<br />
             <strong style={{ color: '#6E6E73' }}>Data sources · Fleet:</strong>{' '}
-            Nextbike operational data · UITP autonomous shuttle & bus benchmarks · MOIA Hamburg analogue · Share Now / Stadtmobil data<br />
+            Nextbike operational data · UITP autonomous shuttle &amp; bus benchmarks · MOIA Hamburg analogue · Share Now / Stadtmobil data<br />
+            <strong style={{ color: '#6E6E73' }}>Hub geometry:</strong>{' '}
+            Coverage radius 200m (Hub S) / 400m (Hub M) · 1.35× overlap factor · max 6 Hub L (existing parking garages)<br />
             Python scripts:{' '}
             <code style={{ background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace' }}>analysis/modal_distribution.py</code>{' '}
-            <code style={{ background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace' }}>analysis/fleet_calculation.py</code>
+            <code style={{ background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace' }}>analysis/fleet_calculation.py</code>{' '}
+            <code style={{ background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace' }}>analysis/hub_calculation.py</code>
           </p>
         </div>
 

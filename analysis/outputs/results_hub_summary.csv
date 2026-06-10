@@ -1,0 +1,4 @@
+tier,hub_count,charging_per_hub,footprint_per_hub_m2,per_hub_e_bike,per_hub_autonomous_shuttle,per_hub_autonomous_bus,per_hub_autonomous_pod,per_hub_car_sharing_ev
+Hub L,6,23,1169,0,6,7,23,35
+Hub M,19,12,182,13,2,0,12,0
+Hub S,43,8,50,13,0,0,3,0
