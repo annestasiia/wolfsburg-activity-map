@@ -1,0 +1,4 @@
+tier,hub_count,S_fleet,S_circ,S_charging,S_program,S_hub,S_all_hubs
+Hub L,6,1385.0,831.0,92.0,230.8,2538.8,15232.8
+Hub M,19,222.5,89.0,23.5,33.5,368.5,7001.5
+Hub S,43,62.5,12.5,7.5,8.2,90.8,3902.2

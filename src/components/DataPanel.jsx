@@ -182,6 +182,36 @@ const hub_total_charging  = TIERS.reduce((s, t) => s + hub_charging_per[t]  * HU
 const hub_total_footprint = TIERS.reduce((s, t) => s + hub_footprint_per[t] * HUB_COUNTS[t], 0)
 const hub_footprint_pct   = (hub_total_footprint / hub_zone_m2 * 100).toFixed(2)
 
+// ─── HUB AREA  S_hub = S_fleet + S_circ + S_charging + S_program ──────────────
+const FOOTPRINT_PER_UNIT = { e_bike: 2.5, autonomous_pod: 10, autonomous_shuttle: 35, autonomous_bus: 60, car_sharing_ev: 15 }
+const CIRCULATION_FACTOR = { hub_l: 1.60, hub_m: 1.40, hub_s: 1.20 }
+const CHARGING_FP_M2     = { e_bike: 0.5, other: 4.0 }
+const PROGRAM_SHARE_AREA = 0.10
+
+const S_fleet_area    = {}
+const S_circ_area     = {}
+const S_charging_area = {}
+const S_program_area  = {}
+const S_hub_area      = {}
+
+for (const tier of TIERS) {
+  S_fleet_area[tier] = Object.keys(MODE_META).reduce(
+    (sum, mode) => sum + (fleet_per_hub[tier][mode] || 0) * FOOTPRINT_PER_UNIT[mode], 0)
+  S_circ_area[tier] = S_fleet_area[tier] * (CIRCULATION_FACTOR[tier] - 1)
+  S_charging_area[tier] = Object.keys(MODE_META).reduce((sum, mode) => {
+    const n = fleet_per_hub[tier][mode] || 0
+    const chargers = ceil(n * HUB_CHARGING_RATE[mode])
+    const fp = mode === 'e_bike' ? CHARGING_FP_M2.e_bike : CHARGING_FP_M2.other
+    return sum + chargers * fp
+  }, 0)
+  const sub = S_fleet_area[tier] + S_circ_area[tier] + S_charging_area[tier]
+  S_program_area[tier] = sub * PROGRAM_SHARE_AREA
+  S_hub_area[tier] = sub + S_program_area[tier]
+}
+
+const area_total_all_hubs = TIERS.reduce((s, t) => s + S_hub_area[t] * HUB_COUNTS[t], 0)
+const area_pct_of_zone    = (area_total_all_hubs / hub_zone_m2 * 100).toFixed(2)
+
 // ─── SHARED UTILS ─────────────────────────────────────────────────────────────
 const fmt = n => Math.round(n).toLocaleString('de-DE')
 
@@ -1036,6 +1066,232 @@ function HubInfraTable() {
   )
 }
 
+// ─── HUB AREA COMPONENTS ─────────────────────────────────────────────────────
+const COMP_COLORS_AREA = {
+  S_fleet_area:    '#2D6A4F',
+  S_circ_area:     '#52A882',
+  S_charging_area: '#2980B9',
+  S_program_area:  '#BDC3C7',
+}
+const COMP_LABELS_AREA = {
+  S_fleet_area:    'Fleet parking',
+  S_circ_area:     'Circulation',
+  S_charging_area: 'Charging stations',
+  S_program_area:  'Program / shelter',
+}
+const COMP_KEYS_AREA = ['S_fleet_area', 'S_circ_area', 'S_charging_area', 'S_program_area']
+const AREA_MAPS = { S_fleet_area, S_circ_area, S_charging_area, S_program_area }
+
+function HubAreaSummaryGrid() {
+  const cards = [
+    { label: 'Hub L area',       value: `${Math.round(S_hub_area.hub_l)} m²`,   sub: `per hub · ${hub_l_count} hubs`,    color: HUB_COLORS_UI.hub_l },
+    { label: 'Hub M area',       value: `${Math.round(S_hub_area.hub_m)} m²`,   sub: `per hub · ${hub_m_count} hubs`,    color: HUB_COLORS_UI.hub_m },
+    { label: 'Hub S area',       value: `${Math.round(S_hub_area.hub_s)} m²`,   sub: `per hub · ${hub_s_count} hubs`,    color: HUB_COLORS_UI.hub_s },
+    { label: 'Total footprint',  value: `${fmt(area_total_all_hubs)} m²`,        sub: `${area_pct_of_zone}% of 4 km² zone`, color: '#E67E22' },
+    { label: '≈ hectares',       value: `${(area_total_all_hubs/10000).toFixed(2)} ha`,  sub: 'combined hub land use',     color: '#7C3AED' },
+    { label: 'Circulation share',value: `${Math.round((CIRCULATION_FACTOR.hub_l-1)*100)}–${Math.round((CIRCULATION_FACTOR.hub_s-1)*100)}%`, sub: 'of fleet area (by tier)', color: '#2980B9' },
+  ]
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      {cards.map(({ label, value, sub, color }) => (
+        <div key={label} style={{
+          background: '#fff', borderRadius: 14, padding: '16px 18px',
+          border: `1px solid ${color}22`, borderTop: `3px solid ${color}`,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+        }}>
+          <div style={{ fontSize: 22, fontWeight: 300, color, letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F', marginTop: 6 }}>{label}</div>
+          <div style={{ fontSize: 11, color: '#AEAEB2', marginTop: 2 }}>{sub}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function HubAreaBreakdownBars() {
+  const maxTotal = Math.max(...TIERS.map(t => S_hub_area[t]))
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+      {TIERS.map(tier => {
+        const total = S_hub_area[tier]
+        let left = 0
+        return (
+          <div key={tier}>
+            {/* Label row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: HUB_COLORS_UI[tier] }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: HUB_COLORS_UI[tier] }}>{HUB_LABELS_UI[tier]}</span>
+                <span style={{ fontSize: 11, color: '#AEAEB2' }}>{HUB_COUNTS[tier]} hubs · {fmt(S_hub_area[tier] * HUB_COUNTS[tier])} m² total</span>
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#1D1D1F' }}>{Math.round(total)} m²</span>
+            </div>
+            {/* Stacked bar */}
+            <div style={{ height: 22, display: 'flex', borderRadius: 6, overflow: 'hidden', background: '#F5F5F7' }}>
+              {COMP_KEYS_AREA.map(ck => {
+                const val = AREA_MAPS[ck][tier]
+                const pct = (val / total) * 100
+                return (
+                  <div key={ck} title={`${COMP_LABELS_AREA[ck]}: ${Math.round(val)} m²`} style={{
+                    width: `${pct}%`, background: COMP_COLORS_AREA[ck],
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                  }}>
+                    {pct > 8 && <span style={{ fontSize: 9, fontWeight: 700, color: 'white' }}>{Math.round(val)}</span>}
+                  </div>
+                )
+              })}
+            </div>
+            {/* Sub-breakdown text */}
+            <div style={{ display: 'flex', gap: 14, marginTop: 5, flexWrap: 'wrap' }}>
+              {COMP_KEYS_AREA.map(ck => (
+                <div key={ck} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 8, height: 8, background: COMP_COLORS_AREA[ck], borderRadius: 2 }} />
+                  <span style={{ fontSize: 10, color: '#6E6E73' }}>{COMP_LABELS_AREA[ck]}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: '#3D3D3F' }}>{Math.round(AREA_MAPS[ck][tier])} m²</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+      {/* Legend */}
+      <div style={{ marginTop: 4, padding: '12px 16px', background: 'rgba(230,126,34,0.06)', borderRadius: 10, border: '1px solid rgba(230,126,34,0.15)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F' }}>All hubs combined</span>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#E67E22' }}>{fmt(area_total_all_hubs)} m²</div>
+            <div style={{ fontSize: 11, color: '#AEAEB2' }}>{area_pct_of_zone}% of zone · {(area_total_all_hubs/10000).toFixed(2)} ha</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HubAreaFleetDonut() {
+  const modes = Object.keys(MODE_META)
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      {TIERS.map(tier => {
+        const modeAreas = modes.map(m => ({
+          mode: m, val: (fleet_per_hub[tier][m] || 0) * FOOTPRINT_PER_UNIT[m],
+        })).filter(x => x.val > 0)
+        const total = modeAreas.reduce((s, x) => s + x.val, 0)
+        if (total === 0) return (
+          <div key={tier} style={{ textAlign: 'center', padding: 20, color: '#AEAEB2', fontSize: 12 }}>
+            {HUB_LABELS_UI[tier]}<br />no fleet area
+          </div>
+        )
+        // SVG donut
+        const R = 52, r = 32, cx = 68, cy = 68
+        let angle = -Math.PI / 2
+        const paths = []
+        modeAreas.forEach(({ mode, val }) => {
+          const sweep = (val / total) * 2 * Math.PI
+          const x1 = cx + R * Math.cos(angle), y1 = cy + R * Math.sin(angle)
+          const x2 = cx + R * Math.cos(angle + sweep), y2 = cy + R * Math.sin(angle + sweep)
+          const xi1 = cx + r * Math.cos(angle), yi1 = cy + r * Math.sin(angle)
+          const xi2 = cx + r * Math.cos(angle + sweep), yi2 = cy + r * Math.sin(angle + sweep)
+          const large = sweep > Math.PI ? 1 : 0
+          paths.push(
+            <path key={mode}
+              d={`M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${r} ${r} 0 ${large} 0 ${xi1} ${yi1} Z`}
+              fill={MODE_META[mode].color} stroke="white" strokeWidth={1.5}
+            />
+          )
+          angle += sweep
+        })
+        return (
+          <div key={tier} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: HUB_COLORS_UI[tier], marginBottom: 6 }}>
+              {HUB_LABELS_UI[tier]}
+            </div>
+            <svg width={136} height={136} style={{ overflow: 'visible' }}>
+              {paths}
+              <text x={cx} y={cy-6} textAnchor="middle" fontSize={14} fontWeight={700} fill="#1D1D1F">
+                {Math.round(total)}
+              </text>
+              <text x={cx} y={cy+9} textAnchor="middle" fontSize={9} fill="#AEAEB2">m² fleet</text>
+            </svg>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', padding: '0 8px' }}>
+              {modeAreas.map(({ mode, val }) => (
+                <div key={mode} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: MODE_META[mode].color }} />
+                    <span style={{ fontSize: 11, color: '#6E6E73' }}>{MODE_META[mode].label}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#1D1D1F' }}>{Math.round(val)} m²</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function HubAreaTable() {
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <thead>
+          <tr style={{ borderBottom: '1px solid #E8E8ED' }}>
+            {['Component', 'Hub L', 'Hub M', 'Hub S', 'Formula'].map((h, i) => (
+              <th key={h} style={{
+                textAlign: i === 0 || i === 4 ? 'left' : 'right',
+                padding: '8px 10px', fontWeight: 600, color: '#6E6E73', fontSize: 11,
+                letterSpacing: '0.04em', textTransform: 'uppercase',
+              }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            { label: 'S_fleet',    keys: 'S_fleet_area',    formula: 'Σ(units × m²/unit)',          accent: false },
+            { label: 'S_circ',     keys: 'S_circ_area',     formula: 'S_fleet × (factor − 1)',       accent: false },
+            { label: 'S_charging', keys: 'S_charging_area', formula: 'Σ(chargers × station m²)',     accent: false },
+            { label: 'S_program',  keys: 'S_program_area',  formula: '10% of (fleet+circ+charging)', accent: false },
+            { label: 'S_hub TOTAL', keys: 'S_hub_area',     formula: 'Sum of all components',        accent: true  },
+          ].map(({ label, keys, formula, accent }) => {
+            const map = { S_fleet_area, S_circ_area, S_charging_area, S_program_area, S_hub_area }
+            const vals = map[keys]
+            return (
+              <tr key={label} style={{ background: accent ? 'rgba(10,126,69,0.05)' : 'transparent', borderTop: accent ? '2px solid #E8E8ED' : undefined }}>
+                <td style={{ padding: '9px 10px', fontWeight: accent ? 700 : 500, color: accent ? '#0A7E45' : '#1D1D1F' }}>{label}</td>
+                {TIERS.map(t => (
+                  <td key={t} style={{ padding: '9px 10px', textAlign: 'right', fontWeight: accent ? 700 : 400, color: accent ? HUB_COLORS_UI[t] : '#3D3D3F', fontVariantNumeric: 'tabular-nums' }}>
+                    {Math.round(vals[t])} m²
+                  </td>
+                ))}
+                <td style={{ padding: '9px 10px', color: '#AEAEB2', fontSize: 11 }}>{formula}</td>
+              </tr>
+            )
+          })}
+          {/* Circulation factors row */}
+          <tr style={{ background: 'rgba(0,0,0,0.02)' }}>
+            <td style={{ padding: '9px 10px', color: '#6E6E73', fontSize: 12 }}>Circulation factor</td>
+            {TIERS.map(t => (
+              <td key={t} style={{ padding: '9px 10px', textAlign: 'right', color: '#6E6E73', fontSize: 12 }}>× {CIRCULATION_FACTOR[t]}</td>
+            ))}
+            <td style={{ padding: '9px 10px', color: '#AEAEB2', fontSize: 11 }}>driveways + maneuvering</td>
+          </tr>
+          {/* Per-hub × count row */}
+          <tr style={{ borderTop: '1px solid #E8E8ED' }}>
+            <td style={{ padding: '9px 10px', fontWeight: 600, color: '#1D1D1F' }}>All hubs (× count)</td>
+            {TIERS.map(t => (
+              <td key={t} style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, color: '#1D1D1F', fontVariantNumeric: 'tabular-nums' }}>
+                {fmt(S_hub_area[t] * HUB_COUNTS[t])} m²
+              </td>
+            ))}
+            <td style={{ padding: '9px 10px', color: '#AEAEB2', fontSize: 11 }}>S_hub × hub count</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 // ─── LEFT NAV ─────────────────────────────────────────────────────────────────
 const NAV = [
   { href: '#overview',     label: 'Overview' },
@@ -1058,6 +1314,11 @@ const NAV = [
   { href: '#hub-bars',     label: 'Fleet by tier' },
   { href: '#hub-cards',    label: 'Hub profiles' },
   { href: '#hub-infra',    label: 'Infrastructure' },
+  { href: '#hub-area',     label: '— Hub Areas' },
+  { href: '#hub-area-sum', label: 'Area summary' },
+  { href: '#hub-area-bar', label: 'Area breakdown' },
+  { href: '#hub-area-pie', label: 'Fleet footprint' },
+  { href: '#hub-area-tbl', label: 'Area table' },
 ]
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
@@ -1111,7 +1372,6 @@ export default function DataPanel() {
             <div>KBA 2023</div>
             <div>UITP benchmarks</div>
             <div>MOIA Hamburg</div>
-            <div>Hub geometry calc</div>
           </div>
         </div>
       </div>
@@ -1270,7 +1530,7 @@ export default function DataPanel() {
             Hub Count &amp; Fleet Distribution
           </h2>
           <p style={{ fontSize: 13, color: '#6E6E73', marginTop: 6, lineHeight: 1.5 }}>
-            {hub_l_count} large · {hub_m_count} district · {hub_s_count} micro-hubs · zone {ZONE_AREA_KM2} km² · {fmt(hub_total_footprint)} m² total footprint
+            {hub_l_count} large · {hub_m_count} district · {hub_s_count} micro-hubs · zone {ZONE_AREA_KM2} km²
           </p>
         </div>
 
@@ -1302,6 +1562,43 @@ export default function DataPanel() {
           </SectionBlock>
         </div>
 
+        {/* ── PART 4: HUB AREAS ── */}
+        <Divider label="Part 4 · Hub Area Calculation" />
+
+        <div id="hub-area" style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#AEAEB2', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Part 4 · Hub Area Calculation
+          </div>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1D1D1F', margin: 0, letterSpacing: '-0.02em' }}>
+            S_hub = S_fleet + S_circ + S_charging + S_program
+          </h2>
+          <p style={{ fontSize: 13, color: '#6E6E73', marginTop: 6, lineHeight: 1.5 }}>
+            {fmt(area_total_all_hubs)} m² total · {area_pct_of_zone}% of zone · {(area_total_all_hubs/10000).toFixed(2)} ha
+          </p>
+        </div>
+
+        <div id="hub-area-sum" style={{ marginBottom: 20, marginTop: 20 }}>
+          <HubAreaSummaryGrid />
+        </div>
+
+        <div id="hub-area-bar" style={{ marginBottom: 16 }}>
+          <SectionBlock title="Area Breakdown per Hub" subtitle="S_fleet · circulation · charging · program — hover bars for values" accent="#2D6A4F">
+            <HubAreaBreakdownBars />
+          </SectionBlock>
+        </div>
+
+        <div id="hub-area-pie" style={{ marginBottom: 16 }}>
+          <SectionBlock title="Fleet Parking Area by Mode" subtitle="How S_fleet is distributed across vehicle types per hub tier" accent="#8E44AD">
+            <HubAreaFleetDonut />
+          </SectionBlock>
+        </div>
+
+        <div id="hub-area-tbl" style={{ marginBottom: 16 }}>
+          <SectionBlock title="Hub Area Table" subtitle="Full breakdown · circulation factors · per-hub × total area" accent="#E67E22">
+            <HubAreaTable />
+          </SectionBlock>
+        </div>
+
         {/* ── Sources ── */}
         <div style={{
           padding: '16px 20px', background: 'rgba(0,0,0,0.03)',
@@ -1313,11 +1610,14 @@ export default function DataPanel() {
             <strong style={{ color: '#6E6E73' }}>Data sources · Fleet:</strong>{' '}
             Nextbike operational data · UITP autonomous shuttle &amp; bus benchmarks · MOIA Hamburg analogue · Share Now / Stadtmobil data<br />
             <strong style={{ color: '#6E6E73' }}>Hub geometry:</strong>{' '}
-            Coverage radius 200m (Hub S) / 400m (Hub M) · 1.35× overlap factor · max 6 Hub L (existing parking garages)<br />
+            Coverage radius 200m (S) / 400m (M) · 1.35× overlap · max 6 Hub L (parking garages)<br />
+            <strong style={{ color: '#6E6E73' }}>Hub area:</strong>{' '}
+            Footprint per unit + circulation factor + charging stations + 10% program<br />
             Python scripts:{' '}
             <code style={{ background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace' }}>analysis/modal_distribution.py</code>{' '}
             <code style={{ background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace' }}>analysis/fleet_calculation.py</code>{' '}
-            <code style={{ background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace' }}>analysis/hub_calculation.py</code>
+            <code style={{ background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace' }}>analysis/hub_calculation.py</code>{' '}
+            <code style={{ background: 'rgba(0,0,0,0.05)', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace' }}>analysis/hub_area.py</code>
           </p>
         </div>
 
