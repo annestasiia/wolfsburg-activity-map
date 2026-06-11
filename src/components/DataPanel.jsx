@@ -1061,6 +1061,11 @@ const NAV = [
   { href: '#hub-area-bar', label: 'Area breakdown' },
   { href: '#hub-area-pie', label: 'Fleet footprint' },
   { href: '#hub-area-tbl', label: 'Area table' },
+  { href: '#methodology',  label: '— Methodology' },
+  { href: '#method-p1',    label: 'Baseline' },
+  { href: '#method-p2',    label: 'Fleet sizing' },
+  { href: '#method-p3',    label: 'Hub network' },
+  { href: '#method-p4',    label: 'Hub area' },
 ]
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
@@ -1315,6 +1320,183 @@ export default function DataPanel() {
 
           <Sect id="hub-area-tbl" eyebrow="Full breakdown · circulation factors · per-hub and total" title="Hub Area Table">
             <HubAreaTable />
+          </Sect>
+
+          {/* ── METHODOLOGY ── */}
+          <Rule label="Methodology" />
+
+          <div id="methodology" className="dp-a" style={{ marginBottom: 8 }}>
+            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Appendix · Methods</div>
+            <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>How the Numbers Were Made</h2>
+            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
+              Each section builds on publicly available data and standard urban transport benchmarks.
+              The calculations are deterministic — no simulation or model calibration is required.
+            </p>
+          </div>
+
+          <Sect id="method-p1" eyebrow="Part 1 · Baseline" title="Transport Demand">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+              <div style={{ maxWidth: 600 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                  Population figures come from the <strong style={{ color: C.text1 }}>WOKS 2023</strong> statistical report for the nine central Wolfsburg districts.
+                  Worker count ({fmt(WORKERS)}) is from <strong style={{ color: C.text1 }}>WOKS Arbeitsmarktbericht 2025</strong>.
+                  Visitor volume is estimated as 20% of the combined residents and workers, following the MiD 2017 trip-generation pattern for mid-size German cities.
+                </p>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                  Trip generation rates are national averages from <strong style={{ color: C.text1 }}>MiD 2017 (BMVI)</strong>:
+                  residents make 3.2 trips/day, workers 2.1, visitors 1.5.
+                  Modal split uses the MiD 2017 baseline with the private-car share raised
+                  by +4 percentage points to 62%, reflecting Wolfsburg's above-average car ownership
+                  from <strong style={{ color: C.text1 }}>KBA 2023</strong>.
+                </p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { label: 'D_total formula', formula: `residents × 3.2 + workers × 2.1 + visitors × 1.5`, result: `= ${fmt(D_total)} trips/day` },
+                  { label: 'Visitors estimate', formula: `(${fmt(total_residents)} + ${fmt(WORKERS)}) × 20%`, result: `= ${fmt(visitors)} visitors/day` },
+                  { label: 'Peak hour (8–9 h)', formula: `D_total × 8.5% MiD profile`, result: `= ${fmt(peak_hour_trips)} trips/h` },
+                  { label: 'Private cars/day', formula: `D_total × 62% ÷ 1.3 occupancy`, result: `= ${fmt(car_vehicles_per_day)} vehicles` },
+                ].map(({ label, formula, result }) => (
+                  <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
+                    <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+                    <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5 }}>{formula}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Sect>
+
+          <Sect id="method-p2" eyebrow="Part 2 · Fleet Sizing" title="From Trips to Vehicles">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+              <div style={{ maxWidth: 600 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                  D_total is first split into <strong style={{ color: C.text1 }}>inbound</strong> and <strong style={{ color: C.text1 }}>internal</strong> flows.
+                  Inbound covers workers commuting from outside the zone (50% of worker trips)
+                  and visitors arriving from outside (80% of visitor trips).
+                  Internal flows include all resident trips plus the remaining worker and visitor movements within the zone.
+                  Of internal trips, 60% are assumed walkable and filtered out — consistent with
+                  MiD 2017 short-distance walking rates for dense urban cores.
+                </p>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                  Each transport mode is assigned a fixed share of the remaining demand via two allocation matrices:
+                  one for inbound flows (dominated by autonomous bus and shuttle),
+                  one for internal flows (dominated by e-bike and autonomous pod).
+                  Fleet size follows a <strong style={{ color: C.text1 }}>peak-hour utilisation formula</strong>: the number of vehicles
+                  simultaneously on the street at peak hour equals peak trips divided by vehicle capacity, multiplied by average trip duration.
+                  A mode-specific reserve factor (1.15–1.35) converts on-street count to total fleet.
+                </p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { label: 'Net transport demand', formula: `inbound trips + internal transport\n(after walking filter)`, result: `D_transport = ${fmt(D_transport)}` },
+                  { label: 'Walking filtered out', formula: `internal trips × 60% walkable`, result: `= ${fmt(walking_filtered)} trips/day` },
+                  { label: 'On-street fleet (per mode)', formula: `⌈(peak_trips ÷ capacity) × trip_h⌉`, result: `e.g. e-bike: ${fleet.e_bike.on_street} units` },
+                  { label: 'Total fleet (per mode)', formula: `on_street × peak_factor`, result: `total: ${fmt(total_fleet)} vehicles` },
+                ].map(({ label, formula, result }) => (
+                  <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
+                    <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+                    <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ maxWidth: 600 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                  Charging point requirements are benchmarked from operator data:
+                  50% of e-bikes charge simultaneously (Nextbike operational standard),
+                  30% for all other modes (UITP autonomous vehicle guidelines, MOIA Hamburg analogue,
+                  Share Now fleet operations).
+                  The baseline car count ({fmt(CARS_REPLACED)} private vehicles/day) is derived from KBA 2023
+                  car registration data for Wolfsburg, divided by average car utilisation.
+                </p>
+              </div>
+            </div>
+          </Sect>
+
+          <Sect id="method-p3" eyebrow="Part 3 · Hub Network" title="Hub Counts from Geometry">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+              <div style={{ maxWidth: 600 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                  Hub counts are derived from <strong style={{ color: C.text1 }}>coverage geometry</strong>, not from fleet demand alone.
+                  The starting point is the 4 km² zone area and the maximum acceptable walking distance to a hub.
+                  A 1.35× overlap factor accounts for irregular street grids and dead zones between circles.
+                </p>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                  <strong style={{ color: C.text1 }}>Hub L</strong> count is constrained by existing infrastructure —
+                  there are at most 6 large parking structures in the zone that can be repurposed as interchange hubs.
+                  The fleet-driven estimate (⌈(bus + car-share fleet) ÷ 8⌉) is capped at this maximum.
+                  <strong style={{ color: C.text1 }}> Hub M</strong> is the maximum of the geometric estimate (r = 400 m coverage) and the
+                  shuttle-fleet requirement (one Hub M per 3 shuttles).
+                  <strong style={{ color: C.text1 }}> Hub S</strong> follows purely from geometry: enough micro-hubs to ensure
+                  no resident is more than 200 m from a docking point.
+                </p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                {[
+                  { tier: 'Hub S', color: HUB_COLORS_UI.hub_s, formula: `⌈(4,000,000 m² ÷ π×200²) × 1.35⌉`, result: `= ${hub_s_count} hubs`, note: '200 m walking radius' },
+                  { tier: 'Hub M', color: HUB_COLORS_UI.hub_m, formula: `max(geometry r=400m,\nshuttle_fleet ÷ 3)`, result: `= ${hub_m_count} hubs`, note: '400 m, shuttle coverage' },
+                  { tier: 'Hub L', color: HUB_COLORS_UI.hub_l, formula: `min(⌈(bus+car-share) ÷ 8⌉, 6)`, result: `= ${hub_l_count} hubs`, note: 'capped — existing garages' },
+                ].map(({ tier, color, formula, result, note }) => (
+                  <div key={tier} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}`, borderTop: `3px solid ${color}` }}>
+                    <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color, marginBottom: 8 }}>{tier}</div>
+                    <div style={{ fontFamily: 'monospace', fontSize: 12, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 3 }}>{note}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ maxWidth: 600 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                  Fleet is assigned to tiers via a fixed distribution matrix — for example, all buses and car-share EVs
+                  concentrate at Hub L, while 70% of e-bikes are distributed to Hub S micro-hubs.
+                  Per-hub vehicle count adds a 20% operational reserve on top of the tier allocation,
+                  rounding up to ensure no hub is under-provisioned at peak demand.
+                </p>
+              </div>
+            </div>
+          </Sect>
+
+          <Sect id="method-p4" eyebrow="Part 4 · Hub Area" title="Spatial Footprint Formula">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+              <div style={{ maxWidth: 600 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                  Hub area is the sum of four components. Footprint values per vehicle type are drawn from
+                  standard parking and depot design references: 2.5 m² for an e-bike rack,
+                  10 m² for a compact pod, 35 m² for a minibus, 60 m² for a full-size bus, 15 m² for a car.
+                </p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { label: 'S_fleet — parking footprint', formula: `Σ (units_per_hub × m²/vehicle)`, note: 'standard depot footprint values per type' },
+                  { label: 'S_circ — circulation', formula: `S_fleet × (factor − 1)`, note: '×1.6 Hub L · ×1.4 Hub M · ×1.2 Hub S' },
+                  { label: 'S_charging — charging stations', formula: `Σ ⌈units × rate⌉ × station_m²`, note: '0.5 m² e-bike dock · 4 m² EV charger' },
+                  { label: 'S_program — shelter & services', formula: `(S_fleet + S_circ + S_charging) × 10%`, note: 'waiting areas, info points, shelter' },
+                ].map(({ label, formula, note }) => (
+                  <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
+                    <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+                    <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5 }}>{formula}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 5 }}>{note}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ maxWidth: 600 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                  The circulation factor captures driveways, turning radii, and pedestrian paths
+                  within the hub perimeter — it is applied as a multiplier to fleet area only,
+                  not to charging or program. Program space covers sheltered waiting zones,
+                  real-time information displays, and minor service areas.
+                </p>
+                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                  Total land use across all {hub_l_count + hub_m_count + hub_s_count} hubs is{' '}
+                  <strong style={{ color: C.text1 }}>{fmt(area_total_all_hubs)} m²</strong> ({(area_total_all_hubs / 10000).toFixed(2)} ha),
+                  equivalent to {area_pct_of_zone}% of the 4 km² project zone —
+                  comparable to a single urban block. The concentration of area in Hub L
+                  ({Math.round(S_hub_area.hub_l * hub_l_count / area_total_all_hubs * 100)}% of total despite only {hub_l_count} sites)
+                  reflects the bus and car-share depot requirements at large interchange nodes.
+                </p>
+              </div>
+            </div>
           </Sect>
 
           {/* Sources */}
