@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { computeBbox, inBbox, getCoordList } from '../../utils/geoUtils'
+import { CYCLING_WB_TYP_COLORS, CYCLING_WB_TYP_DEFAULT, CYCLING_WB_TYP_LABELS } from '../../utils/cyclingWbConfig'
 
 function parseLeisureRoutes(geoJSON) {
   if (!geoJSON?.features) return []
@@ -48,6 +49,9 @@ export default function MobilityPanel({ noTitle }) {
     cyclingHighlightLeisureRoute, setCyclingHighlightLeisureRoute,
     selectedMobilityDistrict,     setSelectedMobilityDistrict,
     districtBoundaries,
+    localCyclingWb,
+    cyclingWbShowByType,
+    cyclingWbShowRoutes,
   } = useAppStore()
 
   const modes = [...activeMobilityModes]
@@ -67,12 +71,23 @@ export default function MobilityPanel({ noTitle }) {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 8)
 
-  const hasTransit = activeMobilityModes.has('transport')
-  const hasCycling = activeMobilityModes.has('cycling')
+  const cyclingWbTypCounts = useMemo(() => {
+    if (!localCyclingWb) return []
+    const counts = {}
+    for (const f of localCyclingWb.features) {
+      const t = f.properties?.typ || 'Sonstige'
+      counts[t] = (counts[t] || 0) + 1
+    }
+    return Object.entries(counts).sort((x, y) => y[1] - x[1])
+  }, [localCyclingWb])
+
+  const hasTransit   = activeMobilityModes.has('transport')
+  const hasCycling   = activeMobilityModes.has('cycling')
+  const hasCyclingWb = activeMobilityModes.has('cycling_wb')
 
   // Determine which mode to show district detail for
   const statMode = selectedMobilityDistrict
-    ? (hasTransit ? 'transport' : hasCycling ? 'cycling' : null)
+    ? (hasTransit ? 'transport' : hasCycling ? 'cycling' : hasCyclingWb ? 'cycling_wb' : null)
     : null
 
   const districtStats = useMemo(() => {
@@ -123,10 +138,24 @@ export default function MobilityPanel({ noTitle }) {
       return { mode: 'cycling', district: selectedMobilityDistrict, parkingCount: spots.length, totalCapacity, districtLeisureRoutes }
     }
 
+    if (statMode === 'cycling_wb') {
+      const overlay = mobilityOverlayPerMode['cycling_wb'] || localCyclingWb
+      const distFeatures = (overlay?.features || []).filter(f => {
+        const coords = getCoordList(f.geometry)
+        return coords.some(([lng, lat]) => inBbox(lng, lat, bbox))
+      })
+      const byTyp = {}
+      for (const f of distFeatures) {
+        const t = f.properties?.typ || 'Sonstige'
+        byTyp[t] = (byTyp[t] || 0) + 1
+      }
+      return { mode: 'cycling_wb', district: selectedMobilityDistrict, segmentCount: distFeatures.length, byTyp }
+    }
+
     return null
   }, [statMode, selectedMobilityDistrict, districtBoundaries,
       transitStopsGeoJSON, mobilityOverlayPerMode, mobilityDataCache,
-      cyclingParkingGeoJSON, cyclingRoutesGeoJSON, leisureRoutes])
+      cyclingParkingGeoJSON, cyclingRoutesGeoJSON, leisureRoutes, localCyclingWb])
 
   return (
     <div>
@@ -326,6 +355,65 @@ export default function MobilityPanel({ noTitle }) {
         </div>
       )}
 
+      {/* ── District detail: Cycling WB ── */}
+      {!mobilityDataLoading && districtStats?.mode === 'cycling_wb' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <button
+              onClick={() => setSelectedMobilityDistrict(null)}
+              style={{
+                background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
+                borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer',
+                fontFamily: 'inherit', color: '#3D3D3F',
+              }}
+            >
+              ← Districts
+            </button>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F' }}>
+              {districtStats.district}
+            </span>
+          </div>
+
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: '#E8F0FF', borderRadius: 10, padding: '10px 14px', marginBottom: 12,
+          }}>
+            <span style={{ fontSize: 22 }}>🛣️</span>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#0057B7', lineHeight: 1 }}>
+                {districtStats.segmentCount}
+              </div>
+              <div style={{ fontSize: 12, color: '#3366AA', marginTop: 2 }}>path segments</div>
+            </div>
+          </div>
+
+          {Object.keys(districtStats.byTyp).length > 0 && (
+            <>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F', marginBottom: 6 }}>
+                Path types in district
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {Object.entries(districtStats.byTyp)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([typ, count]) => (
+                    <div key={typ} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{
+                        width: 12, height: 4, borderRadius: 2, flexShrink: 0,
+                        background: CYCLING_WB_TYP_COLORS[typ] || CYCLING_WB_TYP_DEFAULT,
+                      }} />
+                      <span style={{ fontSize: 12, flex: 1, color: '#1D1D1F' }}>{CYCLING_WB_TYP_LABELS[typ] || typ}</span>
+                      <span style={{ fontSize: 12, color: '#AEAEB2' }}>{count}</span>
+                    </div>
+                  ))}
+              </div>
+            </>
+          )}
+          <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
+            Source: Stadt Wolfsburg GDI — inspire_radwege
+          </p>
+        </div>
+      )}
+
       {/* ── Cycling all leisure routes ── */}
       {!mobilityDataLoading && !selectedMobilityDistrict && hasCycling && leisureRoutes.length > 0 && (
         <div>
@@ -382,6 +470,58 @@ export default function MobilityPanel({ noTitle }) {
           </div>
           <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
             Source: OpenStreetMap · official routes from wolfsburg.de/radfahren
+          </p>
+        </div>
+      )}
+
+      {/* ── Cycling WB global summary ── */}
+      {!mobilityDataLoading && !selectedMobilityDistrict && hasCyclingWb && localCyclingWb && (
+        <div>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', marginBottom: 4 }}>
+            Official Wolfsburg cycling network
+          </p>
+          <p style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 10, letterSpacing: '-0.01em' }}>
+            {localCyclingWb.features.length} segments · click a district for local stats
+          </p>
+
+          {cyclingWbShowRoutes && cyclingWbShowByType ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {cyclingWbTypCounts.map(([typ, count]) => {
+                const color = CYCLING_WB_TYP_COLORS[typ] || CYCLING_WB_TYP_DEFAULT
+                const maxCount = cyclingWbTypCounts[0]?.[1] || 1
+                return (
+                  <div key={typ} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 20, height: 4, borderRadius: 2, flexShrink: 0, background: color }} />
+                    <span style={{ fontSize: 12, color: '#1D1D1F', flex: 1, lineHeight: 1.3 }}>{CYCLING_WB_TYP_LABELS[typ] || typ}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                      <div style={{
+                        width: Math.round((count / maxCount) * 40),
+                        height: 4, borderRadius: 2,
+                        background: color, opacity: 0.35,
+                      }} />
+                      <span style={{ fontSize: 11, color: '#AEAEB2', minWidth: 24, textAlign: 'right' }}>
+                        {count}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : cyclingWbShowRoutes ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 20, height: 4, borderRadius: 2, background: '#0057B7' }} />
+              <span style={{ fontSize: 12, color: '#6E6E73' }}>
+                All paths — enable "Color by path type" for breakdown
+              </span>
+            </div>
+          ) : (
+            <p style={{ fontSize: 12, color: '#AEAEB2' }}>
+              Enable "Network lines" to show paths on map
+            </p>
+          )}
+
+          <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 10 }}>
+            Source: Stadt Wolfsburg GDI — inspire_radwege
           </p>
         </div>
       )}

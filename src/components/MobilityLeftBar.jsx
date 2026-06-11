@@ -5,6 +5,7 @@ const MODES = [
   { id: 'automobile', label: 'Automobile', sub: 'Transport', icon: '🚗', color: '#3D3D3F' },
   { id: 'transport',  label: 'Public',     sub: 'Transport', icon: '🚌', color: '#0077FF' },
   { id: 'cycling',    label: 'Cycling',    sub: 'Access',    icon: '🚲', color: '#00C853' },
+  { id: 'cycling_wb', label: 'Cycling',   sub: 'WB Official', icon: '🏙️', color: '#0057B7' },
 ]
 
 const FACILITIES_COLOR = '#FF6900'

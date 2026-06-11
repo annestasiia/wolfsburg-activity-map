@@ -20,6 +20,7 @@ import { scoreToGSAColor } from '../utils/greenSocialAnalysis'
 import { generateCircleGeoJSON } from '../utils/intermodalAlgorithm'
 import { nodesGeoJSON, edgesGeoJSON, gapsGeoJSON } from '../utils/radAlgorithm'
 import { makePieSVG } from './IntermodalSidebar'
+import { CYCLING_WB_COLOR_EXPR } from '../utils/cyclingWbConfig'
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 const WOLFSBURG  = { center: [10.7865, 52.4227], zoom: 12 }
@@ -324,6 +325,8 @@ export default function MapView({ onVenueClick }) {
     cyclingParkingGeoJSON, setCyclingParkingGeoJSON,
     cyclingRoutesGeoJSON, setCyclingRoutesGeoJSON,
     cyclingHighlightLeisureRoute,
+    cyclingWbShowRegional, cyclingWbShowRoutes, cyclingWbShowByType,
+    localCyclingWb,
     selectedMobilityDistrict, setSelectedMobilityDistrict,
     // Greenery
     greeneryGeoJSON, greeneryCategoryToggles, greeneryTagToggles, greeneryOthersTagToggles,
@@ -518,7 +521,7 @@ export default function MapView({ onVenueClick }) {
     const handleClick = (e) => {
       if (activeModeRef.current !== 'mobility') return
       const modes = activeMobilityModesRef.current
-      if (!modes.has('transport') && !modes.has('cycling')) return
+      if (!modes.has('transport') && !modes.has('cycling') && !modes.has('cycling_wb')) return
       const layers = DISTRICTS.map(d => `boundary-fill-${d.name}`).filter(id => map.getLayer(id))
       const features = map.queryRenderedFeatures(e.point, { layers })
       if (!features.length) {
@@ -532,7 +535,7 @@ export default function MapView({ onVenueClick }) {
     const handleMouseMove = (e) => {
       if (activeModeRef.current !== 'mobility') { map.getCanvas().style.cursor = ''; return }
       const modes = activeMobilityModesRef.current
-      if (!modes.has('transport') && !modes.has('cycling')) { map.getCanvas().style.cursor = ''; return }
+      if (!modes.has('transport') && !modes.has('cycling') && !modes.has('cycling_wb')) { map.getCanvas().style.cursor = ''; return }
       const layers = DISTRICTS.map(d => `boundary-fill-${d.name}`).filter(id => map.getLayer(id))
       const features = map.queryRenderedFeatures(e.point, { layers })
       map.getCanvas().style.cursor = features.length ? 'pointer' : ''
@@ -683,6 +686,7 @@ export default function MapView({ onVenueClick }) {
     if (!mapReady || !Object.keys(districtBoundaries).length) return
 
     for (const mode of activeMobilityModes) {
+      if (mode === 'cycling_wb') continue        // uses pre-loaded static file, not Overpass
       if (mobilityOverlayPerMode[mode]) continue // already loaded
 
       let cancelled = false
@@ -1062,6 +1066,44 @@ export default function MapView({ onVenueClick }) {
     }
   }, [mapReady, cyclingHighlightLeisureRoute, cyclingRoutesGeoJSON, activeMode])
 
+  // ── Cycling WB: compute district scores from pre-loaded GeoJSON ──────────
+  useEffect(() => {
+    if (!mapReady) return
+    if (!activeMobilityModes.has('cycling_wb')) return
+    if (mobilityScoresPerMode['cycling_wb']) return
+    if (!localCyclingWb || !Object.keys(districtBoundaries).length) return
+    const raw = scoreDistrictsToCenter(localCyclingWb, districtBoundaries, 0.010)
+    setMobilityScoresForMode('cycling_wb', normalizeScores(raw))
+    setMobilityOverlayForMode('cycling_wb', localCyclingWb)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady, activeMobilityModes, localCyclingWb, districtBoundaries])
+
+  // ── Cycling WB: render official city network ──────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    if (!localCyclingWb) return
+    const active    = activeMobilityModes.has('cycling_wb') && cyclingWbShowRoutes
+    const lineColor = cyclingWbShowByType ? CYCLING_WB_COLOR_EXPR : '#0057B7'
+
+    if (!map.getSource('cycling-wb-overlay')) {
+      map.addSource('cycling-wb-overlay', { type: 'geojson', data: localCyclingWb })
+      map.addLayer({
+        id:     'cycling-wb-overlay',
+        type:   'line',
+        source: 'cycling-wb-overlay',
+        layout: { 'line-cap': 'round', 'line-join': 'round', visibility: active ? 'visible' : 'none' },
+        paint:  { 'line-color': lineColor, 'line-width': 3.0, 'line-opacity': 0.85 },
+      }, 'venue-circles')
+    } else {
+      map.getSource('cycling-wb-overlay').setData(localCyclingWb)
+      if (map.getLayer('cycling-wb-overlay')) {
+        map.setPaintProperty('cycling-wb-overlay', 'line-color', lineColor)
+        map.setLayoutProperty('cycling-wb-overlay', 'visibility', active ? 'visible' : 'none')
+      }
+    }
+  }, [mapReady, localCyclingWb, activeMobilityModes, cyclingWbShowRoutes, cyclingWbShowByType])
+
   // ── District coloring by regional activity ────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
@@ -1077,6 +1119,7 @@ export default function MapView({ onVenueClick }) {
     const showRegional = singleMode === 'automobile' ? autoShowRegional
       : singleMode === 'transport' ? transitShowRegional
       : singleMode === 'cycling' ? cyclingShowRegional
+      : singleMode === 'cycling_wb' ? cyclingWbShowRegional
       : false
 
     DISTRICTS.forEach(({ name, color }) => {
@@ -1106,7 +1149,7 @@ export default function MapView({ onVenueClick }) {
       }
     })
   }, [mapReady, mobilityScoresPerMode, activeMobilityModes, selectedDistricts, activeMode,
-      autoShowRegional, transitShowRegional, cyclingShowRegional])
+      autoShowRegional, transitShowRegional, cyclingShowRegional, cyclingWbShowRegional])
 
   // ── Show All Borders: light gray district outlines (global) ───────────────
   useEffect(() => {

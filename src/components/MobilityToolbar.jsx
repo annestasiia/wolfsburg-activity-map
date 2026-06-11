@@ -1,6 +1,7 @@
 import React from 'react'
 import { useAppStore } from '../store/appStore'
 import { DAYS } from '../constants'
+import { CYCLING_WB_TYP_COLORS, CYCLING_WB_TYP_DEFAULT, CYCLING_WB_TYP_LABELS } from '../utils/cyclingWbConfig'
 
 function slotToTime(slot) {
   const h = Math.floor(slot / 2).toString().padStart(2, '0')
@@ -159,6 +160,11 @@ export default function MobilityToolbar() {
     cyclingShowBikeParking,     toggleCyclingShowBikeParking,
     cyclingParkingGeoJSON,
     cyclingRoutesGeoJSON,
+    // Cycling WB
+    cyclingWbShowRegional, toggleCyclingWbShowRegional,
+    cyclingWbShowRoutes,   toggleCyclingWbShowRoutes,
+    cyclingWbShowByType,   toggleCyclingWbShowByType,
+    localCyclingWb,
     // Shared time selectors
     selectedDay,  setSelectedDay,
     selectedTime, setSelectedTime,
@@ -168,6 +174,7 @@ export default function MobilityToolbar() {
   const hasAuto    = activeMobilityModes.has('automobile')
   const hasTransit = activeMobilityModes.has('transport')
   const hasCycling = activeMobilityModes.has('cycling')
+  const hasWb      = activeMobilityModes.has('cycling_wb')
 
   if (activeMobilityModes.size === 0) return null
 
@@ -299,6 +306,47 @@ export default function MobilityToolbar() {
             color="#00897B"
             count={cyclingParkingGeoJSON?.features?.length}
           />
+        </>
+      )}
+
+      {/* ── Cycling WB ─────────────────────────────────────────── */}
+      {hasWb && (
+        <>
+          <Divider />
+          <SectionLabel color="#0057B7">Cycling — WB Official</SectionLabel>
+          <Toggle
+            label="Regional activity"
+            active={cyclingWbShowRegional}
+            onToggle={toggleCyclingWbShowRegional}
+            color="#0057B7"
+            disabled={multiMode}
+          />
+          <Toggle
+            label="Network lines"
+            active={cyclingWbShowRoutes}
+            onToggle={toggleCyclingWbShowRoutes}
+            color="#0057B7"
+            count={localCyclingWb?.features?.length}
+          />
+          <Toggle
+            label="Color by path type"
+            active={cyclingWbShowByType}
+            onToggle={toggleCyclingWbShowByType}
+            color="#FF8C00"
+          />
+          {cyclingWbShowByType && cyclingWbShowRoutes && (
+            <div style={{
+              background: '#F5F5F7', borderRadius: 10,
+              padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 5,
+            }}>
+              {Object.entries(CYCLING_WB_TYP_COLORS).map(([typ, color]) => (
+                <div key={typ} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ width: 16, height: 3, borderRadius: 2, flexShrink: 0, background: color }} />
+                  <span style={{ fontSize: 10, color: '#3D3D3F', lineHeight: 1.3 }}>{CYCLING_WB_TYP_LABELS[typ] || typ}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
 

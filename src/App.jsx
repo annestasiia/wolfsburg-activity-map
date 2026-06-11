@@ -28,6 +28,7 @@ export default function App() {
     activeMode, setSelectedFacilityVenueId,
     setLocalBusStops, setLocalCarParkings, setLocalBikeParkings,
     setLocalFacilities, setLocalHistoric, setLocalParksForests, setLocalCycling,
+    setLocalCyclingWb,
   } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
 
@@ -55,6 +56,7 @@ export default function App() {
       ['wolfsburg_historic.geojson',     setLocalHistoric],
       ['wolfsburg_parks_forests.geojson',setLocalParksForests],
       ['wolfsburg_cycling.geojson',      setLocalCycling],
+      ['wolfsburg_cycling_wb.geojson',   setLocalCyclingWb],
     ]
     for (const [filename, setter] of localFiles) {
       fetch(`${import.meta.env.BASE_URL}${filename}`)
@@ -63,7 +65,7 @@ export default function App() {
         .catch(() => {})
     }
   }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways,
-      setLocalBusStops, setLocalCarParkings, setLocalBikeParkings, setLocalFacilities, setLocalHistoric, setLocalParksForests, setLocalCycling])
+      setLocalBusStops, setLocalCarParkings, setLocalBikeParkings, setLocalFacilities, setLocalHistoric, setLocalParksForests, setLocalCycling, setLocalCyclingWb])
 
   const handleVenueClick = useCallback((props) => {
     if (activeMode === 'facilities') {

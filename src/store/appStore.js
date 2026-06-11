@@ -29,7 +29,7 @@ export const useAppStore = create((set) => ({
   activeMode: 'mobility',  // 'mobility' | 'facilities' | 'greenery'
 
   // ── Mobility: multi-select transport modes ────────────────────────────────
-  activeMobilityModes: new Set(),  // 'automobile' | 'transport' | 'cycling'
+  activeMobilityModes: new Set(),  // 'automobile' | 'transport' | 'cycling' | 'cycling_wb'
 
   // ── Mobility data (shared cache, per-mode results) ────────────────────────
   mobilityDataCache: {},        // { modeKey: raw OSM elements }
@@ -54,6 +54,11 @@ export const useAppStore = create((set) => ({
 
   // ── Cycling options ───────────────────────────────────────────────────────
   cyclingShowRegional: true,
+  // ── Cycling WB (Wolfsburg official) ──────────────────────────────────────
+  cyclingWbShowRegional: true,
+  cyclingWbShowRoutes:   true,
+  cyclingWbShowByType:   false,
+  localCyclingWb:        null,
   cyclingShowRoutes: true,           // cycling infrastructure paths
   cyclingShowLeisureRoutes: true,    // named leisure route relations
   cyclingShowBikeParking: false,
@@ -146,6 +151,7 @@ export const useAppStore = create((set) => ({
     cyclingShowRegional: true, cyclingShowRoutes: true,
     cyclingShowLeisureRoutes: true, cyclingShowBikeParking: false,
     cyclingHighlightLeisureRoute: null,
+    cyclingWbShowRegional: true, cyclingWbShowRoutes: true, cyclingWbShowByType: false,
     selectedMobilityDistrict: null,
     showFacilitiesInMobility: false,
     intermodalSelectedHub: null,
@@ -193,6 +199,12 @@ export const useAppStore = create((set) => ({
   setCyclingParkingGeoJSON:       (gj) => set({ cyclingParkingGeoJSON: gj }),
   setCyclingRoutesGeoJSON:        (gj) => set({ cyclingRoutesGeoJSON: gj }),
   setCyclingHighlightLeisureRoute:(id) => set({ cyclingHighlightLeisureRoute: id }),
+
+  // ── Cycling WB setters ────────────────────────────────────────────────────
+  toggleCyclingWbShowRegional: () => set(s => ({ cyclingWbShowRegional: !s.cyclingWbShowRegional })),
+  toggleCyclingWbShowRoutes:   () => set(s => ({ cyclingWbShowRoutes:   !s.cyclingWbShowRoutes   })),
+  toggleCyclingWbShowByType:   () => set(s => ({ cyclingWbShowByType:   !s.cyclingWbShowByType   })),
+  setLocalCyclingWb:           (v) => set({ localCyclingWb: v }),
 
   // ── District selection ────────────────────────────────────────────────────
   setSelectedMobilityDistrict: (name) => set(s => ({
@@ -465,6 +477,7 @@ export const useAppStore = create((set) => ({
     cyclingShowRegional: true, cyclingShowRoutes: true,
     cyclingShowLeisureRoutes: true, cyclingShowBikeParking: false,
     cyclingHighlightLeisureRoute: null,
+    cyclingWbShowRegional: true, cyclingWbShowRoutes: true, cyclingWbShowByType: false,
     mobilityHighlightRoute: null,
     selectedMobilityDistrict: null,
     showFacilitiesInMobility: false,
