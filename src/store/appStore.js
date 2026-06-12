@@ -25,6 +25,9 @@ export const useAppStore = create((set) => ({
   activeModes: new Set(['infrastructure']),
   activeBottomPanel: null,
 
+  // ── Top-level section (right nav) ────────────────────────────────────────
+  activeSection: null,  // null | 'strategy' | 'geo' | 'capacity' | 'hub' | 'urban' | 'simulation'
+
   // ── Top-level analysis mode ───────────────────────────────────────────────
   activeMode: 'mobility',  // 'mobility' | 'facilities' | 'greenery'
 
@@ -134,6 +137,11 @@ export const useAppStore = create((set) => ({
   setSelectedTime: (time) => set({ selectedTime: time }),
   setShowNotes:    (val)  => set({ showNotes: val }),
   setSelectedFacilityVenueId: (id) => set({ selectedFacilityVenueId: id }),
+
+  setActiveSection: (section) => set((state) => ({
+    activeSection: section,
+    activeMode: section === 'geo' ? 'mobility' : section === 'hub' ? 'intermodal' : state.activeMode,
+  })),
 
   // ── Mode switch: overlay/score data is preserved as cache across mode changes ─
   setActiveMode: (mode) => set({
