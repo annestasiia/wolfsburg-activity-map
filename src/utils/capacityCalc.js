@@ -60,6 +60,19 @@ const PROGRAM_SHARE_AREA = 0.10
 
 const ceil = Math.ceil
 
+// Density config for Hub S intermodal algorithm.
+// high/medium/low are exclusion radii — smaller = hubs can be placed closer together = more hubs.
+// As population grows, radii shrink → denser coverage → more Hub S placed.
+export function computeDensityConfig(cityPopulation = 130000) {
+  const scale = cityPopulation / 130000
+  const inv   = 1 / Math.sqrt(scale)            // decays from 1.0 at 130k to 0.72 at 250k
+  return {
+    high:   Math.max(80,  Math.round(300  * inv)),   // 300 → 216 m
+    medium: Math.max(200, Math.round(700  * inv)),   // 700 → 505 m
+    low:    Math.max(400, Math.round(1000 * inv)),   // 1000 → 721 m
+  }
+}
+
 export function computeCapacity(cityPopulation = 130000) {
   const scale = cityPopulation / BASELINE_CITY_POP
 

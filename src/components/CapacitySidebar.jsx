@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { useAppStore } from '../store/appStore'
-import { computeCapacity, MODE_META } from '../utils/capacityCalc'
+import { computeCapacity, computeDensityConfig, MODE_META } from '../utils/capacityCalc'
 import { buildRunAllHubs } from './HubNetworkSidebar'
 
 const SANS  = "system-ui, -apple-system, sans-serif"
@@ -57,12 +57,17 @@ export default function CapacitySidebar() {
   const { hubPopulation, setHubPopulation, hubLMRunning, hubLMResults, localCarParkings, localBusStops } = store
 
   const pop = hubPopulation || 130000
-  const cap = useMemo(() => computeCapacity(pop), [pop])
+  const cap         = useMemo(() => computeCapacity(pop),       [pop])
+  const autoDensity = useMemo(() => computeDensityConfig(pop),  [pop])
   const runAll = buildRunAllHubs(store)
   const ready  = !!localCarParkings && !!localBusStops
 
   const maxTrips  = Math.max(...Object.values(cap.trips_by_mode))
   const maxFleet  = Math.max(...Object.values(cap.fleet).map(f => f.total))
+
+  // Fleet per hub tier — summed across modes
+  const TIER_COLORS = { hub_l: C.hubL, hub_m: C.hubM, hub_s: C.hubS }
+  const TIER_LABELS = { hub_l: 'Hub L', hub_m: 'Hub M', hub_s: 'Hub S' }
 
   return (
     <div style={{
@@ -163,14 +168,47 @@ export default function CapacitySidebar() {
               <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
                 <div style={{ height: '100%', width: `${(count / maxCount) * 100}%`, background: color, borderRadius: 2, transition: 'width 0.3s ease' }} />
               </div>
-              {area != null && (
+              {area != null ? (
                 <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3 }}>
                   {fmtM2(area)} total · {fmtM2(perHub)}/hub
+                </div>
+              ) : (
+                <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3 }}>
+                  density high·{autoDensity.high}m mid·{autoDensity.medium}m low·{autoDensity.low}m
                 </div>
               )}
             </div>
           ))
         })()}
+
+        {/* ── Fleet per Hub Type ── */}
+        <SectionLabel>Fleet per Hub Type</SectionLabel>
+        {['hub_l', 'hub_m', 'hub_s'].map(tier => {
+          const color = TIER_COLORS[tier]
+          const fph   = cap.fleet_per_hub[tier] || {}
+          const total = Object.values(fph).reduce((s, v) => s + v, 0)
+          const modes = Object.entries(MODE_META).filter(([m]) => (fph[m] || 0) > 0)
+          if (!modes.length) return null
+          return (
+            <div key={tier} style={{ border: `1px solid ${C.border}`, borderLeft: `3px solid ${color}`, borderRadius: 5, padding: '8px 10px', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                <span style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  {TIER_LABELS[tier]}
+                </span>
+                <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: C.text1 }}>{total} veh/hub</span>
+              </div>
+              {modes.map(([mode, { label, color: mc }]) => (
+                <div key={mode} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: mc, flexShrink: 0 }} />
+                    <span style={{ fontFamily: SANS, fontSize: 10, color: C.text3 }}>{label}</span>
+                  </div>
+                  <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 600, color: mc }}>{fph[mode]}</span>
+                </div>
+              ))}
+            </div>
+          )
+        })}
 
         {/* ── Run Analysis ── */}
         <div style={{ marginTop: 10 }}>

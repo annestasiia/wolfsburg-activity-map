@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { runHubLMAlgorithm } from '../utils/hubLMAlgorithm'
 import { runIntermodalAlgorithm } from '../utils/intermodalAlgorithm'
-import { computeCapacity } from '../utils/capacityCalc'
+import { computeCapacity, computeDensityConfig } from '../utils/capacityCalc'
 
 const SERIF = "'Georgia', 'Times New Roman', serif"
 const SANS  = "system-ui, -apple-system, sans-serif"
@@ -85,7 +85,7 @@ function HubTypeCard({ type, color, count, totalArea, centreCount, outerCount, c
 // Exported so CapacitySidebar, HubLMDataPanel and HubStatsPanel can call it
 export function buildRunAllHubs(store) {
   const { localCarParkings, localBusStops, localBikeParkings, parks,
-          districtBoundaries, hubLMConfig, densityConfig, venues,
+          districtBoundaries, hubLMConfig, venues,
           hubPopulation,
           setHubLMResults, setHubSBusOnly, setHubLMRunning } = store
   return async () => {
@@ -93,27 +93,24 @@ export function buildRunAllHubs(store) {
     setHubLMRunning(true, 'Running Hub L/M/S analysis…')
     await new Promise(r => setTimeout(r, 10))
     try {
-      // Compute required areas from city population via Capacity Analysis formulas
-      const cap = computeCapacity(hubPopulation || 130000)
+      const pop   = hubPopulation || 130000
+      const scale = pop / 130000
+
+      // Hub L/M — required areas from capacity model, minDistM shrinks as city grows
+      const cap = computeCapacity(pop)
       const lmConfig = {
         ...hubLMConfig,
         requiredAreaL: cap.requiredAreaL,
         requiredAreaM: cap.requiredAreaM,
+        minDistM: Math.max(200, Math.round(500 / Math.sqrt(scale))),  // 500m→361m at 250k
       }
-
-      // Hub L + Hub M
       const lmResults = runHubLMAlgorithm({ localCarParkings, districtBoundaries, hubLMConfig: lmConfig })
       setHubLMResults(lmResults)
 
-      // Hub S — bus_bike only (null carParkings → no auto hubs)
+      // Hub S — density config auto-computed from population (smaller radii = more hubs)
+      const autoDensity = computeDensityConfig(pop)
       const sBusOnly = runIntermodalAlgorithm(
-        venues || [],
-        localBusStops,
-        null,
-        localBikeParkings,
-        parks,
-        null,
-        densityConfig,
+        venues || [], localBusStops, null, localBikeParkings, parks, null, autoDensity,
       ).filter(h => h.hubType === 'bus_bike')
       setHubSBusOnly(sBusOnly)
     } catch (err) {

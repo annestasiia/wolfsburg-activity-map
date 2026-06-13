@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { buildRunAllHubs } from '../HubNetworkSidebar'
+import { computeDensityConfig } from '../../utils/capacityCalc'
 
 const SANS = "system-ui, -apple-system, sans-serif"
 const C = {
@@ -46,14 +47,15 @@ export default function HubStatsPanel() {
   const store = useAppStore()
   const {
     hubSBusOnly,
-    densityConfig, setDensityConfig,
     hubLMConfig, setHubLMConfig,
     hubLMResults,
     hubLMRunning, localCarParkings, localBusStops,
+    hubPopulation,
   } = store
 
   const [activeTab, setActiveTab] = useState('S')
   const rerun = buildRunAllHubs(store)
+  const autoDensity = computeDensityConfig(hubPopulation || 130000)
 
   const hubS = hubSBusOnly || []
   const hubSRadius = hubLMConfig?.hubSCoverageRadius || 200
@@ -94,12 +96,20 @@ export default function HubStatsPanel() {
           )}
 
           <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 8 }}>
-            Density Config (Hub S)
+            Density Zones (auto · scales with population)
           </div>
-          <Slider label="High-density zone radius"   value={densityConfig.high}   min={100}  max={1000}  onChange={v => setDensityConfig('high',   v)} />
-          <Slider label="Medium-density zone radius" value={densityConfig.medium} min={300}  max={2000}  onChange={v => setDensityConfig('medium', v)} />
-          <Slider label="Low-density zone radius"    value={densityConfig.low}    min={500}  max={3000}  onChange={v => setDensityConfig('low',    v)} />
-          <Slider label="Coverage radius display"    value={hubSRadius}           min={50}   max={1000}  step={50}  onChange={v => setHubLMConfig('hubSCoverageRadius', v)} />
+          {[
+            ['High-density exclusion', autoDensity.high,   'm'],
+            ['Medium-density exclusion', autoDensity.medium, 'm'],
+            ['Low-density exclusion', autoDensity.low,    'm'],
+          ].map(([label, val, unit]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ fontFamily: SANS, fontSize: 11, color: C.text2 }}>{label}</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 11, color: C.text1, fontWeight: 600 }}>{val} {unit}</span>
+            </div>
+          ))}
+          <Slider label="Coverage radius display" value={hubSRadius} min={50} max={2000} step={50}
+            onChange={v => setHubLMConfig('hubSCoverageRadius', v)} />
 
           <button onClick={rerun} disabled={hubLMRunning || !localCarParkings || !localBusStops}
             style={{ marginTop: 10, width: '100%', padding: '8px 0', borderRadius: 4, border: 'none',
