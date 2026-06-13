@@ -13,7 +13,7 @@ import AnalysisInfoModal from './components/panels/AnalysisInfoModal'
 import IntermodalSidebar, { IntermodalDataPanel } from './components/IntermodalSidebar'
 import IntermodalHubPopup from './components/IntermodalHubPopup'
 import RadSidebar, { RadDataPanel, RadNodePopup, RadEdgePopup } from './components/RadSidebar'
-import HubNetworkSidebar from './components/HubNetworkSidebar'
+import CapacitySidebar from './components/CapacitySidebar'
 import HubLMDataPanel from './components/HubLMDataPanel'
 import HubLMHubPopup from './components/HubLMHubPopup'
 import TransportPoolPanel from './components/TransportPoolPanel'
@@ -220,7 +220,7 @@ export default function App() {
         {inHub && activeMode === 'rad'         && <RadDataPanel />}
         {inHub && activeMode === 'rad'         && <RadNodePopup />}
         {inHub && activeMode === 'rad'         && <RadEdgePopup />}
-        {inHub && activeMode === 'hub-network' && <HubNetworkSidebar />}
+        {inHub && activeMode === 'hub-network' && <CapacitySidebar />}
         {inHub && activeMode === 'hub-network' && <HubLMDataPanel />}
         {inHub && activeMode === 'hub-network' && <HubLMHubPopup />}
 

@@ -1,6 +1,5 @@
 import React from 'react'
 import { useAppStore } from '../store/appStore'
-import { buildRunAllHubs } from './HubNetworkSidebar'
 import { computeFleetPerHub, MODE_META } from '../utils/fleetCalc'
 
 const SANS  = "system-ui, -apple-system, sans-serif"
@@ -98,12 +97,8 @@ export default function HubLMDataPanel() {
     hubLMShowCandidatesL, toggleHubLMShowCandidatesL,
     hubLMShowCandidatesM, toggleHubLMShowCandidatesM,
     hubLMSStatusFilter,   setHubLMSStatusFilter,
-    hubLMRunning, localCarParkings, localBusStops,
     hubLMConfig,
   } = store
-
-  const runAll = buildRunAllHubs(store)
-  const ready  = !!localCarParkings && !!localBusStops
 
   const hubL  = hubLMResults?.hubL
   const hubM  = hubLMResults?.hubM
@@ -130,18 +125,6 @@ export default function HubLMDataPanel() {
       </div>
 
       <div style={{ flex: 1, padding: '0 14px 24px', overflowY: 'auto' }}>
-
-        {/* Run button */}
-        <div style={{ margin: '12px 0 4px' }}>
-          <button onClick={runAll} disabled={hubLMRunning || !ready} style={{
-            width: '100%', padding: '8px 0', borderRadius: 5, border: 'none',
-            background: hubLMRunning ? '#ccc' : C.text1, color: '#fff',
-            fontFamily: SANS, fontSize: 12, fontWeight: 600,
-            cursor: hubLMRunning ? 'not-allowed' : 'pointer',
-          }}>
-            {hubLMRunning ? '⏳ Running…' : hubLMResults ? '↺  Re-run Analysis' : '▶  Run Analysis'}
-          </button>
-        </div>
 
         {/* ── Hub L ── */}
         <SectionLabel>Hub L — Fleet Depot</SectionLabel>

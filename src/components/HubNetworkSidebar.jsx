@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { runHubLMAlgorithm } from '../utils/hubLMAlgorithm'
 import { runIntermodalAlgorithm } from '../utils/intermodalAlgorithm'
+import { computeCapacity } from '../utils/capacityCalc'
 
 const SERIF = "'Georgia', 'Times New Roman', serif"
 const SANS  = "system-ui, -apple-system, sans-serif"
@@ -81,21 +82,30 @@ function HubTypeCard({ type, color, count, totalArea, centreCount, outerCount, c
   )
 }
 
-// Exported so DataPanel and others can call it directly
+// Exported so CapacitySidebar, HubLMDataPanel and HubStatsPanel can call it
 export function buildRunAllHubs(store) {
   const { localCarParkings, localBusStops, localBikeParkings, parks,
           districtBoundaries, hubLMConfig, densityConfig, venues,
+          hubPopulation,
           setHubLMResults, setHubSBusOnly, setHubLMRunning } = store
   return async () => {
     if (!localCarParkings || !localBusStops) return
     setHubLMRunning(true, 'Running Hub L/M/S analysis…')
     await new Promise(r => setTimeout(r, 10))
     try {
+      // Compute required areas from city population via Capacity Analysis formulas
+      const cap = computeCapacity(hubPopulation || 130000)
+      const lmConfig = {
+        ...hubLMConfig,
+        requiredAreaL: cap.requiredAreaL,
+        requiredAreaM: cap.requiredAreaM,
+      }
+
       // Hub L + Hub M
-      const lmResults = runHubLMAlgorithm({ localCarParkings, districtBoundaries, hubLMConfig })
+      const lmResults = runHubLMAlgorithm({ localCarParkings, districtBoundaries, hubLMConfig: lmConfig })
       setHubLMResults(lmResults)
 
-      // Hub S — bus_bike only (pass null carParkings so no auto hubs are created)
+      // Hub S — bus_bike only (null carParkings → no auto hubs)
       const sBusOnly = runIntermodalAlgorithm(
         venues || [],
         localBusStops,

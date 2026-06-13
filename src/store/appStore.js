@@ -382,6 +382,10 @@ export const useAppStore = create((set) => ({
   }),
   setRadHubObjectScale: (v) => set({ radHubObjectScale: Math.max(0.5, Math.min(2.0, v)) }),
 
+  // ── Hub Network: city population (drives capacity → hub area computation) ──
+  hubPopulation: 130000,
+  setHubPopulation: (v) => set({ hubPopulation: Math.max(130000, Math.min(250000, v)) }),
+
   // ── Hub L/M analysis ─────────────────────────────────────────────────────
   hubLMConfig: {
     requiredAreaL: 15233,
