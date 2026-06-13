@@ -388,6 +388,7 @@ export const useAppStore = create((set) => ({
     requiredAreaM: 7002,
     minDistL: 800,
     minDistM: 500,
+    hubSCoverageRadius: 500,
   },
   hubLMResults: null,
   hubLMRunning: false,
