@@ -144,14 +144,9 @@ export function runHubLMAlgorithm({ localCarParkings, districtBoundaries, hubLMC
   const candidatesL = extractCandidates(localCarParkings, ['multi-storey', 'multi_storey', 'garage'])
   const { selected: selL, totalArea: areaL } = greedySelect(candidatesL, requiredAreaL, minDistL, 15)
 
-  // Hub M: underground + surface parkings (intermodal transfer node).
-  // Surface parkings are abundant candidates that become district hubs in a post-car scenario.
-  // We exclude sites already taken by Hub L.
-  const hubLCoords = new Set(selL.map(h => `${h.lat.toFixed(5)},${h.lon.toFixed(5)}`))
-  const candidatesM = extractCandidates(
-    localCarParkings, ['underground', 'underpass', 'surface', 'multi-storey', 'multi_storey', 'garage'],
-  ).filter(c => !hubLCoords.has(`${c.lat.toFixed(5)},${c.lon.toFixed(5)}`))
-  const { selected: selM, totalArea: areaM } = greedySelect(candidatesM, requiredAreaM, minDistM, 60)
+  // Hub M: underground parking only (intermodal transfer node)
+  const candidatesM = extractCandidates(localCarParkings, ['underground', 'underpass'])
+  const { selected: selM, totalArea: areaM } = greedySelect(candidatesM, requiredAreaM, minDistM, 10)
 
   // Zone classification
   const classifyAll = (arr) =>
