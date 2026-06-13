@@ -142,31 +142,35 @@ export default function CapacitySidebar() {
 
         {/* ── Hub Distribution ── */}
         <SectionLabel>Hub Distribution</SectionLabel>
-        {[
-          {
-            tier: 'hub_l', label: 'Hub L', color: C.hubL,
-            value: fmtM2(cap.requiredAreaL),
-            sub: `${cap.hub_counts.hub_l} hubs · ${fmtM2(cap.S_hub_area.hub_l)} each`,
-          },
-          {
-            tier: 'hub_m', label: 'Hub M', color: C.hubM,
-            value: fmtM2(cap.requiredAreaM),
-            sub: `${cap.hub_counts.hub_m} hubs · ${fmtM2(cap.S_hub_area.hub_m)} each`,
-          },
-          {
-            tier: 'hub_s', label: 'Hub S', color: C.hubS,
-            value: `${cap.hubSCount} hubs`,
-            sub: 'Bus + Bike micro-nodes',
-          },
-        ].map(({ tier, label, color, value, sub }) => (
-          <div key={tier} style={{ border: `1px solid ${C.border}`, borderLeft: `3px solid ${color}`, borderRadius: 5, padding: '8px 10px', marginBottom: 6 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color, letterSpacing: '0.06em' }}>{label}</span>
-              <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: C.text1 }}>{value}</span>
+        {(() => {
+          const tiers = [
+            { id: 'hub_l', label: 'Hub L', color: C.hubL, count: cap.hub_counts.hub_l, area: cap.requiredAreaL, perHub: cap.S_hub_area.hub_l, desc: 'Fleet Depot' },
+            { id: 'hub_m', label: 'Hub M', color: C.hubM, count: cap.hub_counts.hub_m, area: cap.requiredAreaM, perHub: cap.S_hub_area.hub_m, desc: 'Transfer Node' },
+            { id: 'hub_s', label: 'Hub S', color: C.hubS, count: cap.hubSCount,         area: null,              perHub: null,                  desc: 'Bus + Bike' },
+          ]
+          const maxCount = Math.max(...tiers.map(t => t.count))
+          return tiers.map(({ id, label, color, count, area, perHub, desc }) => (
+            <div key={id} style={{ border: `1px solid ${C.border}`, borderLeft: `3px solid ${color}`, borderRadius: 5, padding: '9px 10px', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 5 }}>
+                <div>
+                  <span style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</span>
+                  <span style={{ fontFamily: SANS, fontSize: 10, color: C.text3, marginLeft: 5 }}>{desc}</span>
+                </div>
+                <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, color: C.text1, lineHeight: 1 }}>
+                  {count}<span style={{ fontFamily: SANS, fontSize: 10, fontWeight: 400, color: C.text3, marginLeft: 3 }}>hubs</span>
+                </span>
+              </div>
+              <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+                <div style={{ height: '100%', width: `${(count / maxCount) * 100}%`, background: color, borderRadius: 2, transition: 'width 0.3s ease' }} />
+              </div>
+              {area != null && (
+                <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3 }}>
+                  {fmtM2(area)} total · {fmtM2(perHub)}/hub
+                </div>
+              )}
             </div>
-            <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, marginTop: 3 }}>{sub}</div>
-          </div>
-        ))}
+          ))
+        })()}
 
         {/* ── Run Analysis ── */}
         <div style={{ marginTop: 10 }}>
