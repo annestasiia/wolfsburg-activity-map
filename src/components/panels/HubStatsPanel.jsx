@@ -49,7 +49,7 @@ export default function HubStatsPanel() {
     hubLMConfig, setHubLMConfig,
     hubLMResults, setHubLMResults,
     hubLMRunning, setHubLMRunning,
-    localCarParkings, buildings, districtBoundaries,
+    localCarParkings, districtBoundaries,
   } = useAppStore()
 
   const [activeTab, setActiveTab] = useState('S')
@@ -59,7 +59,7 @@ export default function HubStatsPanel() {
     setHubLMRunning(true)
     setTimeout(() => {
       try {
-        const results = runHubLMAlgorithm({ localCarParkings, buildings, districtBoundaries, hubLMConfig })
+        const results = runHubLMAlgorithm({ localCarParkings, districtBoundaries, hubLMConfig })
         setHubLMResults(results)
       } catch (err) {
         console.error('[HubLM]', err)

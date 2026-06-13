@@ -393,9 +393,23 @@ export const useAppStore = create((set) => ({
   hubLMRunning: false,
   hubLMStatus: '',
 
+  // layer visibility
+  hubLMShowL: true,
+  hubLMShowM: true,
+  hubLMShowCoverageL: false,
+  hubLMShowCoverageM: false,
+  hubLMShowCandidatesL: false,
+  hubLMShowCandidatesM: false,
+
   setHubLMConfig: (key, val) => set(s => ({ hubLMConfig: { ...s.hubLMConfig, [key]: val } })),
   setHubLMResults: (results) => set({ hubLMResults: results }),
   setHubLMRunning: (val, status = '') => set({ hubLMRunning: val, hubLMStatus: status }),
+  toggleHubLMShowL:           () => set(s => ({ hubLMShowL:           !s.hubLMShowL           })),
+  toggleHubLMShowM:           () => set(s => ({ hubLMShowM:           !s.hubLMShowM           })),
+  toggleHubLMShowCoverageL:   () => set(s => ({ hubLMShowCoverageL:   !s.hubLMShowCoverageL   })),
+  toggleHubLMShowCoverageM:   () => set(s => ({ hubLMShowCoverageM:   !s.hubLMShowCoverageM   })),
+  toggleHubLMShowCandidatesL: () => set(s => ({ hubLMShowCandidatesL: !s.hubLMShowCandidatesL })),
+  toggleHubLMShowCandidatesM: () => set(s => ({ hubLMShowCandidatesM: !s.hubLMShowCandidatesM })),
 
   // ── Export trigger (TopBar → MapView) ────────────────────────────────────
   exportPNGTrigger: 0,

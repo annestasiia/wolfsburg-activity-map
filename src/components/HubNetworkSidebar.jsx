@@ -95,7 +95,7 @@ function HubTypeCard({ type, color, count, totalArea, centreCount, outerCount, c
 
 export default function HubNetworkSidebar() {
   const {
-    localCarParkings, buildings, districtBoundaries,
+    localCarParkings, districtBoundaries,
     hubLMConfig, setHubLMConfig,
     hubLMResults, setHubLMResults,
     hubLMRunning, setHubLMRunning,
@@ -113,7 +113,6 @@ export default function HubNetworkSidebar() {
       try {
         const results = runHubLMAlgorithm({
           localCarParkings,
-          buildings,
           districtBoundaries,
           hubLMConfig,
         })
