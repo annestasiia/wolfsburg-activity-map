@@ -382,6 +382,21 @@ export const useAppStore = create((set) => ({
   }),
   setRadHubObjectScale: (v) => set({ radHubObjectScale: Math.max(0.5, Math.min(2.0, v)) }),
 
+  // ── Hub L/M analysis ─────────────────────────────────────────────────────
+  hubLMConfig: {
+    requiredAreaL: 15233,
+    requiredAreaM: 7002,
+    minDistL: 800,
+    minDistM: 500,
+  },
+  hubLMResults: null,
+  hubLMRunning: false,
+  hubLMStatus: '',
+
+  setHubLMConfig: (key, val) => set(s => ({ hubLMConfig: { ...s.hubLMConfig, [key]: val } })),
+  setHubLMResults: (results) => set({ hubLMResults: results }),
+  setHubLMRunning: (val, status = '') => set({ hubLMRunning: val, hubLMStatus: status }),
+
   // ── Export trigger (TopBar → MapView) ────────────────────────────────────
   exportPNGTrigger: 0,
   incrementExportTrigger: () => set(s => ({ exportPNGTrigger: s.exportPNGTrigger + 1 })),

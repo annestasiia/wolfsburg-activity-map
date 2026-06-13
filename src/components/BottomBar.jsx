@@ -5,6 +5,7 @@ import FacilitiesPanel from './panels/FacilitiesPanel'
 import TimePanel from './panels/TimePanel'
 import StatsPanel from './panels/StatsPanel'
 import MobilityPanel from './panels/MobilityPanel'
+import HubStatsPanel from './panels/HubStatsPanel'
 
 const TABS = [
   { id: 'districts',  label: 'Districts',  icon: '⬡' },
@@ -80,6 +81,26 @@ export default function BottomBar() {
   }, [activeBottomPanel, setActiveBottomPanel])
 
   if (activeMode === 'greenery' || activeMode === 'intermodal' || activeMode === 'data') return null
+
+  if (activeMode === 'hub-network') {
+    return (
+      <div className="bottom-bar">
+        <div
+          className="bottom-drag-handle"
+          onMouseDown={beginDrag}
+          onTouchStart={beginDrag}
+        >
+          <div className="bottom-drag-pill" />
+          <span className="bottom-drag-label">Hub L / M / S Statistics</span>
+        </div>
+        <div className="bottom-sheet-content" style={{ height: panelH }}>
+          <div className="bottom-panel-inner">
+            <HubStatsPanel />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const ActivePanel = activeBottomPanel ? PANELS[activeBottomPanel] : null
 

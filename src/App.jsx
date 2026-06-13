@@ -13,6 +13,7 @@ import AnalysisInfoModal from './components/panels/AnalysisInfoModal'
 import IntermodalSidebar, { IntermodalDataPanel } from './components/IntermodalSidebar'
 import IntermodalHubPopup from './components/IntermodalHubPopup'
 import RadSidebar, { RadDataPanel, RadNodePopup, RadEdgePopup } from './components/RadSidebar'
+import HubNetworkSidebar from './components/HubNetworkSidebar'
 import TransportPoolPanel from './components/TransportPoolPanel'
 import DataPanel from './components/DataPanel'
 import RightNav from './components/RightNav'
@@ -210,13 +211,14 @@ export default function App() {
         )}
 
         {/* ── Hub System tools ── */}
-        {inHub && activeMode === 'intermodal' && <IntermodalSidebar />}
-        {inHub && activeMode === 'intermodal' && <IntermodalDataPanel />}
-        {inHub && activeMode === 'intermodal' && <IntermodalHubPopup />}
-        {inHub && activeMode === 'rad'        && <RadSidebar />}
-        {inHub && activeMode === 'rad'        && <RadDataPanel />}
-        {inHub && activeMode === 'rad'        && <RadNodePopup />}
-        {inHub && activeMode === 'rad'        && <RadEdgePopup />}
+        {inHub && activeMode === 'intermodal'  && <IntermodalSidebar />}
+        {inHub && activeMode === 'intermodal'  && <IntermodalDataPanel />}
+        {inHub && activeMode === 'intermodal'  && <IntermodalHubPopup />}
+        {inHub && activeMode === 'rad'         && <RadSidebar />}
+        {inHub && activeMode === 'rad'         && <RadDataPanel />}
+        {inHub && activeMode === 'rad'         && <RadNodePopup />}
+        {inHub && activeMode === 'rad'         && <RadEdgePopup />}
+        {inHub && activeMode === 'hub-network' && <HubNetworkSidebar />}
 
         {/* ── Section panels ── */}
         {activeSection === 'strategy'   && <StrategyPanel />}

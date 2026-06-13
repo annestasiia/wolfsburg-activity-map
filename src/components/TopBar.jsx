@@ -9,8 +9,9 @@ const GEO_MODES = [
 ]
 
 const HUB_MODES = [
-  { id: 'intermodal', label: 'Hub S'           },
-  { id: 'rad',        label: 'Cycling Network' },
+  { id: 'intermodal',    label: 'Hub S'           },
+  { id: 'rad',           label: 'Cycling Network' },
+  { id: 'hub-network',   label: 'HUB L/M'         },
 ]
 
 const pillStyle = (active) => ({
