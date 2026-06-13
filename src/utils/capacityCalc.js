@@ -104,13 +104,18 @@ export function computeCapacity(cityPopulation = 130000) {
     fleet[mode] = { trips: trips_by_mode[mode] || 0, peak_hour: pt, on_street, total, charging }
   }
 
-  // ── Hub counts (from DataPanel formulas) ──────────────────────────────────────
-  const hub_s_area          = Math.PI * HUB_S_RADIUS ** 2
-  const hub_s_count         = ceil((hub_zone_m2 / hub_s_area) * 1.35)
+  // ── Hub counts — scale with population ───────────────────────────────────────
+  // Base counts at 130k population; all geometry components multiplied by scale.
+  const hub_s_area      = Math.PI * HUB_S_RADIUS ** 2
+  const hub_s_base      = ceil((hub_zone_m2 / hub_s_area) * 1.35)        // 43 at baseline
+  const hub_s_count     = ceil(hub_s_base * scale)                        // proportional
+
   const hub_m_area_geom     = Math.PI * HUB_M_RADIUS ** 2
-  const hub_m_from_geometry = ceil((hub_zone_m2 / hub_m_area_geom) * 1.35)
-  const hub_m_from_shuttle  = ceil(fleet.autonomous_shuttle.total / 3)
+  const hub_m_base_geom     = ceil((hub_zone_m2 / hub_m_area_geom) * 1.35) // 11 at baseline
+  const hub_m_from_geometry = ceil(hub_m_base_geom * scale)               // proportional
+  const hub_m_from_shuttle  = ceil(fleet.autonomous_shuttle.total / 3)    // fleet-based
   const hub_m_count         = Math.max(hub_m_from_geometry, hub_m_from_shuttle)
+
   const hub_l_from_fleet    = ceil((fleet.autonomous_bus.total + fleet.car_sharing_ev.total) / 8)
   const hub_l_count         = Math.min(Math.max(hub_l_from_fleet, 3), 6)
 
