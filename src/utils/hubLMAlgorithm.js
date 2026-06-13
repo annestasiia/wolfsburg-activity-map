@@ -92,7 +92,7 @@ function greedySelect(candidates, requiredAreaM2, minDistM, maxHubs = 12) {
 
 // ── Coverage stats ────────────────────────────────────────────────────────────
 
-export const COVERAGE_RADIUS = { hub_l: 2000, hub_m: 1000, hub_s: 200 }
+export const COVERAGE_RADIUS = { hub_l: 4000, hub_m: 2000, hub_s: 500 }
 
 function computeCoverageM2(count, radiusM) {
   return count * Math.PI * radiusM * radiusM

@@ -2340,13 +2340,13 @@ export default function MapView({ onVenueClick }) {
     })
 
     if (hubLMResults) {
-      // Hub L — 2 km coverage
-      map.addSource('hub-lm-cov-l', { type: 'geojson', data: makeCircles(hubLMResults.hubL?.hubs, 2000) })
+      // Hub L — 4 km coverage
+      map.addSource('hub-lm-cov-l', { type: 'geojson', data: makeCircles(hubLMResults.hubL?.hubs, 4000) })
       map.addLayer({ id: 'hub-lm-cov-l-fill',   type: 'fill', source: 'hub-lm-cov-l', layout: { visibility: hubLMShowCoverageL ? 'visible' : 'none' }, paint: { 'fill-color': '#1D1D1F', 'fill-opacity': 0.06 } })
       map.addLayer({ id: 'hub-lm-cov-l-stroke', type: 'line', source: 'hub-lm-cov-l', layout: { visibility: hubLMShowCoverageL ? 'visible' : 'none' }, paint: { 'line-color': '#1D1D1F', 'line-width': 1.5, 'line-dasharray': [5, 4] } })
 
-      // Hub M — 1 km coverage
-      map.addSource('hub-lm-cov-m', { type: 'geojson', data: makeCircles(hubLMResults.hubM?.hubs, 1000) })
+      // Hub M — 2 km coverage
+      map.addSource('hub-lm-cov-m', { type: 'geojson', data: makeCircles(hubLMResults.hubM?.hubs, 2000) })
       map.addLayer({ id: 'hub-lm-cov-m-fill',   type: 'fill', source: 'hub-lm-cov-m', layout: { visibility: hubLMShowCoverageM ? 'visible' : 'none' }, paint: { 'fill-color': '#1D7A3A', 'fill-opacity': 0.07 } })
       map.addLayer({ id: 'hub-lm-cov-m-stroke', type: 'line', source: 'hub-lm-cov-m', layout: { visibility: hubLMShowCoverageM ? 'visible' : 'none' }, paint: { 'line-color': '#1D7A3A', 'line-width': 1.5, 'line-dasharray': [5, 4] } })
 

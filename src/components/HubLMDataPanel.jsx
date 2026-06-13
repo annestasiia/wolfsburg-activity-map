@@ -146,7 +146,7 @@ export default function HubLMDataPanel() {
         {/* ── Hub L ── */}
         <SectionLabel>Hub L — Fleet Depot</SectionLabel>
         <LayerToggle label="Hub L markers" active={hubLMShowL} onToggle={toggleHubLMShowL} color={C.hubL} />
-        <LayerToggle label="Coverage (2 km)" active={hubLMShowCoverageL} onToggle={toggleHubLMShowCoverageL} color={C.hubL} dot={false} />
+        <LayerToggle label="Coverage (4 km)" active={hubLMShowCoverageL} onToggle={toggleHubLMShowCoverageL} color={C.hubL} dot={false} />
         <LayerToggle label="Candidates" active={hubLMShowCandidatesL} onToggle={toggleHubLMShowCandidatesL} color={C.hubL} />
         {hubL ? (
           <>
@@ -162,7 +162,7 @@ export default function HubLMDataPanel() {
         {/* ── Hub M ── */}
         <SectionLabel>Hub M — Transfer Node</SectionLabel>
         <LayerToggle label="Hub M markers" active={hubLMShowM} onToggle={toggleHubLMShowM} color={C.hubM} />
-        <LayerToggle label="Coverage (1 km)" active={hubLMShowCoverageM} onToggle={toggleHubLMShowCoverageM} color={C.hubM} dot={false} />
+        <LayerToggle label="Coverage (2 km)" active={hubLMShowCoverageM} onToggle={toggleHubLMShowCoverageM} color={C.hubM} dot={false} />
         <LayerToggle label="Candidates" active={hubLMShowCandidatesM} onToggle={toggleHubLMShowCandidatesM} color={C.hubM} />
         {hubM ? (
           <>
@@ -194,8 +194,8 @@ export default function HubLMDataPanel() {
         {/* ── Legend ── */}
         <SectionLabel>Legend</SectionLabel>
         {[
-          { color: C.hubL, r: 14, label: 'Hub L · 2 km coverage' },
-          { color: C.hubM, r: 11, label: 'Hub M · 1 km coverage' },
+          { color: C.hubL, r: 14, label: 'Hub L · 4 km coverage' },
+          { color: C.hubM, r: 11, label: 'Hub M · 2 km coverage' },
           { color: C.hubS, r: 8,  label: 'Hub S · configurable' },
         ].map(({ color, r, label }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: `1px solid ${C.border}` }}>
