@@ -15,6 +15,7 @@ import IntermodalHubPopup from './components/IntermodalHubPopup'
 import RadSidebar, { RadDataPanel, RadNodePopup, RadEdgePopup } from './components/RadSidebar'
 import HubNetworkSidebar from './components/HubNetworkSidebar'
 import HubLMDataPanel from './components/HubLMDataPanel'
+import HubLMHubPopup from './components/HubLMHubPopup'
 import TransportPoolPanel from './components/TransportPoolPanel'
 import DataPanel from './components/DataPanel'
 import RightNav from './components/RightNav'
@@ -221,6 +222,7 @@ export default function App() {
         {inHub && activeMode === 'rad'         && <RadEdgePopup />}
         {inHub && activeMode === 'hub-network' && <HubNetworkSidebar />}
         {inHub && activeMode === 'hub-network' && <HubLMDataPanel />}
+        {inHub && activeMode === 'hub-network' && <HubLMHubPopup />}
 
         {/* ── Section panels ── */}
         {activeSection === 'strategy'   && <StrategyPanel />}

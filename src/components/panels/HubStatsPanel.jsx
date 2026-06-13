@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../../store/appStore'
-import { runHubLMAlgorithm } from '../../utils/hubLMAlgorithm'
+import { buildRunAllHubs } from '../HubNetworkSidebar'
 
 const SANS = "system-ui, -apple-system, sans-serif"
 const C = {
@@ -43,34 +43,21 @@ const TABS = [
 ]
 
 export default function HubStatsPanel() {
+  const store = useAppStore()
   const {
-    intermodalHubs,
+    hubSBusOnly,
     densityConfig, setDensityConfig,
     hubLMConfig, setHubLMConfig,
-    hubLMResults, setHubLMResults,
-    hubLMRunning, setHubLMRunning,
-    localCarParkings, districtBoundaries,
-  } = useAppStore()
+    hubLMResults,
+    hubLMRunning, localCarParkings, localBusStops,
+  } = store
 
   const [activeTab, setActiveTab] = useState('S')
+  const rerun = buildRunAllHubs(store)
 
-  const rerun = () => {
-    if (!localCarParkings) return
-    setHubLMRunning(true)
-    setTimeout(() => {
-      try {
-        const results = runHubLMAlgorithm({ localCarParkings, districtBoundaries, hubLMConfig })
-        setHubLMResults(results)
-      } catch (err) {
-        console.error('[HubLM]', err)
-      } finally {
-        setHubLMRunning(false)
-      }
-    }, 10)
-  }
-
-  const hubS = intermodalHubs || []
-  const hubSCovM2 = hubS.length * Math.PI * 200 * 200
+  const hubS = hubSBusOnly || []
+  const hubSRadius = hubLMConfig?.hubSCoverageRadius || 200
+  const hubSCovM2 = hubS.length * Math.PI * hubSRadius * hubSRadius
   const { hubL, hubM } = hubLMResults || {}
 
   return (
@@ -97,18 +84,29 @@ export default function HubStatsPanel() {
         <div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
             <StatCard label="Hub count" value={hubS.length} color={C.hubS} />
-            <StatCard label="Coverage area" value={fmtKm2(hubSCovM2)} sub="200 m radius/hub" color={C.hubS} />
+            <StatCard label="Coverage" value={fmtKm2(hubSCovM2)} sub={`${hubSRadius} m/hub`} color={C.hubS} />
+            <StatCard label="Existing" value={hubS.filter(h => h.status === 'existing').length} sub="at bus stops" />
           </div>
-          <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginBottom: 12 }}>
-            Hub S = intermodal bus/bike stops. Run the Intermodal analysis from the Hub S tab to populate.
-          </div>
+          {hubS.length === 0 && (
+            <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginBottom: 12 }}>
+              Hub S (bus_bike only) — run Re-run below to compute.
+            </div>
+          )}
 
           <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 8 }}>
             Density Config (Hub S)
           </div>
-          <Slider label="High-density zone radius" value={densityConfig.high}   min={100} max={1000} onChange={v => setDensityConfig('high',   v)} />
-          <Slider label="Medium-density zone radius" value={densityConfig.medium} min={300} max={2000} onChange={v => setDensityConfig('medium', v)} />
-          <Slider label="Low-density zone radius"  value={densityConfig.low}    min={500} max={3000} onChange={v => setDensityConfig('low',    v)} />
+          <Slider label="High-density zone radius"   value={densityConfig.high}   min={100}  max={1000}  onChange={v => setDensityConfig('high',   v)} />
+          <Slider label="Medium-density zone radius" value={densityConfig.medium} min={300}  max={2000}  onChange={v => setDensityConfig('medium', v)} />
+          <Slider label="Low-density zone radius"    value={densityConfig.low}    min={500}  max={3000}  onChange={v => setDensityConfig('low',    v)} />
+          <Slider label="Coverage radius display"    value={hubSRadius}           min={50}   max={1000}  step={50}  onChange={v => setHubLMConfig('hubSCoverageRadius', v)} />
+
+          <button onClick={rerun} disabled={hubLMRunning || !localCarParkings || !localBusStops}
+            style={{ marginTop: 10, width: '100%', padding: '8px 0', borderRadius: 4, border: 'none',
+              background: hubLMRunning ? '#ccc' : C.hubS, color: '#fff', fontFamily: SANS, fontSize: 12,
+              fontWeight: 600, cursor: hubLMRunning ? 'not-allowed' : 'pointer' }}>
+            {hubLMRunning ? '⏳ Running…' : '↺  Re-run Analysis'}
+          </button>
         </div>
       )}
 
@@ -120,7 +118,7 @@ export default function HubStatsPanel() {
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 <StatCard label="Hub count" value={hubM.hubs.length} color={C.hubM} />
                 <StatCard label="Total area" value={fmt(hubM.totalArea)} sub={`req: ${fmt(hubM.requiredArea)}`} color={C.hubM} />
-                <StatCard label="Coverage" value={fmtKm2(hubM.coverageM2)} sub="400 m radius/hub" />
+                <StatCard label="Coverage" value={fmtKm2(hubM.coverageM2)} sub="1 km radius/hub" />
               </div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 <StatCard label="Centre hubs" value={hubM.centreCount} sub={fmt(hubM.centreArea)} />

@@ -393,23 +393,37 @@ export const useAppStore = create((set) => ({
   hubLMRunning: false,
   hubLMStatus: '',
 
+  // Hub S bus_bike results (computed within hub-network mode)
+  hubSBusOnly: [],
+  setHubSBusOnly: (hubs) => set({ hubSBusOnly: hubs }),
+
   // layer visibility
   hubLMShowL: true,
   hubLMShowM: true,
+  hubLMShowS: true,
   hubLMShowCoverageL: false,
   hubLMShowCoverageM: false,
+  hubLMShowCoverageS: false,
   hubLMShowCandidatesL: false,
   hubLMShowCandidatesM: false,
+  hubLMSStatusFilter: 'all',
+
+  // selected hub for popup
+  hubLMSelectedHub: null,
 
   setHubLMConfig: (key, val) => set(s => ({ hubLMConfig: { ...s.hubLMConfig, [key]: val } })),
   setHubLMResults: (results) => set({ hubLMResults: results }),
   setHubLMRunning: (val, status = '') => set({ hubLMRunning: val, hubLMStatus: status }),
   toggleHubLMShowL:           () => set(s => ({ hubLMShowL:           !s.hubLMShowL           })),
   toggleHubLMShowM:           () => set(s => ({ hubLMShowM:           !s.hubLMShowM           })),
+  toggleHubLMShowS:           () => set(s => ({ hubLMShowS:           !s.hubLMShowS           })),
   toggleHubLMShowCoverageL:   () => set(s => ({ hubLMShowCoverageL:   !s.hubLMShowCoverageL   })),
   toggleHubLMShowCoverageM:   () => set(s => ({ hubLMShowCoverageM:   !s.hubLMShowCoverageM   })),
+  toggleHubLMShowCoverageS:   () => set(s => ({ hubLMShowCoverageS:   !s.hubLMShowCoverageS   })),
   toggleHubLMShowCandidatesL: () => set(s => ({ hubLMShowCandidatesL: !s.hubLMShowCandidatesL })),
   toggleHubLMShowCandidatesM: () => set(s => ({ hubLMShowCandidatesM: !s.hubLMShowCandidatesM })),
+  setHubLMSStatusFilter:      (f) => set({ hubLMSStatusFilter: f }),
+  setHubLMSelectedHub:        (h) => set({ hubLMSelectedHub: h }),
 
   // ── Export trigger (TopBar → MapView) ────────────────────────────────────
   exportPNGTrigger: 0,

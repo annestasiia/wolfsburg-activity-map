@@ -356,11 +356,14 @@ export default function MapView({ onVenueClick }) {
     radRawHistoric,
     // Local GeoJSON library
     localBusStops, localCarParkings, localBikeParkings, localFacilities, localHistoric, localParksForests, localCycling,
-    // Hub L/M
-    hubLMResults,
-    hubLMShowL, hubLMShowM,
-    hubLMShowCoverageL, hubLMShowCoverageM,
+    // Hub L/M/S network
+    hubLMResults, hubSBusOnly,
+    hubLMShowL, hubLMShowM, hubLMShowS,
+    hubLMShowCoverageL, hubLMShowCoverageM, hubLMShowCoverageS,
     hubLMShowCandidatesL, hubLMShowCandidatesM,
+    hubLMSStatusFilter,
+    hubLMConfig,
+    setHubLMSelectedHub,
     // Export trigger
     exportPNGTrigger,
   } = useAppStore()
@@ -2238,7 +2241,7 @@ export default function MapView({ onVenueClick }) {
     }
   }, [mapReady, activeMode, intermodalHubs, radHubTypes, radHubObjectScale])
 
-  // ── Hub L/M — markers ────────────────────────────────────────────────────
+  // ── Hub L/M/S — markers (click → popup) ─────────────────────────────────
   const hubLMMarkersRef = useRef([])
 
   useEffect(() => {
@@ -2248,39 +2251,48 @@ export default function MapView({ onVenueClick }) {
     hubLMMarkersRef.current.forEach(m => m.remove())
     hubLMMarkersRef.current = []
 
-    if (activeMode !== 'hub-network' || !hubLMResults) return
+    if (activeMode !== 'hub-network') return
 
     const markers = []
+    const hubSRadius = hubLMConfig?.hubSCoverageRadius || 200
 
-    if (hubLMShowL && hubLMResults.hubL?.hubs?.length) {
+    const makeMarker = (hub, tier, svgW, svgH, svgInner) => {
+      const el = document.createElement('div')
+      el.innerHTML = `<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">${svgInner}</svg>`
+      el.style.cssText = `cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));width:${svgW}px;height:${svgH}px`
+      el.addEventListener('click', (e) => { e.stopPropagation(); setHubLMSelectedHub({ hub, tier }) })
+      return new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([hub.lon ?? hub.lng, hub.lat]).addTo(map)
+    }
+
+    if (hubLMShowL && hubLMResults?.hubL?.hubs?.length) {
       for (const hub of hubLMResults.hubL.hubs) {
-        const el = document.createElement('div')
-        el.innerHTML = `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="16" cy="16" r="14" fill="#1D1D1F" stroke="white" stroke-width="2.5"/>
-          <text x="16" y="20.5" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="white">L</text>
-        </svg>`
-        el.style.cssText = 'cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));width:32px;height:32px'
-        el.title = `Hub L — ${hub.name} · ${Math.round(hub.area)} m²`
-        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
-          .setLngLat([hub.lon, hub.lat])
-          .addTo(map)
-        markers.push(marker)
+        markers.push(makeMarker(hub, 'hub_l', 34, 34,
+          `<circle cx="17" cy="17" r="15" fill="#1D1D1F" stroke="white" stroke-width="2.5"/>
+           <text x="17" y="22" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="white">L</text>`
+        ))
       }
     }
 
-    if (hubLMShowM && hubLMResults.hubM?.hubs?.length) {
+    if (hubLMShowM && hubLMResults?.hubM?.hubs?.length) {
       for (const hub of hubLMResults.hubM.hubs) {
-        const el = document.createElement('div')
-        el.innerHTML = `<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="13" cy="13" r="11" fill="#1D7A3A" stroke="white" stroke-width="2.5"/>
-          <text x="13" y="17" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="white">M</text>
-        </svg>`
-        el.style.cssText = 'cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));width:26px;height:26px'
-        el.title = `Hub M — ${hub.name} · ${Math.round(hub.area)} m²`
-        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
-          .setLngLat([hub.lon, hub.lat])
-          .addTo(map)
-        markers.push(marker)
+        markers.push(makeMarker(hub, 'hub_m', 28, 28,
+          `<circle cx="14" cy="14" r="12" fill="#1D7A3A" stroke="white" stroke-width="2.5"/>
+           <text x="14" y="18.5" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="white">M</text>`
+        ))
+      }
+    }
+
+    if (hubLMShowS && hubSBusOnly?.length) {
+      const filtered = hubSBusOnly.filter(h => {
+        if (hubLMSStatusFilter === 'existing') return h.status === 'existing'
+        if (hubLMSStatusFilter === 'proposed') return h.status === 'proposed'
+        return true
+      })
+      for (const hub of filtered) {
+        markers.push(makeMarker({ ...hub, lon: hub.lng }, 'hub_s', 22, 22,
+          `<circle cx="11" cy="11" r="9" fill="#185FA5" stroke="white" stroke-width="2"/>
+           <text x="11" y="15" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="white">S</text>`
+        ))
       }
     }
 
@@ -2289,70 +2301,81 @@ export default function MapView({ onVenueClick }) {
       markers.forEach(m => m.remove())
       hubLMMarkersRef.current = []
     }
-  }, [mapReady, activeMode, hubLMResults, hubLMShowL, hubLMShowM])
+  }, [mapReady, activeMode, hubLMResults, hubSBusOnly, hubLMShowL, hubLMShowM, hubLMShowS, hubLMSStatusFilter, hubLMConfig])
 
-  // ── Hub L/M — coverage circles + candidate points ────────────────────────
+  // ── Hub L/M/S — coverage circles + candidate points ──────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
 
-    const LAYERS = ['hub-lm-cov-l-fill', 'hub-lm-cov-l-stroke', 'hub-lm-cov-m-fill', 'hub-lm-cov-m-stroke', 'hub-lm-cand-l', 'hub-lm-cand-m']
-    const SOURCES = ['hub-lm-cov-l', 'hub-lm-cov-m', 'hub-lm-cand-l', 'hub-lm-cand-m']
-    LAYERS.forEach(id => { if (map.getLayer(id)) map.removeLayer(id) })
-    SOURCES.forEach(id => { if (map.getSource(id)) map.removeSource(id) })
+    const ALL_LAYERS  = ['hub-lm-cov-l-fill', 'hub-lm-cov-l-stroke', 'hub-lm-cov-m-fill', 'hub-lm-cov-m-stroke', 'hub-lm-cov-s-fill', 'hub-lm-cov-s-stroke', 'hub-lm-cand-l', 'hub-lm-cand-m']
+    const ALL_SOURCES = ['hub-lm-cov-l', 'hub-lm-cov-m', 'hub-lm-cov-s', 'hub-lm-cand-l', 'hub-lm-cand-m']
+    ALL_LAYERS.forEach(id  => { if (map.getLayer(id))   map.removeLayer(id)   })
+    ALL_SOURCES.forEach(id => { if (map.getSource(id))  map.removeSource(id)  })
 
-    if (activeMode !== 'hub-network' || !hubLMResults) return
+    if (activeMode !== 'hub-network') return
 
-    const makeCircles = (hubs, radiusM) => {
-      const features = (hubs || []).map(hub => {
-        const steps = 48
+    const hubSRadius = hubLMConfig?.hubSCoverageRadius || 200
+
+    const makeCircles = (hubs, radiusM, latKey = 'lat', lonKey = 'lon') => ({
+      type: 'FeatureCollection',
+      features: (hubs || []).map(hub => {
+        const steps = 48, lat = hub[latKey], lon = hub[lonKey] ?? hub.lng
         const coords = []
         for (let i = 0; i <= steps; i++) {
           const angle = (i / steps) * 2 * Math.PI
-          const dLat = (radiusM / 111320) * Math.sin(angle)
-          const dLon = (radiusM / (111320 * Math.cos(hub.lat * Math.PI / 180))) * Math.cos(angle)
-          coords.push([hub.lon + dLon, hub.lat + dLat])
+          coords.push([lon + (radiusM / (111320 * Math.cos(lat * Math.PI / 180))) * Math.cos(angle),
+                       lat + (radiusM / 111320) * Math.sin(angle)])
         }
         coords.push(coords[0])
         return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] }, properties: {} }
       })
-      return { type: 'FeatureCollection', features }
-    }
+    })
 
     const makePoints = (candidates) => ({
       type: 'FeatureCollection',
       features: (candidates || []).map(c => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
-        properties: { name: c.name },
+        type: 'Feature', geometry: { type: 'Point', coordinates: [c.lon, c.lat] }, properties: {}
       }))
     })
 
-    // Hub L coverage circles
-    map.addSource('hub-lm-cov-l', { type: 'geojson', data: makeCircles(hubLMResults.hubL?.hubs, 800) })
-    map.addLayer({ id: 'hub-lm-cov-l-fill', type: 'fill', source: 'hub-lm-cov-l', layout: { visibility: hubLMShowCoverageL ? 'visible' : 'none' }, paint: { 'fill-color': '#1D1D1F', 'fill-opacity': 0.07 } })
-    map.addLayer({ id: 'hub-lm-cov-l-stroke', type: 'line', source: 'hub-lm-cov-l', layout: { visibility: hubLMShowCoverageL ? 'visible' : 'none' }, paint: { 'line-color': '#1D1D1F', 'line-width': 1.5, 'line-dasharray': [4, 3] } })
+    if (hubLMResults) {
+      // Hub L — 2 km coverage
+      map.addSource('hub-lm-cov-l', { type: 'geojson', data: makeCircles(hubLMResults.hubL?.hubs, 2000) })
+      map.addLayer({ id: 'hub-lm-cov-l-fill',   type: 'fill', source: 'hub-lm-cov-l', layout: { visibility: hubLMShowCoverageL ? 'visible' : 'none' }, paint: { 'fill-color': '#1D1D1F', 'fill-opacity': 0.06 } })
+      map.addLayer({ id: 'hub-lm-cov-l-stroke', type: 'line', source: 'hub-lm-cov-l', layout: { visibility: hubLMShowCoverageL ? 'visible' : 'none' }, paint: { 'line-color': '#1D1D1F', 'line-width': 1.5, 'line-dasharray': [5, 4] } })
 
-    // Hub M coverage circles
-    map.addSource('hub-lm-cov-m', { type: 'geojson', data: makeCircles(hubLMResults.hubM?.hubs, 400) })
-    map.addLayer({ id: 'hub-lm-cov-m-fill', type: 'fill', source: 'hub-lm-cov-m', layout: { visibility: hubLMShowCoverageM ? 'visible' : 'none' }, paint: { 'fill-color': '#1D7A3A', 'fill-opacity': 0.08 } })
-    map.addLayer({ id: 'hub-lm-cov-m-stroke', type: 'line', source: 'hub-lm-cov-m', layout: { visibility: hubLMShowCoverageM ? 'visible' : 'none' }, paint: { 'line-color': '#1D7A3A', 'line-width': 1.5, 'line-dasharray': [4, 3] } })
+      // Hub M — 1 km coverage
+      map.addSource('hub-lm-cov-m', { type: 'geojson', data: makeCircles(hubLMResults.hubM?.hubs, 1000) })
+      map.addLayer({ id: 'hub-lm-cov-m-fill',   type: 'fill', source: 'hub-lm-cov-m', layout: { visibility: hubLMShowCoverageM ? 'visible' : 'none' }, paint: { 'fill-color': '#1D7A3A', 'fill-opacity': 0.07 } })
+      map.addLayer({ id: 'hub-lm-cov-m-stroke', type: 'line', source: 'hub-lm-cov-m', layout: { visibility: hubLMShowCoverageM ? 'visible' : 'none' }, paint: { 'line-color': '#1D7A3A', 'line-width': 1.5, 'line-dasharray': [5, 4] } })
 
-    // Hub L candidates
-    map.addSource('hub-lm-cand-l', { type: 'geojson', data: makePoints(hubLMResults.candidatesL) })
-    map.addLayer({ id: 'hub-lm-cand-l', type: 'circle', source: 'hub-lm-cand-l', layout: { visibility: hubLMShowCandidatesL ? 'visible' : 'none' }, paint: { 'circle-radius': 4, 'circle-color': '#1D1D1F', 'circle-opacity': 0.45, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' } })
+      // Candidates
+      map.addSource('hub-lm-cand-l', { type: 'geojson', data: makePoints(hubLMResults.candidatesL) })
+      map.addLayer({ id: 'hub-lm-cand-l', type: 'circle', source: 'hub-lm-cand-l', layout: { visibility: hubLMShowCandidatesL ? 'visible' : 'none' }, paint: { 'circle-radius': 4, 'circle-color': '#1D1D1F', 'circle-opacity': 0.40, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' } })
+      map.addSource('hub-lm-cand-m', { type: 'geojson', data: makePoints(hubLMResults.candidatesM) })
+      map.addLayer({ id: 'hub-lm-cand-m', type: 'circle', source: 'hub-lm-cand-m', layout: { visibility: hubLMShowCandidatesM ? 'visible' : 'none' }, paint: { 'circle-radius': 4, 'circle-color': '#1D7A3A', 'circle-opacity': 0.40, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' } })
+    }
 
-    // Hub M candidates
-    map.addSource('hub-lm-cand-m', { type: 'geojson', data: makePoints(hubLMResults.candidatesM) })
-    map.addLayer({ id: 'hub-lm-cand-m', type: 'circle', source: 'hub-lm-cand-m', layout: { visibility: hubLMShowCandidatesM ? 'visible' : 'none' }, paint: { 'circle-radius': 4, 'circle-color': '#1D7A3A', 'circle-opacity': 0.45, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' } })
+    // Hub S coverage — configurable radius
+    if (hubSBusOnly?.length) {
+      const filtered = hubSBusOnly.filter(h => {
+        if (hubLMSStatusFilter === 'existing') return h.status === 'existing'
+        if (hubLMSStatusFilter === 'proposed') return h.status === 'proposed'
+        return true
+      })
+      map.addSource('hub-lm-cov-s', { type: 'geojson', data: makeCircles(filtered, hubSRadius, 'lat', 'lng') })
+      map.addLayer({ id: 'hub-lm-cov-s-fill',   type: 'fill', source: 'hub-lm-cov-s', layout: { visibility: hubLMShowCoverageS ? 'visible' : 'none' }, paint: { 'fill-color': '#185FA5', 'fill-opacity': 0.07 } })
+      map.addLayer({ id: 'hub-lm-cov-s-stroke', type: 'line', source: 'hub-lm-cov-s', layout: { visibility: hubLMShowCoverageS ? 'visible' : 'none' }, paint: { 'line-color': '#185FA5', 'line-width': 1, 'line-dasharray': [3, 3] } })
+    }
 
     return () => {
-      LAYERS.forEach(id => { if (map.getLayer(id)) map.removeLayer(id) })
-      SOURCES.forEach(id => { if (map.getSource(id)) map.removeSource(id) })
+      ALL_LAYERS.forEach(id  => { if (map.getLayer(id))  map.removeLayer(id)  })
+      ALL_SOURCES.forEach(id => { if (map.getSource(id)) map.removeSource(id) })
     }
-  }, [mapReady, activeMode, hubLMResults])
+  }, [mapReady, activeMode, hubLMResults, hubSBusOnly, hubLMSStatusFilter, hubLMConfig])
 
-  // ── Hub L/M — sync layer visibility on toggle ─────────────────────────────
+  // ── Hub L/M/S — sync layer visibility on toggle ───────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
@@ -2361,9 +2384,11 @@ export default function MapView({ onVenueClick }) {
     if (map.getLayer('hub-lm-cov-l-stroke'))  map.setLayoutProperty('hub-lm-cov-l-stroke',  'visibility', vis(hubLMShowCoverageL))
     if (map.getLayer('hub-lm-cov-m-fill'))    map.setLayoutProperty('hub-lm-cov-m-fill',    'visibility', vis(hubLMShowCoverageM))
     if (map.getLayer('hub-lm-cov-m-stroke'))  map.setLayoutProperty('hub-lm-cov-m-stroke',  'visibility', vis(hubLMShowCoverageM))
+    if (map.getLayer('hub-lm-cov-s-fill'))    map.setLayoutProperty('hub-lm-cov-s-fill',    'visibility', vis(hubLMShowCoverageS))
+    if (map.getLayer('hub-lm-cov-s-stroke'))  map.setLayoutProperty('hub-lm-cov-s-stroke',  'visibility', vis(hubLMShowCoverageS))
     if (map.getLayer('hub-lm-cand-l'))        map.setLayoutProperty('hub-lm-cand-l',        'visibility', vis(hubLMShowCandidatesL))
     if (map.getLayer('hub-lm-cand-m'))        map.setLayoutProperty('hub-lm-cand-m',        'visibility', vis(hubLMShowCandidatesM))
-  }, [mapReady, hubLMShowCoverageL, hubLMShowCoverageM, hubLMShowCandidatesL, hubLMShowCandidatesM])
+  }, [mapReady, hubLMShowCoverageL, hubLMShowCoverageM, hubLMShowCoverageS, hubLMShowCandidatesL, hubLMShowCandidatesM])
 
   // ── Export trigger from TopBar ────────────────────────────────────────────
   useEffect(() => {
