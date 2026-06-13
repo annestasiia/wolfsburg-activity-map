@@ -93,16 +93,14 @@ export function buildRunAllHubs(store) {
     setHubLMRunning(true, 'Running Hub L/M/S analysis…')
     await new Promise(r => setTimeout(r, 10))
     try {
-      const pop   = hubPopulation || 130000
-      const scale = pop / 130000
+      const pop = hubPopulation || 130000
 
-      // Hub L/M — required areas from capacity model, minDistM shrinks as city grows
+      // Hub L/M — required areas from capacity model; minDist from hubLMConfig (store default 500m)
       const cap = computeCapacity(pop)
       const lmConfig = {
         ...hubLMConfig,
         requiredAreaL: cap.requiredAreaL,
         requiredAreaM: cap.requiredAreaM,
-        minDistM: Math.max(200, Math.round(500 / Math.sqrt(scale))),  // 500m→361m at 250k
       }
       const lmResults = runHubLMAlgorithm({ localCarParkings, districtBoundaries, hubLMConfig: lmConfig })
       setHubLMResults(lmResults)
