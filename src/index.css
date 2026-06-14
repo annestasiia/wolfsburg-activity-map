@@ -4,35 +4,38 @@
 
 /* ── Design tokens ── */
 :root {
-  --ease-apple: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:    cubic-bezier(0.7, 0, 1, 1);
 
-  --bg-primary:   #FFFFFF;
-  --bg-secondary: #F5F5F7;
-  --bg-tertiary:  #E8E8ED;
+  --bg-primary:   #ffffff;
+  --bg-secondary: #f7f7f7;
+  --bg-tertiary:  rgba(0, 0, 0, 0.05);
 
-  --text-primary:   #1D1D1F;
-  --text-secondary: #6E6E73;
-  --text-tertiary:  #AEAEB2;
+  --text-primary:   #111111;
+  --text-secondary: #666666;
+  --text-tertiary:  #aaaaaa;
 
-  --accent:       #0071E3;
-  --accent-hover: #0077ED;
+  --accent:       #111111;
+  --accent-hover: #000000;
 
-  --border:        rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.16);
+  --border:        rgba(0, 0, 0, 0.05);
+  --border-medium: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.12);
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 8px 40px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.06);
 }
 
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.65;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
@@ -57,11 +60,11 @@ html, body, #root {
 
 .maplibregl-popup-content {
   border-radius: 16px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   padding: 0 !important;
   min-width: 240px;
   max-width: 320px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border);
@@ -117,7 +120,7 @@ html, body, #root {
   padding: 0 24px;
   height: 56px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--border);
@@ -133,7 +136,7 @@ html, body, #root {
 }
 .top-bar-logo em {
   font-style: normal;
-  color: var(--accent);
+  color: var(--text-tertiary);
   margin: 0 1px;
 }
 
@@ -144,46 +147,39 @@ html, body, #root {
   justify-content: center;
 }
 
-/* ── Mode / layer buttons (Pedestrian / Transport / Infrastructure) ── */
+/* ── Mode / layer buttons ── */
 .mode-btn {
-  padding: 7px 16px;
+  padding: 6px 16px;
   border-radius: 980px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
   letter-spacing: -0.01em;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  background: transparent;
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: all 0.2s var(--ease-apple);
+  transition: color 0.3s var(--ease-apple), background 0.3s var(--ease-apple), border-color 0.3s var(--ease-apple), box-shadow 0.3s var(--ease-apple);
   white-space: nowrap;
   user-select: none;
   font-family: inherit;
+  filter: blur(0.3px);
 }
 .mode-btn:hover:not(.active) {
-  background: var(--bg-tertiary);
+  background: rgba(0, 0, 0, 0.03);
   color: var(--text-primary);
+  filter: blur(0px);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 .mode-btn:active { transform: scale(0.97); }
 .mode-btn.active {
-  background: var(--accent);
-  color: #FFFFFF;
+  background: #111111;
+  color: #ffffff;
   border-color: transparent;
-  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.35);
+  box-shadow: var(--shadow-sm);
+  filter: blur(0px);
+  font-weight: 500;
 }
-.mode-btn.active:hover { background: var(--accent-hover); }
-
-/* Mode-specific active colors */
-.mode-btn.mobility.active    { background: #E63946; box-shadow: 0 2px 8px rgba(230,57,70,0.35); }
-.mode-btn.facilities.active  { background: #1D70B8; box-shadow: 0 2px 8px rgba(29,112,184,0.35); }
-.mode-btn.greenery.active    { background: #2D6A4F; box-shadow: 0 2px 8px rgba(45,106,79,0.35); }
-.mode-btn.intermodal.active  { background: #7C3AED; box-shadow: 0 2px 8px rgba(124,58,237,0.35); }
-.mode-btn.mobility.active:hover    { background: #C1121F; }
-.mode-btn.facilities.active:hover  { background: #1557A0; }
-.mode-btn.greenery.active:hover    { background: #1B4332; }
-.mode-btn.intermodal.active:hover  { background: #6D28D9; }
-.mode-btn.data.active              { background: #0A7E45; box-shadow: 0 2px 8px rgba(10,126,69,0.35); }
-.mode-btn.data.active:hover        { background: #076135; }
+.mode-btn.active:hover { background: #000000; }
 
 .top-bar-meta {
   font-size: 14px;
@@ -203,7 +199,7 @@ html, body, #root {
   align-items: center;
   padding: 8px 0 5px;
   gap: 3px;
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid var(--border);
@@ -233,7 +229,7 @@ html, body, #root {
 .bottom-sheet-content {
   overflow-y: auto;
   overflow-x: hidden;
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
@@ -244,7 +240,7 @@ html, body, #root {
 
 .bottom-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid var(--border);
@@ -258,23 +254,25 @@ html, body, #root {
   gap: 3px;
   padding: 10px 8px 13px;
   color: var(--text-tertiary);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
   letter-spacing: -0.01em;
   cursor: pointer;
   background: transparent;
   border: none;
-  transition: color 0.18s var(--ease-apple), background 0.18s var(--ease-apple);
+  transition: color 0.3s var(--ease-apple), background 0.3s var(--ease-apple);
   position: relative;
   border-right: 1px solid var(--border);
   font-family: inherit;
+  filter: blur(0.3px);
 }
+.bottom-tab:hover { filter: blur(0px); }
 .bottom-tab:last-child { border-right: none; }
 .bottom-tab:hover {
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.02);
 }
-.bottom-tab.active { color: var(--accent); }
+.bottom-tab.active { color: var(--text-primary); }
 .bottom-tab.active::before {
   content: '';
   position: absolute;
@@ -282,7 +280,7 @@ html, body, #root {
   left: 18%;
   right: 18%;
   height: 2px;
-  background: var(--accent);
+  background: var(--text-primary);
   border-radius: 0 0 2px 2px;
 }
 .tab-icon { font-size: 17px; line-height: 1; margin-bottom: 2px; }
@@ -302,37 +300,39 @@ html, body, #root {
 .chip {
   padding: 5px 12px;
   border-radius: 980px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
   letter-spacing: -0.01em;
   cursor: pointer;
   border: 1px solid var(--border);
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  transition: all 0.2s var(--ease-apple);
+  color: var(--text-tertiary);
+  background: transparent;
+  transition: color 0.3s var(--ease-apple), background 0.3s var(--ease-apple), border-color 0.3s var(--ease-apple);
   white-space: nowrap;
   line-height: 1.4;
   font-family: inherit;
+  filter: blur(0.3px);
 }
-.chip:hover { background: var(--bg-tertiary); color: var(--text-primary); }
-.chip.active { border-color: transparent; color: #fff; font-weight: 500; }
+.chip:hover { background: rgba(0,0,0,0.03); color: var(--text-primary); filter: blur(0px); border-color: rgba(0,0,0,0.08); }
+.chip.active { border-color: transparent; background: #111111; color: #fff; font-weight: 500; filter: blur(0px); }
 .chip:active { transform: scale(0.97); }
 
 .chip-actions { display: flex; gap: 14px; margin-top: 12px; }
 
 .chip-action-btn {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--accent);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 0;
   letter-spacing: -0.01em;
-  transition: color 0.15s var(--ease-apple);
+  transition: color 0.3s var(--ease-apple);
   font-family: inherit;
+  filter: blur(0.3px);
 }
-.chip-action-btn:hover { color: var(--accent-hover); }
+.chip-action-btn:hover { color: var(--text-primary); filter: blur(0px); }
 
 /* ── Time panel ── */
 .time-panel-grid {
@@ -451,10 +451,18 @@ html, body, #root {
 /* ── Panel entrance animation ── */
 .panel-enter {
   opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.3s var(--ease-apple), transform 0.3s var(--ease-apple);
+  transform: translateY(10px);
+  visibility: hidden;
+  transition: opacity 0.4s var(--ease-apple), transform 0.4s var(--ease-apple), visibility 0.4s var(--ease-apple);
 }
 .panel-enter-active {
   opacity: 1;
   transform: translateY(0);
+  visibility: visible;
 }
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.08); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.12); }

@@ -20,7 +20,6 @@ import TransportPoolPanel from './components/TransportPoolPanel'
 import DataPanel from './components/DataPanel'
 import RightNav from './components/RightNav'
 import StrategyPanel from './components/StrategyPanel'
-import wolfsburgPhoto from '../Photo_wb/5571eddf4a2798c830ee6f60289ee60e.jpg'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -40,21 +39,19 @@ function LandingOverlay() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundImage: `url(${wolfsburgPhoto})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
+      pointerEvents: 'none',
     }}>
       <div style={{
-        maxWidth: 560,
+        maxWidth: 540,
         padding: '52px 60px',
-        background: 'rgba(255,255,255,0.90)',
-        backdropFilter: 'blur(28px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(32px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(32px) saturate(180%)',
         borderRadius: 20,
-        border: '1px solid rgba(0,0,0,0.07)',
-        boxShadow: '0 20px 64px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(0,0,0,0.05)',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.06)',
         textAlign: 'center',
+        pointerEvents: 'auto',
       }}>
         <div style={{
           fontFamily: SANS,
