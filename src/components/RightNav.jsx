@@ -20,7 +20,7 @@ const HUB_SUBMENU = [
 ]
 
 export default function LeftNav() {
-  const { activeSection, setActiveSection, navOpen, setNavOpen } = useAppStore()
+  const { activeSection, setActiveSection, setActiveMode, navOpen, setNavOpen } = useAppStore()
   const [hoveredId, setHoveredId] = useState(null)
   const [hubSubmenuOpen, setHubSubmenuOpen] = useState(false)
 
@@ -37,6 +37,8 @@ export default function LeftNav() {
 
   const handleSubmenuClick = (id) => {
     setActiveSection(id)
+    if (id === 'hub') setActiveMode('hub-network')
+    if (id === 'geo') setActiveMode('mobility')
     setHubSubmenuOpen(false)
   }
 
@@ -140,36 +142,51 @@ export default function LeftNav() {
         </div>
       )}
 
-      {/* ── Collapsed handle ─────────────────────────────────────────────── */}
+      {/* ── Collapsed handle — always visible strip ──────────────────────── */}
       {!navOpen && (
-        <button
+        <div style={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 8,
+          zIndex: 401,
+          background: 'rgba(0,0,0,0.10)',
+          cursor: 'pointer',
+        }}
           onClick={() => setNavOpen(true)}
           title="Open navigation"
-          style={{
-            position: 'fixed',
-            left: 0,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 401,
-            width: 20,
-            padding: '24px 2px',
-            background: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(0,0,0,0.09)',
-            borderLeft: 'none',
-            borderRadius: '0 8px 8px 0',
-            boxShadow: '2px 0 16px rgba(0,0,0,0.08)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#666',
-            fontSize: 11,
-          }}
         >
-          ›
-        </button>
+          <button
+            onClick={() => setNavOpen(true)}
+            title="Open navigation"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: 0,
+              transform: 'translateY(-50%)',
+              width: 28,
+              padding: '20px 4px',
+              background: 'rgba(255,255,255,0.97)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(0,0,0,0.10)',
+              borderLeft: 'none',
+              borderRadius: '0 10px 10px 0',
+              boxShadow: '3px 0 16px rgba(0,0,0,0.10)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#555',
+              fontSize: 14,
+              fontWeight: 600,
+              zIndex: 402,
+            }}
+          >
+            ›
+          </button>
+        </div>
       )}
 
       {/* ── Main nav panel ───────────────────────────────────────────────── */}
