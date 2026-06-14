@@ -91,7 +91,7 @@ export default function BottomBar() {
           onTouchStart={beginDrag}
         >
           <div className="bottom-drag-pill" />
-          <span className="bottom-drag-label">Hub L / M / S Statistics</span>
+          <span className="bottom-drag-label">HUB</span>
         </div>
         <div className="bottom-sheet-content" style={{ height: panelH }}>
           <div className="bottom-panel-inner">

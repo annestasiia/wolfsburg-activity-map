@@ -1,7 +1,5 @@
 import React from 'react'
 import { useAppStore } from '../store/appStore'
-import { computeFleetPerHub, MODE_META } from '../utils/fleetCalc'
-
 const SANS  = "system-ui, -apple-system, sans-serif"
 const SERIF = "'Georgia', 'Times New Roman', serif"
 const C = {
@@ -47,27 +45,6 @@ function MiniStat({ label, value, color }) {
   )
 }
 
-function FleetMini({ fleetPerHub, tier, color }) {
-  if (!fleetPerHub) return null
-  const d = fleetPerHub[tier]
-  if (!d) return null
-  const modes = Object.entries(d).filter(([k, v]) => k !== '_total' && v > 0)
-  return (
-    <div style={{ marginTop: 4 }}>
-      {modes.map(([mode, n]) => (
-        <div key={mode} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-          <span style={{ fontFamily: SANS, fontSize: 10, color: C.text3 }}>{MODE_META[mode]?.label || mode}</span>
-          <span style={{ fontFamily: 'monospace', fontSize: 10, color: color, fontWeight: 600 }}>{n}</span>
-        </div>
-      ))}
-      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderTop: `1px solid ${C.border}`, marginTop: 2 }}>
-        <span style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: C.text2 }}>Total per hub</span>
-        <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 700, color: color }}>{d._total}</span>
-      </div>
-    </div>
-  )
-}
-
 function StatusFilter({ value, onChange }) {
   return (
     <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
@@ -104,10 +81,6 @@ export default function HubLMDataPanel() {
   const hubM  = hubLMResults?.hubM
   const hubS  = hubSBusOnly || []
 
-  const fleetPerHub = hubLMResults
-    ? computeFleetPerHub(hubL?.hubs?.length || 1, hubM?.hubs?.length || 1, hubS.length || 1)
-    : null
-
   const hubSRadius = hubLMConfig?.hubSCoverageRadius || 200
 
   return (
@@ -137,8 +110,6 @@ export default function HubLMDataPanel() {
             <MiniStat label="Total area" value={fmt(hubL.totalArea)} />
             <MiniStat label="Coverage" value={fmtKm2(hubL.coverageM2)} />
             <MiniStat label="Centre / Outer" value={`${hubL.centreCount} / ${hubL.outerCount}`} />
-            <div style={{ fontFamily: SANS, fontSize: 9, fontWeight: 700, color: C.text3, margin: '8px 0 2px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Fleet per hub</div>
-            <FleetMini fleetPerHub={fleetPerHub} tier="hub_l" color={C.hubL} />
           </>
         ) : <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, padding: '4px 0' }}>Run analysis</div>}
 
@@ -153,8 +124,6 @@ export default function HubLMDataPanel() {
             <MiniStat label="Total area" value={fmt(hubM.totalArea)} />
             <MiniStat label="Coverage" value={fmtKm2(hubM.coverageM2)} />
             <MiniStat label="Centre / Outer" value={`${hubM.centreCount} / ${hubM.outerCount}`} />
-            <div style={{ fontFamily: SANS, fontSize: 9, fontWeight: 700, color: C.text3, margin: '8px 0 2px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Fleet per hub</div>
-            <FleetMini fleetPerHub={fleetPerHub} tier="hub_m" color={C.hubM} />
           </>
         ) : <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, padding: '4px 0' }}>Run analysis</div>}
 
@@ -169,8 +138,6 @@ export default function HubLMDataPanel() {
             <MiniStat label="Existing" value={hubS.filter(h => h.status === 'existing').length} />
             <MiniStat label="Proposed" value={hubS.filter(h => h.status === 'proposed').length} />
             <MiniStat label="Coverage" value={fmtKm2(hubS.length * Math.PI * hubSRadius ** 2)} />
-            <div style={{ fontFamily: SANS, fontSize: 9, fontWeight: 700, color: C.text3, margin: '8px 0 2px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Fleet per hub</div>
-            <FleetMini fleetPerHub={fleetPerHub} tier="hub_s" color={C.hubS} />
           </>
         ) : <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, padding: '4px 0' }}>Run analysis</div>}
 

@@ -20,6 +20,7 @@ import TransportPoolPanel from './components/TransportPoolPanel'
 import DataPanel from './components/DataPanel'
 import RightNav from './components/RightNav'
 import StrategyPanel from './components/StrategyPanel'
+import wolfsburgPhoto from '../Photo_wb/5571eddf4a2798c830ee6f60289ee60e.jpg'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -39,7 +40,10 @@ function LandingOverlay() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      pointerEvents: 'none',
+      backgroundImage: `url(${wolfsburgPhoto})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
     }}>
       <div style={{
         maxWidth: 560,
@@ -51,7 +55,6 @@ function LandingOverlay() {
         border: '1px solid rgba(0,0,0,0.07)',
         boxShadow: '0 20px 64px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06)',
         textAlign: 'center',
-        pointerEvents: 'auto',
       }}>
         <div style={{
           fontFamily: SANS,
