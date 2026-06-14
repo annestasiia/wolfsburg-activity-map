@@ -25,7 +25,7 @@ export default function LeftSidebar() {
   const {
     activeMode,
     selectedFacilityVenueId, setSelectedFacilityVenueId,
-    selectedDay,
+    selectedDay, navOpen,
   } = useAppStore()
 
   const { filteredVenues } = useFilters()
@@ -43,7 +43,7 @@ export default function LeftSidebar() {
         onClick={() => setIsOpen(true)}
         title={`Open ${meta.label}`}
         style={{
-          position: 'absolute', left: 12, top: '50%',
+          position: 'absolute', left: navOpen ? 240 : 12, top: '50%', transition: 'left 0.3s ease',
           transform: 'translateY(-50%)', zIndex: 10,
           background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(20px) saturate(180%)',
@@ -68,7 +68,7 @@ export default function LeftSidebar() {
   // ── Open sidebar ───────────────────────────────────────────────────────────
   return (
     <div style={{
-      position: 'absolute', left: 0, top: 0, bottom: 0, width: 300, zIndex: 10,
+      position: 'absolute', left: navOpen ? 228 : 0, top: 0, bottom: 0, width: 300, zIndex: 10, transition: 'left 0.3s ease',
       background: 'rgba(255,255,255,0.93)',
       backdropFilter: 'blur(24px) saturate(180%)',
       WebkitBackdropFilter: 'blur(24px) saturate(180%)',

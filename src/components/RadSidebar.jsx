@@ -110,8 +110,8 @@ export default function RadSidebar() {
 
   return (
     <div style={{
-      position: 'absolute', top: 0, left: 0, bottom: 0,
-      width: 260, zIndex: 20,
+      position: 'absolute', top: 0, left: navOpen ? 228 : 0, bottom: 0,
+      width: 260, zIndex: 20, transition: 'left 0.3s ease',
       background: 'rgba(255,255,255,0.96)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
@@ -231,6 +231,7 @@ export function RadDataPanel() {
     toggleRadHubType, setRadHubObjectScale,
     toggleRadShowAutoRoads, toggleRadShowPedestrianRoads, toggleRadShowCycling,
     toggleRadShowAutoHeatmap, toggleRadShowPedHeatmap,
+    navOpen,
   } = useAppStore()
 
   const dataLoaded = !!(radRawHistoric && radRawVillages)

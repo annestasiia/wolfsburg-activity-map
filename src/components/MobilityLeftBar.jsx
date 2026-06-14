@@ -60,6 +60,7 @@ export default function MobilityLeftBar() {
   const {
     activeMobilityModes, toggleMobilityMode, mobilityDataLoading,
     showFacilitiesInMobility, toggleFacilitiesInMobility,
+    navOpen,
   } = useAppStore()
 
   const anyMobilityActive = activeMobilityModes.size > 0
@@ -67,8 +68,9 @@ export default function MobilityLeftBar() {
   return (
     <div style={{
       position:       'absolute',
-      left:            10,
+      left:            navOpen ? 238 : 10,
       top:             112,
+      transition:     'left 0.3s ease',
       zIndex:          10,
       display:        'flex',
       flexDirection:  'column',

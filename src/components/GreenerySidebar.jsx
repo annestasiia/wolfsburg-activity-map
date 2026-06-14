@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react'
+import { useAppStore } from '../store/appStore'
 import GreeneryPanel from './panels/GreeneryPanel'
 import GreenSocialPanel from './panels/GreenSocialPanel'
 
@@ -12,6 +13,7 @@ const MAX_WIDTH     = 540
 const DEFAULT_WIDTH = 300
 
 export default function GreenerySidebar() {
+  const { navOpen } = useAppStore()
   const [isOpen,   setIsOpen]   = useState(true)
   const [width,    setWidth]    = useState(DEFAULT_WIDTH)
   const [panelTab, setPanelTab] = useState('layers')
@@ -48,8 +50,9 @@ export default function GreenerySidebar() {
         title="Open Greenery Layers"
         style={{
           position:       'absolute',
-          left:            12,
+          left:            navOpen ? 240 : 12,
           top:            '50%',
+          transition:     'left 0.3s ease',
           transform:      'translateY(-50%)',
           zIndex:          10,
           background:     'rgba(255,255,255,0.92)',
@@ -85,10 +88,11 @@ export default function GreenerySidebar() {
   return (
     <div style={{
       position:      'absolute',
-      left:           0,
+      left:           navOpen ? 228 : 0,
       top:            0,
       bottom:         0,
       width:          width + 6,   // +6 for the resize handle strip
+      transition:    'left 0.3s ease',
       zIndex:         10,
       display:       'flex',
       pointerEvents: 'none',       // let map clicks through the transparent handle area

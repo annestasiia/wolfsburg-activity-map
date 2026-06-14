@@ -25,7 +25,11 @@ export const useAppStore = create((set) => ({
   activeModes: new Set(['infrastructure']),
   activeBottomPanel: null,
 
-  // ── Top-level section (right nav) ────────────────────────────────────────
+  // ── Navigation sidebar ───────────────────────────────────────────────────
+  navOpen: true,
+  setNavOpen: (v) => set({ navOpen: v }),
+
+  // ── Top-level section ────────────────────────────────────────────────────
   activeSection: null,  // null | 'strategy' | 'geo' | 'capacity' | 'hub' | 'urban' | 'simulation'
 
   // ── Top-level analysis mode ───────────────────────────────────────────────

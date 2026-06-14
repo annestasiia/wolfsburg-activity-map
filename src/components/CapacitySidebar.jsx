@@ -54,7 +54,7 @@ function BarRow({ label, value, maxValue, color, unit }) {
 
 export default function CapacitySidebar() {
   const store = useAppStore()
-  const { hubPopulation, setHubPopulation, hubLMRunning, hubLMResults, localCarParkings, localBusStops } = store
+  const { hubPopulation, setHubPopulation, hubLMRunning, hubLMResults, localCarParkings, localBusStops, navOpen } = store
 
   const pop = hubPopulation || 130000
   const cap    = useMemo(() => computeCapacity(pop), [pop])
@@ -66,7 +66,7 @@ export default function CapacitySidebar() {
 
   return (
     <div style={{
-      position: 'absolute', top: 48, left: 0, bottom: 0, width: 300, zIndex: 200,
+      position: 'absolute', top: 48, left: navOpen ? 228 : 0, bottom: 0, width: 300, zIndex: 200, transition: 'left 0.3s ease',
       background: C.bg, borderRight: `1px solid ${C.border}`,
       display: 'flex', flexDirection: 'column',
     }}>
