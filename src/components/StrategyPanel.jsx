@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react'
 
-const SERIF = "'Georgia', 'Times New Roman', serif"
-const SANS  = "system-ui, -apple-system, sans-serif"
+const FONT  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+const SERIF = FONT
+const SANS  = FONT
 const C = { bg: '#FAFAF9', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
 
 const CSS_ANIM = `
@@ -82,13 +83,13 @@ export default function StrategyPanel() {
         <div style={{ maxWidth: 660, margin: '0 auto', padding: '72px 56px 120px' }}>
 
           <Block>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 14 }}>
+            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 16 }}>
               Post-Car Strategy · Wolfsburg 2026
             </div>
-            <h1 style={{ fontFamily: SERIF, fontSize: 40, fontWeight: 400, color: C.text1, lineHeight: 1.1, letterSpacing: '-0.03em', margin: '0 0 28px', maxWidth: 520 }}>
+            <h1 style={{ fontFamily: SERIF, fontSize: 64, fontWeight: 400, color: C.text1, lineHeight: 1.05, letterSpacing: '-0.5px', margin: '0 0 28px', maxWidth: 600 }}>
               A City Where Car Ownership Becomes Obsolete
             </h1>
-            <p style={{ fontFamily: SERIF, fontSize: 18, color: C.text2, lineHeight: 1.8, margin: 0, maxWidth: 520 }}>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0, maxWidth: 520 }}>
               Wolfsburg is an unlikely candidate for a post-car experiment.
               Built by and for Volkswagen, it is one of Germany's most car-dependent cities —
               with more registered vehicles per resident than almost anywhere else in the country.
@@ -99,16 +100,16 @@ export default function StrategyPanel() {
           <div style={{ height: 1, background: C.border, margin: '8px 0 48px' }} />
 
           <Block>
-            <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 400, color: C.text1, margin: '0 0 16px', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontFamily: SERIF, fontSize: 40, fontWeight: 400, color: C.text1, margin: '0 0 20px', letterSpacing: '-0.5px' }}>
               The Premise
             </h2>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, lineHeight: 1.8, margin: '0 0 18px', maxWidth: 540 }}>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 18px', maxWidth: 540 }}>
               This is not a car-free city in the traditional sense of banning vehicles.
               It is a city where car <em>ownership</em> itself becomes obsolete —
               replaced by a system that is more convenient, more equitable, and more efficient
               than private ownership ever was.
             </p>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, lineHeight: 1.8, margin: 0, maxWidth: 540 }}>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0, maxWidth: 540 }}>
               All mobility is shared, electric, autonomous, and on-demand.
               Vehicles do not sit parked for 23 hours a day.
               They circulate — serving the next trip, the next person, the next district.
@@ -116,15 +117,15 @@ export default function StrategyPanel() {
           </Block>
 
           <Block>
-            <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 400, color: C.text1, margin: '0 0 16px', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontFamily: SERIF, fontSize: 40, fontWeight: 400, color: C.text1, margin: '0 0 20px', letterSpacing: '-0.5px' }}>
               Why Wolfsburg
             </h2>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, lineHeight: 1.8, margin: '0 0 18px', maxWidth: 540 }}>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 18px', maxWidth: 540 }}>
               The city's identity is inseparable from the car — Volkswagen's main plant employs
               tens of thousands of people within the zone. The paradox of the car city going post-car
               is not a contradiction; it is an argument. If it can work here, it can work anywhere.
             </p>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, lineHeight: 1.8, margin: 0, maxWidth: 540 }}>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0, maxWidth: 540 }}>
               The project focuses on the 4 km² city centre — nine central districts with 17,500 residents,
               18,000 daily workers, and an estimated 4,000 visitors per day.
               This is where car dependency is most visible, and where the gains from eliminating it are largest.
@@ -140,10 +141,10 @@ export default function StrategyPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {PILLARS.map(({ num, title, body }) => (
                 <div key={num} style={{ display: 'flex', gap: 24, padding: '24px 0', borderTop: `1px solid ${C.border}` }}>
-                  <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.06em', width: 24, paddingTop: 3, flexShrink: 0 }}>{num}</div>
+                  <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', width: 24, paddingTop: 3, flexShrink: 0 }}>{num}</div>
                   <div>
-                    <div style={{ fontFamily: SERIF, fontSize: 18, color: C.text1, marginBottom: 8 }}>{title}</div>
-                    <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0, maxWidth: 460 }}>{body}</p>
+                    <div style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 400, color: C.text1, marginBottom: 8, letterSpacing: '-0.3px' }}>{title}</div>
+                    <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0, maxWidth: 460 }}>{body}</p>
                   </div>
                 </div>
               ))}
@@ -153,16 +154,16 @@ export default function StrategyPanel() {
           <div style={{ height: 1, background: C.border, margin: '8px 0 48px' }} />
 
           <Block>
-            <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 400, color: C.text1, margin: '0 0 16px', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontFamily: SERIF, fontSize: 40, fontWeight: 400, color: C.text1, margin: '0 0 20px', letterSpacing: '-0.5px' }}>
               What Changes
             </h2>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, lineHeight: 1.8, margin: '0 0 18px', maxWidth: 540 }}>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 18px', maxWidth: 540 }}>
               Parking lots become parks, plazas, or housing. Streets narrow.
               The acoustic texture of the city changes — less engine noise, more pedestrian space.
               The 49,000 private vehicles that currently enter the zone each day are replaced
               by a shared fleet of roughly 1,300 vehicles and bikes.
             </p>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, lineHeight: 1.8, margin: 0, maxWidth: 540 }}>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0, maxWidth: 540 }}>
               One shared vehicle replaces approximately 38 private cars in daily circulation.
               The land freed from parking and road infrastructure becomes the urban dividend —
               returned to residents, greenery, and public life.

@@ -202,8 +202,8 @@ const area_total_all_hubs = TIERS.reduce((s, t) => s + S_hub_area[t] * HUB_COUNT
 const area_pct_of_zone    = (area_total_all_hubs / hub_zone_m2 * 100).toFixed(2)
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
-const SERIF = "'Georgia', 'Times New Roman', serif"
-const SANS  = "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+const SERIF = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+const SANS  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
 const C = { bg: '#FAFAF9', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
 const fmt = n => Math.round(n).toLocaleString('de-DE')
 
@@ -221,8 +221,8 @@ function Sect({ id, eyebrow, title, children }) {
   return (
     <div id={id} className="dp-a" style={{ padding: '44px 0', borderTop: `1px solid ${C.border}` }}>
       <div style={{ maxWidth: 520, marginBottom: 28 }}>
-        {eyebrow && <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>{eyebrow}</div>}
-        <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: C.text1, margin: 0, lineHeight: 1.35 }}>{title}</h2>
+        {eyebrow && <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>}
+        <h2 style={{ fontFamily: SERIF, fontSize: 36, fontWeight: 400, color: C.text1, margin: 0, lineHeight: 1.1, letterSpacing: '-0.5px' }}>{title}</h2>
       </div>
       {children}
     </div>
@@ -232,8 +232,8 @@ function Sect({ id, eyebrow, title, children }) {
 function KCard({ label, value, sub, color }) {
   return (
     <div style={{ background: C.card, borderRadius: 10, padding: '20px 22px', border: `1px solid ${C.border}` }}>
-      <div style={{ fontFamily: SERIF, fontSize: 30, fontWeight: 400, color: color || C.text1, lineHeight: 1, letterSpacing: '-0.02em' }}>{value}</div>
-      <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1, marginTop: 8 }}>{label}</div>
+      <div style={{ fontFamily: SERIF, fontSize: 48, fontWeight: 300, color: color || C.text1, lineHeight: 1, letterSpacing: '-0.5px' }}>{value}</div>
+      <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 400, color: C.text1, marginTop: 10, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 3 }}>{sub}</div>
     </div>
   )
@@ -243,7 +243,7 @@ function Rule({ label }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '56px 0 44px' }}>
       <div style={{ width: 28, height: 2, background: C.text1 }} />
-      <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text1, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{label}</span>
+      <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text1, letterSpacing: '0.14em', textTransform: 'uppercase' }}>{label}</span>
       <div style={{ flex: 1, height: 1, background: C.border }} />
     </div>
   )
@@ -1105,13 +1105,13 @@ export default function DataPanel() {
 
       {/* Left nav */}
       <nav style={{ width: 200, flexShrink: 0, overflowY: 'auto', background: C.bg, borderRight: `1px solid ${C.border}`, padding: '32px 14px 32px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', padding: '0 10px 16px' }}>
+        <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '0 10px 16px' }}>
           Data Analysis
         </div>
         {NAV.map(({ href, label }) => {
           const isSect = label.startsWith('—')
           if (isSect) return (
-            <div key={href} style={{ padding: '12px 10px 5px', fontFamily: SANS, fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div key={href} style={{ padding: '12px 10px 5px', fontFamily: SANS, fontSize: 10, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
               {label.replace('— ', '')}
             </div>
           )
@@ -1148,13 +1148,13 @@ export default function DataPanel() {
 
           {/* ── PART 1 ── */}
           <div id="overview" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>
               Part 1 · Baseline
             </div>
-            <h1 style={{ fontFamily: SERIF, fontSize: 38, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            <h1 style={{ fontFamily: SERIF, fontSize: 64, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>
               Modal Distribution
             </h1>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
               Nine central districts of Wolfsburg, accounting for {fmt(total_residents)} residents,
               {' '}{fmt(WORKERS)} daily workers, and an estimated {fmt(visitors)} visitors — totalling{' '}
               {fmt(D_total)} trips per day under MiD 2017 modal assumptions.
@@ -1215,9 +1215,9 @@ export default function DataPanel() {
           <Rule label="Part 2 · Post-Car Fleet Sizing" />
 
           <div id="fleet" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 2 · Fleet Sizing</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Post-Car Fleet</h2>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
+            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>Part 2 · Fleet Sizing</div>
+            <h2 style={{ fontFamily: SERIF, fontSize: 56, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>Post-Car Fleet</h2>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
               If private cars are replaced by a shared fleet, peak-hour demand determines
               how many vehicles must be on the street simultaneously. A flow decomposition
               first separates inbound from internal trips, then filters out {(WALKING_SHARE_INTERNAL * 100).toFixed(0)}% as walkable,
@@ -1261,9 +1261,9 @@ export default function DataPanel() {
           <Rule label="Part 3 · Hub Network" />
 
           <div id="hubs" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 3 · Hub Network</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Hub Count &amp; Distribution</h2>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
+            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>Part 3 · Hub Network</div>
+            <h2 style={{ fontFamily: SERIF, fontSize: 56, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>Hub Count &amp; Distribution</h2>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
               Three hub tiers serve different functions: {hub_l_count} large interchange hubs anchor
               the zone at existing parking structures, {hub_m_count} district hubs provide mid-scale coverage,
               and {hub_s_count} micro-hubs ensure walkable access within 200 m across the entire {ZONE_AREA_KM2} km² zone.
@@ -1294,11 +1294,11 @@ export default function DataPanel() {
           <Rule label="Part 4 · Hub Area Calculation" />
 
           <div id="hub-area" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 4 · Hub Area</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>Part 4 · Hub Area</div>
+            <h2 style={{ fontFamily: SERIF, fontSize: 56, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>
               S_hub = S_fleet + S_circ + S_charging + S_program
             </h2>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
               Each hub tier has a distinct spatial footprint determined by its vehicle mix,
               circulation requirements, and program elements. Combined, all {hub_l_count + hub_m_count + hub_s_count} hubs
               require {fmt(area_total_all_hubs)} m² — just {area_pct_of_zone}% of the zone,
@@ -1326,9 +1326,9 @@ export default function DataPanel() {
           <Rule label="Methodology" />
 
           <div id="methodology" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Appendix · Methods</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>How the Numbers Were Made</h2>
-            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
+            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>Appendix · Methods</div>
+            <h2 style={{ fontFamily: SERIF, fontSize: 56, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>How the Numbers Were Made</h2>
+            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
               Each section builds on publicly available data and standard urban transport benchmarks.
               The calculations are deterministic — no simulation or model calibration is required.
             </p>
@@ -1337,12 +1337,12 @@ export default function DataPanel() {
           <Sect id="method-p1" eyebrow="Part 1 · Baseline" title="Transport Demand">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
               <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
                   Population figures come from the <strong style={{ color: C.text1 }}>WOKS 2023</strong> statistical report for the nine central Wolfsburg districts.
                   Worker count ({fmt(WORKERS)}) is from <strong style={{ color: C.text1 }}>WOKS Arbeitsmarktbericht 2025</strong>.
                   Visitor volume is estimated as 20% of the combined residents and workers, following the MiD 2017 trip-generation pattern for mid-size German cities.
                 </p>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
                   Trip generation rates are national averages from <strong style={{ color: C.text1 }}>MiD 2017 (BMVI)</strong>:
                   residents make 3.2 trips/day, workers 2.1, visitors 1.5.
                   Modal split uses the MiD 2017 baseline with the private-car share raised
@@ -1370,7 +1370,7 @@ export default function DataPanel() {
           <Sect id="method-p2" eyebrow="Part 2 · Fleet Sizing" title="From Trips to Vehicles">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
               <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
                   D_total is first split into <strong style={{ color: C.text1 }}>inbound</strong> and <strong style={{ color: C.text1 }}>internal</strong> flows.
                   Inbound covers workers commuting from outside the zone (50% of worker trips)
                   and visitors arriving from outside (80% of visitor trips).
@@ -1378,7 +1378,7 @@ export default function DataPanel() {
                   Of internal trips, 60% are assumed walkable and filtered out — consistent with
                   MiD 2017 short-distance walking rates for dense urban cores.
                 </p>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
                   Each transport mode is assigned a fixed share of the remaining demand via two allocation matrices:
                   one for inbound flows (dominated by autonomous bus and shuttle),
                   one for internal flows (dominated by e-bike and autonomous pod).
@@ -1402,7 +1402,7 @@ export default function DataPanel() {
                 ))}
               </div>
               <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
                   Charging point requirements are benchmarked from operator data:
                   50% of e-bikes charge simultaneously (Nextbike operational standard),
                   30% for all other modes (UITP autonomous vehicle guidelines, MOIA Hamburg analogue,
@@ -1417,12 +1417,12 @@ export default function DataPanel() {
           <Sect id="method-p3" eyebrow="Part 3 · Hub Network" title="Hub Counts from Geometry">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
               <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
                   Hub counts are derived from <strong style={{ color: C.text1 }}>coverage geometry</strong>, not from fleet demand alone.
                   The starting point is the 4 km² zone area and the maximum acceptable walking distance to a hub.
                   A 1.35× overlap factor accounts for irregular street grids and dead zones between circles.
                 </p>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
                   <strong style={{ color: C.text1 }}>Hub L</strong> count is constrained by existing infrastructure —
                   there are at most 6 large parking structures in the zone that can be repurposed as interchange hubs.
                   The fleet-driven estimate (⌈(bus + car-share fleet) ÷ 8⌉) is capped at this maximum.
@@ -1447,7 +1447,7 @@ export default function DataPanel() {
                 ))}
               </div>
               <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
                   Fleet is assigned to tiers via a fixed distribution matrix — for example, all buses and car-share EVs
                   concentrate at Hub L, while 70% of e-bikes are distributed to Hub S micro-hubs.
                   Per-hub vehicle count adds a 20% operational reserve on top of the tier allocation,
@@ -1460,7 +1460,7 @@ export default function DataPanel() {
           <Sect id="method-p4" eyebrow="Part 4 · Hub Area" title="Spatial Footprint Formula">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
               <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
                   Hub area is the sum of four components. Footprint values per vehicle type are drawn from
                   standard parking and depot design references: 2.5 m² for an e-bike rack,
                   10 m² for a compact pod, 35 m² for a minibus, 60 m² for a full-size bus, 15 m² for a car.
@@ -1481,13 +1481,13 @@ export default function DataPanel() {
                 ))}
               </div>
               <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: '0 0 16px' }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
                   The circulation factor captures driveways, turning radii, and pedestrian paths
                   within the hub perimeter — it is applied as a multiplier to fleet area only,
                   not to charging or program. Program space covers sheltered waiting zones,
                   real-time information displays, and minor service areas.
                 </p>
-                <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
+                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
                   Total land use across all {hub_l_count + hub_m_count + hub_s_count} hubs is{' '}
                   <strong style={{ color: C.text1 }}>{fmt(area_total_all_hubs)} m²</strong> ({(area_total_all_hubs / 10000).toFixed(2)} ha),
                   equivalent to {area_pct_of_zone}% of the 4 km² project zone —

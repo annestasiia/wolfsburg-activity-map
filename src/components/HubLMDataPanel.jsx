@@ -1,7 +1,7 @@
 import React from 'react'
 import { useAppStore } from '../store/appStore'
-const SANS  = "system-ui, -apple-system, sans-serif"
-const SERIF = "'Georgia', 'Times New Roman', serif"
+const SANS  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+const SERIF = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
 const C = {
   bg:     '#FFFFFF', border: '#E8E8E8',
   text1:  '#111111', text2:  '#444444', text3:  '#888888',
