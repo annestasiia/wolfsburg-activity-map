@@ -27,7 +27,7 @@ const SNAP_CLOSE_H   = 60
 const DEFAULT_OPEN_H = 220
 
 export default function BottomBar() {
-  const { activeMode, activeBottomPanel, setActiveBottomPanel } = useAppStore()
+  const { activeSection, activeMode, activeBottomPanel, setActiveBottomPanel } = useAppStore()
   const [panelH, setPanelH] = useState(0)
   const drag = useRef(null)
 
@@ -82,7 +82,7 @@ export default function BottomBar() {
 
   if (activeMode === 'greenery' || activeMode === 'intermodal' || activeMode === 'data') return null
 
-  if (activeMode === 'hub-network') {
+  if (activeSection === 'hub' && activeMode === 'hub-network') {
     return (
       <div className="bottom-bar">
         <div
