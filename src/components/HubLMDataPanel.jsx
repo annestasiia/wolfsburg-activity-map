@@ -45,43 +45,20 @@ function MiniStat({ label, value, color }) {
   )
 }
 
-function StatusFilter({ value, onChange }) {
-  return (
-    <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-      {['all', 'existing', 'proposed'].map(s => (
-        <button key={s} onClick={() => onChange(s)} style={{
-          flex: 1, padding: '4px 0', borderRadius: 3, border: `1px solid ${value === s ? C.text1 : C.border}`,
-          background: value === s ? C.text1 : 'transparent', color: value === s ? '#fff' : C.text3,
-          fontFamily: SANS, fontSize: 10, fontWeight: 500, cursor: 'pointer', textTransform: 'capitalize',
-        }}>
-          {s}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 export default function HubLMDataPanel() {
   const store = useAppStore()
   const {
-    hubLMResults, hubSBusOnly,
+    hubLMResults,
     hubLMShowL, toggleHubLMShowL,
     hubLMShowM, toggleHubLMShowM,
-    hubLMShowS, toggleHubLMShowS,
     hubLMShowCoverageL,   toggleHubLMShowCoverageL,
     hubLMShowCoverageM,   toggleHubLMShowCoverageM,
-    hubLMShowCoverageS,   toggleHubLMShowCoverageS,
     hubLMShowCandidatesL, toggleHubLMShowCandidatesL,
     hubLMShowCandidatesM, toggleHubLMShowCandidatesM,
-    hubLMSStatusFilter,   setHubLMSStatusFilter,
-    hubLMConfig,
   } = store
 
-  const hubL  = hubLMResults?.hubL
-  const hubM  = hubLMResults?.hubM
-  const hubS  = hubSBusOnly || []
-
-  const hubSRadius = hubLMConfig?.hubSCoverageRadius || 200
+  const hubL = hubLMResults?.hubL
+  const hubM = hubLMResults?.hubM
 
   return (
     <div style={{
@@ -124,20 +101,6 @@ export default function HubLMDataPanel() {
             <MiniStat label="Total area" value={fmt(hubM.totalArea)} />
             <MiniStat label="Coverage" value={fmtKm2(hubM.coverageM2)} />
             <MiniStat label="Centre / Outer" value={`${hubM.centreCount} / ${hubM.outerCount}`} />
-          </>
-        ) : <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, padding: '4px 0' }}>Run analysis</div>}
-
-        {/* ── Hub S ── */}
-        <SectionLabel>Hub S — Bus/Bike Node</SectionLabel>
-        <LayerToggle label="Hub S markers" active={hubLMShowS} onToggle={toggleHubLMShowS} color={C.hubS} />
-        <LayerToggle label={`Coverage (${hubSRadius} m)`} active={hubLMShowCoverageS} onToggle={toggleHubLMShowCoverageS} color={C.hubS} dot={false} />
-        <StatusFilter value={hubLMSStatusFilter} onChange={setHubLMSStatusFilter} />
-        {hubS.length > 0 ? (
-          <>
-            <MiniStat label="Total" value={`${hubS.length} hubs`} color={C.hubS} />
-            <MiniStat label="Existing" value={hubS.filter(h => h.status === 'existing').length} />
-            <MiniStat label="Proposed" value={hubS.filter(h => h.status === 'proposed').length} />
-            <MiniStat label="Coverage" value={fmtKm2(hubS.length * Math.PI * hubSRadius ** 2)} />
           </>
         ) : <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, padding: '4px 0' }}>Run analysis</div>}
 
