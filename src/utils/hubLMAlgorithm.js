@@ -121,15 +121,20 @@ function pointInRing(lon, lat, ring) {
 }
 
 function pointInDistrict(lon, lat, districtBoundaries, name) {
-  const dist = districtBoundaries?.[name]
-  if (!dist?.geometry) return false
-  const geom = dist.geometry
-  const rings = geom.type === 'Polygon'
-    ? [geom.coordinates[0]]
-    : geom.type === 'MultiPolygon'
-      ? geom.coordinates.map(p => p[0])
-      : []
-  return rings.some(r => pointInRing(lon, lat, r))
+  // districtBoundaries[name] is a FeatureCollection, not a single Feature
+  const fc = districtBoundaries?.[name]
+  if (!fc?.features?.length) return false
+  for (const feature of fc.features) {
+    const geom = feature.geometry
+    if (!geom) continue
+    const rings = geom.type === 'Polygon'
+      ? [geom.coordinates[0]]
+      : geom.type === 'MultiPolygon'
+        ? geom.coordinates.map(p => p[0])
+        : []
+    if (rings.some(r => pointInRing(lon, lat, r))) return true
+  }
+  return false
 }
 
 function classifyZone(lon, lat, districtBoundaries) {
