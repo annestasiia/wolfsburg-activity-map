@@ -20,6 +20,7 @@ import TransportPoolPanel from './components/TransportPoolPanel'
 import DataPanel from './components/DataPanel'
 import RightNav from './components/RightNav'
 import StrategyPanel from './components/StrategyPanel'
+import UrbanDesignPanel from './components/UrbanDesignPanel'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -227,7 +228,7 @@ export default function App() {
         {/* ── Section panels ── */}
         {activeSection === 'strategy'   && <StrategyPanel />}
         {activeSection === 'capacity'   && <DataPanel />}
-        {activeSection === 'urban'      && <UrbanPlaceholder />}
+        {activeSection === 'urban'      && <UrbanDesignPanel />}
         {activeSection === 'simulation' && <SimulationPlaceholder />}
 
         {/* ── Always visible map UI ── */}
