@@ -100,10 +100,15 @@ function computeCoverageM2(count, radiusM) {
 
 // ── Zone classification ───────────────────────────────────────────────────────
 
+// All nine central districts — used for centre/outer classification
 const CENTER_DISTRICT_NAMES = [
   'Stadtmitte', 'Schillerteich', 'Hellwinkel', 'Heßlingen', 'Rothenfelde',
   'Köhlerberg', 'Alt-Wolfsburg', 'Sandkamp', 'Hochenstein',
 ]
+
+// Hub L must NOT be placed in these districts:
+// dense pedestrian cores where a large fleet depot is spatially and logistically incompatible
+const HUB_L_EXCLUDED_DISTRICTS = ['Stadtmitte', 'Schillerteich']
 
 function pointInRing(lon, lat, ring) {
   let inside = false
@@ -115,19 +120,30 @@ function pointInRing(lon, lat, ring) {
   return inside
 }
 
+function pointInDistrict(lon, lat, districtBoundaries, name) {
+  const dist = districtBoundaries?.[name]
+  if (!dist?.geometry) return false
+  const geom = dist.geometry
+  const rings = geom.type === 'Polygon'
+    ? [geom.coordinates[0]]
+    : geom.type === 'MultiPolygon'
+      ? geom.coordinates.map(p => p[0])
+      : []
+  return rings.some(r => pointInRing(lon, lat, r))
+}
+
 function classifyZone(lon, lat, districtBoundaries) {
   for (const name of CENTER_DISTRICT_NAMES) {
-    const dist = districtBoundaries?.[name]
-    if (!dist?.geometry) continue
-    const geom = dist.geometry
-    const rings = geom.type === 'Polygon'
-      ? [geom.coordinates[0]]
-      : geom.type === 'MultiPolygon'
-        ? geom.coordinates.map(p => p[0])
-        : []
-    if (rings.some(r => pointInRing(lon, lat, r))) return 'centre'
+    if (pointInDistrict(lon, lat, districtBoundaries, name)) return 'centre'
   }
   return 'outer'
+}
+
+// Returns true if the point falls inside any of the excluded districts for Hub L
+function isExcludedForHubL(lon, lat, districtBoundaries) {
+  return HUB_L_EXCLUDED_DISTRICTS.some(name =>
+    pointInDistrict(lon, lat, districtBoundaries, name)
+  )
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────────
@@ -140,15 +156,18 @@ export function runHubLMAlgorithm({ localCarParkings, districtBoundaries, hubLMC
     minDistM = 500,
   } = hubLMConfig || {}
 
-  // Hub L: multi-storey parking structures (fleet depot)
+  // Hub L: multi-storey structures only, excluding dense pedestrian cores
   const candidatesL = extractCandidates(localCarParkings, ['multi-storey', 'multi_storey', 'garage'])
-  const { selected: selL, totalArea: areaL } = greedySelect(candidatesL, requiredAreaL, minDistL, 15)
+  const candidatesL_filtered = candidatesL.filter(
+    c => !isExcludedForHubL(c.lon, c.lat, districtBoundaries)
+  )
+  const { selected: selL, totalArea: areaL } = greedySelect(candidatesL_filtered, requiredAreaL, minDistL, 15)
 
-  // Hub M: underground parking only (intermodal transfer node)
+  // Hub M: underground parking only (intermodal transfer node) — no district exclusion
   const candidatesM = extractCandidates(localCarParkings, ['underground', 'underpass'])
   const { selected: selM, totalArea: areaM } = greedySelect(candidatesM, requiredAreaM, minDistM, 10)
 
-  // Zone classification
+  // Zone classification (for stats display — uses full district list)
   const classifyAll = (arr) =>
     arr.map(h => ({ ...h, zone: classifyZone(h.lon, h.lat, districtBoundaries) }))
   const hubL = classifyAll(selL)
@@ -168,9 +187,9 @@ export function runHubLMAlgorithm({ localCarParkings, districtBoundaries, hubLMC
   })
 
   return {
-    hubL: buildStats(hubL, candidatesL, areaL, requiredAreaL, COVERAGE_RADIUS.hub_l),
+    hubL: buildStats(hubL, candidatesL_filtered, areaL, requiredAreaL, COVERAGE_RADIUS.hub_l),
     hubM: buildStats(hubM, candidatesM, areaM, requiredAreaM, COVERAGE_RADIUS.hub_m),
-    candidatesL,
+    candidatesL: candidatesL_filtered,
     candidatesM,
   }
 }
