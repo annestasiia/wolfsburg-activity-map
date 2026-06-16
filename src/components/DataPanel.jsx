@@ -219,8 +219,8 @@ const CSS_ANIM = `
 // ─── BASE COMPONENTS ─────────────────────────────────────────────────────────
 function Sect({ id, eyebrow, title, children }) {
   return (
-    <div id={id} className="dp-a" style={{ padding: '44px 0', borderTop: `1px solid ${C.border}` }}>
-      <div style={{ maxWidth: 520, marginBottom: 28 }}>
+    <div id={id} className="dp-a" style={{ padding: '30px 0', borderTop: `1px solid ${C.border}` }}>
+      <div style={{ maxWidth: 500, marginBottom: 16 }}>
         {eyebrow && <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>}
         <h2 style={{ fontFamily: SERIF, fontSize: 36, fontWeight: 400, color: C.text1, margin: 0, lineHeight: 1.1, letterSpacing: '-0.5px' }}>{title}</h2>
       </div>
@@ -231,9 +231,9 @@ function Sect({ id, eyebrow, title, children }) {
 
 function KCard({ label, value, sub, color }) {
   return (
-    <div style={{ background: C.card, borderRadius: 10, padding: '20px 22px', border: `1px solid ${C.border}` }}>
-      <div style={{ fontFamily: SERIF, fontSize: 48, fontWeight: 300, color: color || C.text1, lineHeight: 1, letterSpacing: '-0.5px' }}>{value}</div>
-      <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 400, color: C.text1, marginTop: 10, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{label}</div>
+    <div style={{ background: C.card, borderRadius: 10, padding: '14px 16px', border: `1px solid ${C.border}` }}>
+      <div style={{ fontFamily: SERIF, fontSize: 36, fontWeight: 300, color: color || C.text1, lineHeight: 1, letterSpacing: '-0.5px' }}>{value}</div>
+      <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 400, color: C.text1, marginTop: 7, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 3 }}>{sub}</div>
     </div>
   )
@@ -1034,486 +1034,422 @@ function HubAreaTable() {
   )
 }
 
-// ─── NAV ─────────────────────────────────────────────────────────────────────
-const NAV = [
-  { href: '#overview',     label: 'Overview' },
-  { href: '#demand',       label: 'Transport demand' },
-  { href: '#modal-split',  label: 'Modal split' },
-  { href: '#districts',    label: 'Districts' },
-  { href: '#hourly',       label: 'Hourly distribution' },
-  { href: '#baseline-tbl', label: 'Baseline table' },
-  { href: '#fleet',        label: '— Fleet sizing' },
-  { href: '#flow',         label: 'Trip flow' },
-  { href: '#fleet-cards',  label: 'Mode cards' },
-  { href: '#fleet-chart',  label: 'On-street vs total' },
-  { href: '#replacement',  label: 'Replacement' },
-  { href: '#dot-matrix',   label: 'Dot matrix' },
-  { href: '#charging',     label: 'Charging points' },
-  { href: '#fleet-tbl',    label: 'Fleet table' },
-  { href: '#hubs',         label: '— Hub Network' },
-  { href: '#hub-summary',  label: 'Hub summary' },
-  { href: '#hub-heatmap',  label: 'Fleet heatmap' },
-  { href: '#hub-bars',     label: 'Fleet by tier' },
-  { href: '#hub-cards',    label: 'Hub profiles' },
-  { href: '#hub-infra',    label: 'Infrastructure' },
-  { href: '#hub-area',     label: '— Hub Areas' },
-  { href: '#hub-area-sum', label: 'Area summary' },
-  { href: '#hub-area-bar', label: 'Area breakdown' },
-  { href: '#hub-area-pie', label: 'Fleet footprint' },
-  { href: '#hub-area-tbl', label: 'Area table' },
-  { href: '#methodology',  label: '— Methodology' },
-  { href: '#method-p1',    label: 'Baseline' },
-  { href: '#method-p2',    label: 'Fleet sizing' },
-  { href: '#method-p3',    label: 'Hub network' },
-  { href: '#method-p4',    label: 'Hub area' },
+
+
+// ─── FULLSCREEN SLIDE SYSTEM ─────────────────────────────────────────────────
+const CSS_SLIDES = `
+@keyframes dp-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dp-slide { animation: dp-in 0.36s cubic-bezier(.4,0,.2,1) both; }
+`
+
+// Wrapper for every slide: eyebrow + title + content
+function Slide({ eyebrow, title, sub, children }) {
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '32px 60px 28px', boxSizing: 'border-box', maxWidth: 1080, margin: '0 auto' }}>
+      <div className="dp-a" style={{ marginBottom: 18, flexShrink: 0 }}>
+        {eyebrow && <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 7 }}>{eyebrow}</div>}
+        <h2 style={{ fontFamily: SERIF, fontSize: 30, fontWeight: 400, color: C.text1, margin: 0, lineHeight: 1.1, letterSpacing: '-0.3px' }}>{title}</h2>
+        {sub && <p style={{ fontFamily: SERIF, fontSize: 13, color: C.text2, marginTop: 7, lineHeight: 1.6, maxWidth: 560, marginBottom: 0 }}>{sub}</p>}
+      </div>
+      <div className="dp-a" style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ─── PART 1 ───────────────────────────────────────────────────────────────────
+function S01_Intro() {
+  return (
+    <Slide eyebrow="Part 1 · Baseline" title="Modal Distribution"
+      sub={`Nine central districts · ${fmt(total_residents)} residents · ${fmt(WORKERS)} daily workers · ${fmt(visitors)} visitors · ${fmt(D_total)} trips/day (MiD 2017)`}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, alignContent: 'start' }}>
+        <KCard label="Residents"       value={fmt(total_residents)} sub="9 districts · WOKS 2023" color="#2980B9" />
+        <KCard label="Workers in zone" value={fmt(WORKERS)}         sub="WOKS Arbeitsmarkt 2025"  color="#8E44AD" />
+        <KCard label="Daily visitors"  value={fmt(visitors)}        sub="MiD 2017 estimate"       color="#2D6A4F" />
+        <KCard label="Total trips/day" value={fmt(D_total)}         sub="MiD 2017 formula"        color="#E63946" />
+      </div>
+    </Slide>
+  )
+}
+
+function S02_Demand() {
+  return (
+    <Slide eyebrow="Part 1 · Baseline" title="Transport Demand Formula"
+      sub="D_total = residents × 3.2 + workers × 2.1 + visitors × 1.5  (MiD 2017 trip-generation rates)">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {[
+          { label: 'Residents', val: total_residents, factor: `× ${T_RESIDENT}`, result: total_residents * T_RESIDENT, color: '#2980B9' },
+          { label: 'Workers',   val: WORKERS,         factor: `× ${T_WORKER}`,   result: WORKERS * T_WORKER,          color: '#8E44AD' },
+          { label: 'Visitors',  val: visitors,        factor: `× ${T_VISITOR}`,  result: visitors * T_VISITOR,        color: '#2D6A4F' },
+        ].map(({ label, val, factor, result, color }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px', background: C.bg, borderRadius: 8, border: `1px solid ${C.border}` }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+            <span style={{ fontFamily: SANS, fontSize: 14, color: C.text2, width: 80 }}>{label}</span>
+            <span style={{ fontFamily: SANS, fontSize: 14, color: C.text3, fontVariantNumeric: 'tabular-nums', width: 70 }}>{fmt(val)}</span>
+            <span style={{ fontFamily: SANS, fontSize: 14, color: C.text3, width: 44 }}>{factor}</span>
+            <span style={{ fontFamily: SERIF, fontSize: 18, color, fontVariantNumeric: 'tabular-nums', marginLeft: 'auto' }}>= {fmt(result)}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', background: C.text1, borderRadius: 8, marginTop: 4 }}>
+          <span style={{ fontFamily: SERIF, fontSize: 15, color: '#fff' }}>D_total</span>
+          <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: '#E63946', fontVariantNumeric: 'tabular-nums' }}>{fmt(D_total)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', background: C.card, border: `1px dashed ${C.border}`, borderRadius: 8 }}>
+          <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>D_internal (65% intra-zone)</span>
+          <span style={{ fontFamily: SERIF, fontSize: 16, color: C.text1, fontVariantNumeric: 'tabular-nums' }}>{fmt(D_internal)}</span>
+        </div>
+      </div>
+    </Slide>
+  )
+}
+
+function S03_ModalDistrict() {
+  return (
+    <Slide eyebrow="Part 1 · Baseline" title="Modal Share & District Population"
+      sub="Current modal split (MiD 2017 + KBA 2023) alongside resident distribution across nine districts (WOKS 2023)">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 36, height: '100%', alignItems: 'start' }}>
+        <div>
+          <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Modal share · MiD 2017</div>
+          <ModalShareChart />
+        </div>
+        <div>
+          <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Population by district · WOKS 2023</div>
+          <DistrictChart />
+        </div>
+      </div>
+    </Slide>
+  )
+}
+
+function S04_Hourly() {
+  return (
+    <Slide eyebrow="Part 1 · Baseline" title="Hourly Trip Distribution"
+      sub={`Estimated weekday pattern (MiD 2017). Peak hour 8–9 h: ${fmt(peak_hour_trips)} trips. Hover bars for values.`}>
+      <div style={{ maxWidth: 680 }}>
+        <HourlyChart />
+      </div>
+    </Slide>
+  )
+}
+
+function S05_BaselineTable() {
+  return (
+    <Slide eyebrow="Part 1 · Baseline" title="Baseline Results"
+      sub="All key metrics derived from open statistical data sources">
+      <BaselineTable />
+    </Slide>
+  )
+}
+
+// ─── PART 2 ───────────────────────────────────────────────────────────────────
+function S06_FleetIntro() {
+  return (
+    <Slide eyebrow="Part 2 · Post-Car Fleet Sizing" title="Post-Car Fleet — Overview"
+      sub={`Flow decomposition filters out ${(WALKING_SHARE_INTERNAL * 100).toFixed(0)}% of internal trips as walkable, yielding a net transport demand of ${fmt(D_transport)} trips/day.`}>
+      <FleetSummaryGrid />
+    </Slide>
+  )
+}
+
+function S07_Flow() {
+  return (
+    <Slide eyebrow="Part 2 · Post-Car Fleet Sizing" title="Trip Flow Decomposition"
+      sub="D_total → inbound (cross-boundary workers & visitors) + internal transport + walking (filtered out)">
+      <div style={{ maxWidth: 680 }}>
+        <FlowChart />
+      </div>
+    </Slide>
+  )
+}
+
+function S08_ModeCards() {
+  return (
+    <Slide eyebrow="Part 2 · Post-Car Fleet Sizing" title="Fleet by Mode"
+      sub="On-street peak · total fleet with reserve · daily trips per mode">
+      <ModeCards />
+    </Slide>
+  )
+}
+
+function S09_OnStreet() {
+  return (
+    <Slide eyebrow="Part 2 · Post-Car Fleet Sizing" title="On-street Peak vs Total Fleet"
+      sub={`On-street = ⌈(peak trips / capacity) × trip duration⌉ · Total fleet includes reserve (1.15–1.35×) · Total: ${fmt(total_fleet)} vehicles`}>
+      <div style={{ maxWidth: 640 }}>
+        <OnStreetChart />
+      </div>
+    </Slide>
+  )
+}
+
+function S10_Replacement() {
+  return (
+    <Slide eyebrow="Part 2 · Post-Car Fleet Sizing" title="Fleet Replacement"
+      sub={`${fmt(CARS_REPLACED)} private cars/day replaced by a shared fleet of ${fmt(total_fleet)} vehicles — ratio 1 : ${replacement_ratio}`}>
+      <ReplacementChart />
+    </Slide>
+  )
+}
+
+function S11_DotMatrix() {
+  return (
+    <Slide eyebrow="Part 2 · Post-Car Fleet Sizing" title="Dot Matrix — Visual Scale"
+      sub={`Each dot = 10 vehicles. ${fmt(CARS_REPLACED)} private cars → ${fmt(total_fleet)} shared vehicles.`}>
+      <DotMatrix />
+    </Slide>
+  )
+}
+
+function S12_Charging() {
+  return (
+    <Slide eyebrow="Part 2 · Post-Car Fleet Sizing" title="Charging Points"
+      sub={`30% of each mode simultaneously charging (e-bike: 50%). Total: ${fmt(total_charging)} charging points across the network.`}>
+      <div style={{ maxWidth: 640 }}>
+        <ChargingChart />
+      </div>
+    </Slide>
+  )
+}
+
+function S13_FleetTable() {
+  return (
+    <Slide eyebrow="Part 2 · Post-Car Fleet Sizing" title="Fleet Results Table"
+      sub="Full breakdown by mode: daily trips · peak hour · on-street count · total fleet · charging points">
+      <FleetTable />
+    </Slide>
+  )
+}
+
+// ─── PART 3 ───────────────────────────────────────────────────────────────────
+function S14_HubIntro() {
+  return (
+    <Slide eyebrow="Part 3 · Hub Network" title="Hub Count & Distribution"
+      sub={`${hub_l_count} large interchange hubs · ${hub_m_count} district hubs · ${hub_s_count} micro-hubs — walkable access within 200 m across the entire ${ZONE_AREA_KM2} km² zone`}>
+      <HubSummaryGrid />
+    </Slide>
+  )
+}
+
+function S15_HubHeatmap() {
+  return (
+    <Slide eyebrow="Part 3 · Hub Network" title="Fleet per Hub — Heatmap"
+      sub="Units assigned to a single hub of each tier, including 20% operational reserve">
+      <HubHeatmap />
+    </Slide>
+  )
+}
+
+function S16_HubBars() {
+  return (
+    <Slide eyebrow="Part 3 · Hub Network" title="Total Fleet by Hub Tier"
+      sub="All vehicles assigned to each tier, stacked by mode — shows how the fleet concentrates">
+      <HubBars />
+    </Slide>
+  )
+}
+
+function S17_HubCards() {
+  return (
+    <Slide eyebrow="Part 3 · Hub Network" title="Hub Profile Cards"
+      sub="Vehicle mix, charging points and footprint per single hub of each tier">
+      <HubCards />
+    </Slide>
+  )
+}
+
+function S18_HubInfra() {
+  return (
+    <Slide eyebrow="Part 3 · Hub Network" title="Infrastructure Table"
+      sub="Tier total · per-hub allocation · charging points · footprint — complete breakdown">
+      <HubInfraTable />
+    </Slide>
+  )
+}
+
+// ─── PART 4 ───────────────────────────────────────────────────────────────────
+function S19_AreaIntro() {
+  return (
+    <Slide eyebrow="Part 4 · Hub Area" title="S_hub = S_fleet + S_circ + S_charging + S_program"
+      sub={`All ${hub_l_count + hub_m_count + hub_s_count} hubs combined: ${fmt(area_total_all_hubs)} m² · ${area_pct_of_zone}% of zone · ${(area_total_all_hubs / 10000).toFixed(2)} ha — comparable to a single urban block`}>
+      <HubAreaSummaryGrid />
+    </Slide>
+  )
+}
+
+function S20_AreaBars() {
+  return (
+    <Slide eyebrow="Part 4 · Hub Area" title="Area Breakdown per Hub Tier"
+      sub="Fleet parking · circulation · charging stations · program/shelter — stacked horizontal bar per tier">
+      <HubAreaBars />
+    </Slide>
+  )
+}
+
+function S21_AreaDonut() {
+  return (
+    <Slide eyebrow="Part 4 · Hub Area" title="Fleet Parking Area by Mode"
+      sub="How S_fleet is distributed across vehicle types within each hub tier — ring charts">
+      <HubAreaFleetDonut />
+    </Slide>
+  )
+}
+
+function S22_AreaTable() {
+  return (
+    <Slide eyebrow="Part 4 · Hub Area" title="Hub Area Table"
+      sub="Full breakdown · circulation factors · per-hub and combined footprint for all tiers">
+      <HubAreaTable />
+    </Slide>
+  )
+}
+
+// ─── METHODOLOGY ─────────────────────────────────────────────────────────────
+function S23_Methods() {
+  const boxes = [
+    { label: 'Transport Demand (P1)', formula: 'residents × 3.2 + workers × 2.1 + visitors × 1.5', result: `D_total = ${fmt(D_total)}`, note: 'MiD 2017 · WOKS 2023/2025 · KBA 2023' },
+    { label: 'Fleet Sizing (P2)',     formula: '⌈(peak_trips ÷ capacity) × trip_h⌉ × peak_factor', result: `Total fleet = ${fmt(total_fleet)}`, note: 'Nextbike · UITP benchmarks · MOIA Hamburg' },
+    { label: 'Hub Counts (P3)',       formula: '⌈(zone_m² ÷ πr²) × 1.35⌉ per tier',               result: `${hub_s_count} S · ${hub_m_count} M · ${hub_l_count} L hubs`, note: 'r = 200 m (S) · 400 m (M) · max 6 (L)' },
+    { label: 'Hub Area (P4)',         formula: 'S_fleet + S_circ + S_charging + S_program',         result: `${fmt(area_total_all_hubs)} m² total`, note: 'Standard depot footprint values per vehicle type' },
+  ]
+  return (
+    <Slide eyebrow="Appendix" title="How the Numbers Were Made"
+      sub="Deterministic calculations from open statistical data — no simulation or model calibration required">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        {boxes.map(({ label, formula, result, note }) => (
+          <div key={label} style={{ background: '#F7F7F6', borderRadius: 10, padding: '20px 22px', border: `1px solid ${C.border}` }}>
+            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>{label}</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5, marginBottom: 10 }}>{formula}</div>
+            <div style={{ fontFamily: SERIF, fontSize: 18, color: C.text1, marginBottom: 6 }}>{result}</div>
+            <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{note}</div>
+          </div>
+        ))}
+      </div>
+    </Slide>
+  )
+}
+
+// ─── SLIDE REGISTRY ──────────────────────────────────────────────────────────
+const ALL_SLIDES = [
+  S01_Intro, S02_Demand, S03_ModalDistrict, S04_Hourly, S05_BaselineTable,
+  S06_FleetIntro, S07_Flow, S08_ModeCards, S09_OnStreet, S10_Replacement,
+  S11_DotMatrix, S12_Charging, S13_FleetTable,
+  S14_HubIntro, S15_HubHeatmap, S16_HubBars, S17_HubCards, S18_HubInfra,
+  S19_AreaIntro, S20_AreaBars, S21_AreaDonut, S22_AreaTable,
+  S23_Methods,
+]
+
+const PART_NAV = [
+  { label: 'Modal Distribution', eyebrow: 'Part 1', first: 0,  last: 4  },
+  { label: 'Post-Car Fleet',     eyebrow: 'Part 2', first: 5,  last: 12 },
+  { label: 'Hub Network',        eyebrow: 'Part 3', first: 13, last: 17 },
+  { label: 'Hub Area',           eyebrow: 'Part 4', first: 18, last: 21 },
+  { label: 'Methodology',        eyebrow: 'Appendix', first: 22, last: 22 },
 ]
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function DataPanel() {
-  const [activeNav, setActiveNav] = useState('#overview')
-  const scrollRef = useRef(null)
-  const [progress, setProgress] = useState(0)
+  const [slide, setSlide] = useState(0)
+  const outerRef = useRef(null)
+  const slideRef = useRef(null)
+  const goRef    = useRef(null)
+  const busy     = useRef(false)
 
-  useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const onScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = el
-      setProgress(scrollHeight > clientHeight ? scrollTop / (scrollHeight - clientHeight) : 0)
-    }
-    el.addEventListener('scroll', onScroll, { passive: true })
-    return () => el.removeEventListener('scroll', onScroll)
-  }, [])
+  const go = React.useCallback((delta) => {
+    if (busy.current) return
+    const next = Math.max(0, Math.min(ALL_SLIDES.length - 1, slide + delta))
+    if (next === slide) return
+    busy.current = true
+    setSlide(next)
+    setTimeout(() => { busy.current = false }, 480)
+  }, [slide])
 
+  useEffect(() => { goRef.current = go }, [go])
+
+  // Trigger entrance animations after slide mounts
   useEffect(() => {
-    const el = scrollRef.current
+    const el = slideRef.current
     if (!el) return
     const timer = setTimeout(() => {
       const obs = new IntersectionObserver(
         entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('dp-v') }),
-        { threshold: 0.10, rootMargin: '0px 0px -40px 0px', root: el }
+        { threshold: 0.02, root: el }
       )
-      el.querySelectorAll('.dp-a').forEach(node => obs.observe(node))
+      el.querySelectorAll('.dp-a').forEach(n => obs.observe(n))
       return () => obs.disconnect()
-    }, 80)
+    }, 60)
     return () => clearTimeout(timer)
+  }, [slide])
+
+  // Each wheel tick = next/prev slide (slides don't scroll internally)
+  useEffect(() => {
+    const outer = outerRef.current
+    if (!outer) return
+    const handler = (e) => {
+      e.preventDefault()
+      goRef.current(e.deltaY > 0 ? 1 : -1)
+    }
+    outer.addEventListener('wheel', handler, { passive: false })
+    return () => outer.removeEventListener('wheel', handler)
   }, [])
 
-  return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', background: C.bg, zIndex: 10, overflow: 'hidden' }}>
-      <style>{CSS_ANIM}</style>
+  const activePartIdx = PART_NAV.findIndex(p => slide >= p.first && slide <= p.last)
+  const SlideComp = ALL_SLIDES[slide]
 
-      {/* Left nav */}
-      <nav style={{ width: 200, flexShrink: 0, overflowY: 'auto', background: C.bg, borderRight: `1px solid ${C.border}`, padding: '32px 14px 32px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '0 10px 16px' }}>
-          Data Analysis
+  return (
+    <div ref={outerRef} style={{ position: 'absolute', inset: 0, display: 'flex', background: C.bg, zIndex: 10, overflow: 'hidden' }}>
+      <style>{CSS_ANIM + CSS_SLIDES}</style>
+
+      {/* ── Left nav ── */}
+      <nav style={{ width: 168, flexShrink: 0, borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', padding: '28px 12px 22px' }}>
+        <div style={{ fontFamily: SANS, fontSize: 9, color: C.text3, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 18, paddingLeft: 8 }}>
+          Capacity Analysis
         </div>
-        {NAV.map(({ href, label }) => {
-          const isSect = label.startsWith('—')
-          if (isSect) return (
-            <div key={href} style={{ padding: '12px 10px 5px', fontFamily: SANS, fontSize: 10, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-              {label.replace('— ', '')}
-            </div>
-          )
-          const active = activeNav === href
-          return (
-            <a key={href} href={href} onClick={() => setActiveNav(href)} style={{
-              display: 'block', padding: '6px 10px',
-              fontFamily: SANS, fontSize: 13,
-              fontWeight: active ? 600 : 400,
-              color: active ? C.text1 : C.text3,
-              borderLeft: `2px solid ${active ? C.text1 : 'transparent'}`,
-              textDecoration: 'none', transition: 'all 0.15s ease',
-            }}>
-              {label}
-            </a>
-          )
-        })}
-        <div style={{ marginTop: 'auto', padding: '20px 10px 0', borderTop: `1px solid ${C.border}` }}>
-          <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, lineHeight: 1.8 }}>
-            <div style={{ fontWeight: 600, marginBottom: 4, color: C.text2 }}>Sources</div>
-            {['MiD 2017', 'WOKS 2023/2025', 'KBA 2023', 'UITP benchmarks', 'MOIA Hamburg'].map(s => <div key={s}>{s}</div>)}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}>
+          {PART_NAV.map((p, i) => {
+            const active = i === activePartIdx
+            return (
+              <button key={i} onClick={() => { busy.current = false; setSlide(p.first) }}
+                style={{ textAlign: 'left', background: 'none', border: 'none', padding: '8px 8px 8px 10px', borderLeft: `2px solid ${active ? C.text1 : 'transparent'}`, cursor: 'pointer', transition: 'all 0.15s ease' }}>
+                <div style={{ fontFamily: SANS, fontSize: 9, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 2 }}>{p.eyebrow}</div>
+                <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: active ? 600 : 400, color: active ? C.text1 : C.text3, transition: 'color 0.15s ease' }}>{p.label}</div>
+                {active && (
+                  <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
+                    {Array.from({ length: p.last - p.first + 1 }, (_, j) => (
+                      <div key={j}
+                        onClick={(e) => { e.stopPropagation(); busy.current = false; setSlide(p.first + j) }}
+                        style={{ width: 5, height: 5, borderRadius: '50%', background: slide === p.first + j ? C.text1 : C.border, flexShrink: 0, cursor: 'pointer', transition: 'background 0.2s' }} />
+                    ))}
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Progress bar + counter */}
+        <div style={{ paddingTop: 14, borderTop: `1px solid ${C.border}`, paddingLeft: 8 }}>
+          <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
+            {ALL_SLIDES.map((_, i) => (
+              <div key={i} style={{ flex: 1, height: 2, borderRadius: 1, background: i <= slide ? C.text1 : C.border, transition: 'background 0.25s ease' }} />
+            ))}
+          </div>
+          <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3 }}>{slide + 1} / {ALL_SLIDES.length}</div>
+        </div>
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}`, paddingLeft: 8 }}>
+          <div style={{ fontFamily: SANS, fontSize: 9, color: C.text3, lineHeight: 1.8 }}>
+            Scroll to navigate
           </div>
         </div>
       </nav>
 
-      {/* Main scroll area */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
-        {/* Progress bar */}
-        <div style={{ position: 'sticky', top: 0, height: 3, background: C.border, zIndex: 50 }}>
-          <div style={{ height: '100%', background: C.text1, width: `${progress * 100}%`, transition: 'width 80ms linear' }} />
-        </div>
-
-        <div style={{ padding: '52px 56px 100px' }}>
-
-          {/* ── PART 1 ── */}
-          <div id="overview" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Part 1 · Baseline
-            </div>
-            <h1 style={{ fontFamily: SERIF, fontSize: 64, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>
-              Modal Distribution
-            </h1>
-            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
-              Nine central districts of Wolfsburg, accounting for {fmt(total_residents)} residents,
-              {' '}{fmt(WORKERS)} daily workers, and an estimated {fmt(visitors)} visitors — totalling{' '}
-              {fmt(D_total)} trips per day under MiD 2017 modal assumptions.
-            </p>
-          </div>
-
-          <div className="dp-a" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 32, marginBottom: 4 }}>
-            <KCard label="Residents"        value={fmt(total_residents)} sub="9 districts · WOKS 2023"   color="#2980B9" />
-            <KCard label="Workers in zone"  value={fmt(WORKERS)}         sub="WOKS Arbeitsmarkt 2025"    color="#8E44AD" />
-            <KCard label="Daily visitors"   value={fmt(visitors)}        sub="MiD 2017 estimate"         color="#2D6A4F" />
-            <KCard label="Total trips/day"  value={fmt(D_total)}         sub="MiD 2017 formula"          color="#E63946" />
-          </div>
-
-          <Sect id="demand" eyebrow="Step-by-step demand calculation · MiD 2017" title="Transport Demand Formula">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[
-                { label: 'Residents', val: total_residents, factor: `× ${T_RESIDENT}`, result: total_residents * T_RESIDENT, color: '#2980B9' },
-                { label: 'Workers',   val: WORKERS,         factor: `× ${T_WORKER}`,   result: WORKERS * T_WORKER,          color: '#8E44AD' },
-                { label: 'Visitors',  val: visitors,        factor: `× ${T_VISITOR}`,  result: visitors * T_VISITOR,        color: '#2D6A4F' },
-              ].map(({ label, val, factor, result, color }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: C.bg, borderRadius: 8, border: `1px solid ${C.border}` }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                  <span style={{ fontFamily: SANS, fontSize: 13, color: C.text2, width: 72 }}>{label}</span>
-                  <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3, fontVariantNumeric: 'tabular-nums', width: 60 }}>{fmt(val)}</span>
-                  <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3, width: 40 }}>{factor}</span>
-                  <span style={{ fontFamily: SERIF, fontSize: 16, color, fontVariantNumeric: 'tabular-nums', marginLeft: 'auto' }}>= {fmt(result)}</span>
-                </div>
-              ))}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: C.text1, borderRadius: 8, marginTop: 4 }}>
-                <span style={{ fontFamily: SERIF, fontSize: 15, color: '#fff' }}>D_total</span>
-                <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: '#E63946', fontVariantNumeric: 'tabular-nums' }}>{fmt(D_total)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: C.card, border: `1px dashed ${C.border}`, borderRadius: 8 }}>
-                <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>D_internal (65% intra-zone)</span>
-                <span style={{ fontFamily: SERIF, fontSize: 16, color: C.text1, fontVariantNumeric: 'tabular-nums' }}>{fmt(D_internal)}</span>
-              </div>
-            </div>
-          </Sect>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 0 }}>
-            <Sect id="modal-split" eyebrow="Share of daily trips · MiD 2017 + KBA 2023" title="Modal Share">
-              <ModalShareChart />
-            </Sect>
-            <Sect id="districts" eyebrow="Residents per district · WOKS 2023" title="District Population">
-              <DistrictChart />
-            </Sect>
-          </div>
-
-          <Sect id="hourly" eyebrow="Estimated weekday pattern · MiD 2017 · hover bars for values" title="Hourly Trip Distribution">
-            <HourlyChart />
-          </Sect>
-
-          <Sect id="baseline-tbl" eyebrow="All metrics from open statistical data" title="Baseline Results">
-            <BaselineTable />
-          </Sect>
-
-          {/* ── PART 2 ── */}
-          <Rule label="Part 2 · Post-Car Fleet Sizing" />
-
-          <div id="fleet" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>Part 2 · Fleet Sizing</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 56, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>Post-Car Fleet</h2>
-            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
-              If private cars are replaced by a shared fleet, peak-hour demand determines
-              how many vehicles must be on the street simultaneously. A flow decomposition
-              first separates inbound from internal trips, then filters out {(WALKING_SHARE_INTERNAL * 100).toFixed(0)}% as walkable,
-              yielding a net transport demand of {fmt(D_transport)} trips/day.
-            </p>
-          </div>
-
-          <div className="dp-a" style={{ marginTop: 28, marginBottom: 4 }}>
-            <FleetSummaryGrid />
-          </div>
-
-          <Sect id="flow" eyebrow="D_total → inbound / internal transport / walking" title="Trip Flow Decomposition">
-            <FlowChart />
-          </Sect>
-
-          <Sect id="fleet-cards" eyebrow="On-street peak · total with reserve · trips/day" title="Fleet by Mode">
-            <ModeCards />
-          </Sect>
-
-          <Sect id="fleet-chart" eyebrow="On-street = (peak trips / capacity) × duration" title="On-street Peak vs Total Fleet">
-            <OnStreetChart />
-          </Sect>
-
-          <Sect id="replacement" eyebrow="49,648 private cars/day replaced by shared fleet" title="Fleet Replacement">
-            <ReplacementChart />
-          </Sect>
-
-          <Sect id="dot-matrix" eyebrow="Visual scale comparison — each dot = 10 vehicles" title="Dot Matrix">
-            <DotMatrix />
-          </Sect>
-
-          <Sect id="charging" eyebrow="30% of fleet simultaneously charging · e-bike 50%" title="Charging Points">
-            <ChargingChart />
-          </Sect>
-
-          <Sect id="fleet-tbl" eyebrow="Full breakdown by mode" title="Fleet Results Table">
-            <FleetTable />
-          </Sect>
-
-          {/* ── PART 3 ── */}
-          <Rule label="Part 3 · Hub Network" />
-
-          <div id="hubs" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>Part 3 · Hub Network</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 56, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>Hub Count &amp; Distribution</h2>
-            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
-              Three hub tiers serve different functions: {hub_l_count} large interchange hubs anchor
-              the zone at existing parking structures, {hub_m_count} district hubs provide mid-scale coverage,
-              and {hub_s_count} micro-hubs ensure walkable access within 200 m across the entire {ZONE_AREA_KM2} km² zone.
-            </p>
-          </div>
-
-          <div id="hub-summary" className="dp-a" style={{ marginTop: 28, marginBottom: 4 }}>
-            <HubSummaryGrid />
-          </div>
-
-          <Sect id="hub-heatmap" eyebrow="Units on a single hub · incl. 20% reserve" title="Fleet per Hub — Heatmap">
-            <HubHeatmap />
-          </Sect>
-
-          <Sect id="hub-bars" eyebrow="All vehicles assigned to each tier · stacked by mode" title="Total Fleet by Hub Tier">
-            <HubBars />
-          </Sect>
-
-          <Sect id="hub-cards" eyebrow="Vehicle mix, charging and footprint per single hub" title="Hub Profile Cards">
-            <HubCards />
-          </Sect>
-
-          <Sect id="hub-infra" eyebrow="Tier total · per-hub allocation · charging · footprint" title="Infrastructure Table">
-            <HubInfraTable />
-          </Sect>
-
-          {/* ── PART 4 ── */}
-          <Rule label="Part 4 · Hub Area Calculation" />
-
-          <div id="hub-area" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>Part 4 · Hub Area</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 56, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>
-              S_hub = S_fleet + S_circ + S_charging + S_program
-            </h2>
-            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
-              Each hub tier has a distinct spatial footprint determined by its vehicle mix,
-              circulation requirements, and program elements. Combined, all {hub_l_count + hub_m_count + hub_s_count} hubs
-              require {fmt(area_total_all_hubs)} m² — just {area_pct_of_zone}% of the zone,
-              or {(area_total_all_hubs / 10000).toFixed(2)} hectares.
-            </p>
-          </div>
-
-          <div id="hub-area-sum" className="dp-a" style={{ marginTop: 28, marginBottom: 4 }}>
-            <HubAreaSummaryGrid />
-          </div>
-
-          <Sect id="hub-area-bar" eyebrow="Fleet · circulation · charging · program per hub" title="Area Breakdown">
-            <HubAreaBars />
-          </Sect>
-
-          <Sect id="hub-area-pie" eyebrow="How S_fleet is distributed across vehicle types" title="Fleet Parking Area by Mode">
-            <HubAreaFleetDonut />
-          </Sect>
-
-          <Sect id="hub-area-tbl" eyebrow="Full breakdown · circulation factors · per-hub and total" title="Hub Area Table">
-            <HubAreaTable />
-          </Sect>
-
-          {/* ── METHODOLOGY ── */}
-          <Rule label="Methodology" />
-
-          <div id="methodology" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>Appendix · Methods</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 56, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.5px', lineHeight: 1.05 }}>How the Numbers Were Made</h2>
-            <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 20, lineHeight: 1.75, maxWidth: 520, marginBottom: 0 }}>
-              Each section builds on publicly available data and standard urban transport benchmarks.
-              The calculations are deterministic — no simulation or model calibration is required.
-            </p>
-          </div>
-
-          <Sect id="method-p1" eyebrow="Part 1 · Baseline" title="Transport Demand">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-              <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
-                  Population figures come from the <strong style={{ color: C.text1 }}>WOKS 2023</strong> statistical report for the nine central Wolfsburg districts.
-                  Worker count ({fmt(WORKERS)}) is from <strong style={{ color: C.text1 }}>WOKS Arbeitsmarktbericht 2025</strong>.
-                  Visitor volume is estimated as 20% of the combined residents and workers, following the MiD 2017 trip-generation pattern for mid-size German cities.
-                </p>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
-                  Trip generation rates are national averages from <strong style={{ color: C.text1 }}>MiD 2017 (BMVI)</strong>:
-                  residents make 3.2 trips/day, workers 2.1, visitors 1.5.
-                  Modal split uses the MiD 2017 baseline with the private-car share raised
-                  by +4 percentage points to 62%, reflecting Wolfsburg's above-average car ownership
-                  from <strong style={{ color: C.text1 }}>KBA 2023</strong>.
-                </p>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {[
-                  { label: 'D_total formula', formula: `residents × 3.2 + workers × 2.1 + visitors × 1.5`, result: `= ${fmt(D_total)} trips/day` },
-                  { label: 'Visitors estimate', formula: `(${fmt(total_residents)} + ${fmt(WORKERS)}) × 20%`, result: `= ${fmt(visitors)} visitors/day` },
-                  { label: 'Peak hour (8–9 h)', formula: `D_total × 8.5% MiD profile`, result: `= ${fmt(peak_hour_trips)} trips/h` },
-                  { label: 'Private cars/day', formula: `D_total × 62% ÷ 1.3 occupancy`, result: `= ${fmt(car_vehicles_per_day)} vehicles` },
-                ].map(({ label, formula, result }) => (
-                  <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
-                    <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
-                    <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5 }}>{formula}</div>
-                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Sect>
-
-          <Sect id="method-p2" eyebrow="Part 2 · Fleet Sizing" title="From Trips to Vehicles">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-              <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
-                  D_total is first split into <strong style={{ color: C.text1 }}>inbound</strong> and <strong style={{ color: C.text1 }}>internal</strong> flows.
-                  Inbound covers workers commuting from outside the zone (50% of worker trips)
-                  and visitors arriving from outside (80% of visitor trips).
-                  Internal flows include all resident trips plus the remaining worker and visitor movements within the zone.
-                  Of internal trips, 60% are assumed walkable and filtered out — consistent with
-                  MiD 2017 short-distance walking rates for dense urban cores.
-                </p>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
-                  Each transport mode is assigned a fixed share of the remaining demand via two allocation matrices:
-                  one for inbound flows (dominated by autonomous bus and shuttle),
-                  one for internal flows (dominated by e-bike and autonomous pod).
-                  Fleet size follows a <strong style={{ color: C.text1 }}>peak-hour utilisation formula</strong>: the number of vehicles
-                  simultaneously on the street at peak hour equals peak trips divided by vehicle capacity, multiplied by average trip duration.
-                  A mode-specific reserve factor (1.15–1.35) converts on-street count to total fleet.
-                </p>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {[
-                  { label: 'Net transport demand', formula: `inbound trips + internal transport\n(after walking filter)`, result: `D_transport = ${fmt(D_transport)}` },
-                  { label: 'Walking filtered out', formula: `internal trips × 60% walkable`, result: `= ${fmt(walking_filtered)} trips/day` },
-                  { label: 'On-street fleet (per mode)', formula: `⌈(peak_trips ÷ capacity) × trip_h⌉`, result: `e.g. e-bike: ${fleet.e_bike.on_street} units` },
-                  { label: 'Total fleet (per mode)', formula: `on_street × peak_factor`, result: `total: ${fmt(total_fleet)} vehicles` },
-                ].map(({ label, formula, result }) => (
-                  <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
-                    <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
-                    <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
-                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
-                  Charging point requirements are benchmarked from operator data:
-                  50% of e-bikes charge simultaneously (Nextbike operational standard),
-                  30% for all other modes (UITP autonomous vehicle guidelines, MOIA Hamburg analogue,
-                  Share Now fleet operations).
-                  The baseline car count ({fmt(CARS_REPLACED)} private vehicles/day) is derived from KBA 2023
-                  car registration data for Wolfsburg, divided by average car utilisation.
-                </p>
-              </div>
-            </div>
-          </Sect>
-
-          <Sect id="method-p3" eyebrow="Part 3 · Hub Network" title="Hub Counts from Geometry">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-              <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
-                  Hub counts are derived from <strong style={{ color: C.text1 }}>coverage geometry</strong>, not from fleet demand alone.
-                  The starting point is the 4 km² zone area and the maximum acceptable walking distance to a hub.
-                  A 1.35× overlap factor accounts for irregular street grids and dead zones between circles.
-                </p>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
-                  <strong style={{ color: C.text1 }}>Hub L</strong> count is constrained by existing infrastructure —
-                  there are at most 6 large parking structures in the zone that can be repurposed as interchange hubs.
-                  The fleet-driven estimate (⌈(bus + car-share fleet) ÷ 8⌉) is capped at this maximum.
-                  <strong style={{ color: C.text1 }}> Hub M</strong> is the maximum of the geometric estimate (r = 400 m coverage) and the
-                  shuttle-fleet requirement (one Hub M per 3 shuttles).
-                  <strong style={{ color: C.text1 }}> Hub S</strong> follows purely from geometry: enough micro-hubs to ensure
-                  no resident is more than 200 m from a docking point.
-                </p>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                {[
-                  { tier: 'Hub S', color: HUB_COLORS_UI.hub_s, formula: `⌈(4,000,000 m² ÷ π×200²) × 1.35⌉`, result: `= ${hub_s_count} hubs`, note: '200 m walking radius' },
-                  { tier: 'Hub M', color: HUB_COLORS_UI.hub_m, formula: `max(geometry r=400m,\nshuttle_fleet ÷ 3)`, result: `= ${hub_m_count} hubs`, note: '400 m, shuttle coverage' },
-                  { tier: 'Hub L', color: HUB_COLORS_UI.hub_l, formula: `min(⌈(bus+car-share) ÷ 8⌉, 6)`, result: `= ${hub_l_count} hubs`, note: 'capped — existing garages' },
-                ].map(({ tier, color, formula, result, note }) => (
-                  <div key={tier} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}`, borderTop: `3px solid ${color}` }}>
-                    <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color, marginBottom: 8 }}>{tier}</div>
-                    <div style={{ fontFamily: 'monospace', fontSize: 12, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
-                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
-                    <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 3 }}>{note}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
-                  Fleet is assigned to tiers via a fixed distribution matrix — for example, all buses and car-share EVs
-                  concentrate at Hub L, while 70% of e-bikes are distributed to Hub S micro-hubs.
-                  Per-hub vehicle count adds a 20% operational reserve on top of the tier allocation,
-                  rounding up to ensure no hub is under-provisioned at peak demand.
-                </p>
-              </div>
-            </div>
-          </Sect>
-
-          <Sect id="method-p4" eyebrow="Part 4 · Hub Area" title="Spatial Footprint Formula">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-              <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
-                  Hub area is the sum of four components. Footprint values per vehicle type are drawn from
-                  standard parking and depot design references: 2.5 m² for an e-bike rack,
-                  10 m² for a compact pod, 35 m² for a minibus, 60 m² for a full-size bus, 15 m² for a car.
-                </p>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {[
-                  { label: 'S_fleet — parking footprint', formula: `Σ (units_per_hub × m²/vehicle)`, note: 'standard depot footprint values per type' },
-                  { label: 'S_circ — circulation', formula: `S_fleet × (factor − 1)`, note: '×1.6 Hub L · ×1.4 Hub M · ×1.2 Hub S' },
-                  { label: 'S_charging — charging stations', formula: `Σ ⌈units × rate⌉ × station_m²`, note: '0.5 m² e-bike dock · 4 m² EV charger' },
-                  { label: 'S_program — shelter & services', formula: `(S_fleet + S_circ + S_charging) × 10%`, note: 'waiting areas, info points, shelter' },
-                ].map(({ label, formula, note }) => (
-                  <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
-                    <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
-                    <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5 }}>{formula}</div>
-                    <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 5 }}>{note}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ maxWidth: 600 }}>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
-                  The circulation factor captures driveways, turning radii, and pedestrian paths
-                  within the hub perimeter — it is applied as a multiplier to fleet area only,
-                  not to charging or program. Program space covers sheltered waiting zones,
-                  real-time information displays, and minor service areas.
-                </p>
-                <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
-                  Total land use across all {hub_l_count + hub_m_count + hub_s_count} hubs is{' '}
-                  <strong style={{ color: C.text1 }}>{fmt(area_total_all_hubs)} m²</strong> ({(area_total_all_hubs / 10000).toFixed(2)} ha),
-                  equivalent to {area_pct_of_zone}% of the 4 km² project zone —
-                  comparable to a single urban block. The concentration of area in Hub L
-                  ({Math.round(S_hub_area.hub_l * hub_l_count / area_total_all_hubs * 100)}% of total despite only {hub_l_count} sites)
-                  reflects the bus and car-share depot requirements at large interchange nodes.
-                </p>
-              </div>
-            </div>
-          </Sect>
-
-          {/* Sources */}
-          <div className="dp-a" style={{ marginTop: 20, padding: '20px 24px', background: C.card, borderRadius: 8, border: `1px solid ${C.border}` }}>
-            <p style={{ fontFamily: SANS, fontSize: 11, color: C.text3, margin: 0, lineHeight: 1.9 }}>
-              <strong style={{ color: C.text2 }}>Baseline:</strong> MiD 2017 (BMVI) · WOKS Wolfsburg 2023/2025 · KBA 2023<br />
-              <strong style={{ color: C.text2 }}>Fleet:</strong> Nextbike operational data · UITP autonomous shuttle &amp; bus benchmarks · MOIA Hamburg · Share Now / Stadtmobil<br />
-              <strong style={{ color: C.text2 }}>Hub geometry:</strong> Coverage radius 200 m (S) / 400 m (M) · 1.35× overlap factor · max 6 Hub L (existing parking garages)<br />
-              <strong style={{ color: C.text2 }}>Hub area:</strong> Footprint/unit + circulation factor + charging stations + 10% program<br />
-              <strong style={{ color: C.text2 }}>Scripts:</strong>{' '}
-              {['modal_distribution.py', 'fleet_calculation.py', 'hub_calculation.py', 'hub_area.py'].map(s => (
-                <code key={s} style={{ background: '#F0EFED', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace', fontSize: 10, marginRight: 6 }}>{s}</code>
-              ))}
-            </p>
-          </div>
-
-        </div>
+      {/* ── Full-screen slide ── */}
+      <div key={slide} ref={slideRef} className="dp-slide"
+        style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'stretch' }}>
+        <SlideComp />
       </div>
     </div>
   )
