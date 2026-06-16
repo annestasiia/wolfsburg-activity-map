@@ -1,17 +1,17 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 
-const NAV_W   = 228
+const NAV_W   = Math.max(240, Math.min(320, Math.round(window.innerWidth * 0.25)))
 const SERIF = "'Georgia', 'Times New Roman', serif"
 const SANS  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
 // 'geo' is removed from the main list — it lives inside Hub System submenu
 const SECTIONS = [
-  { id: 'strategy',   label: 'Post-Car Strategy',      num: '01' },
-  { id: 'capacity',   label: 'Capacity Analysis',      num: '02' },
-  { id: 'hub',        label: 'Hub System',             num: '03', hasSubmenu: true },
-  { id: 'urban',      label: 'Urban Design',           num: '04' },
-  { id: 'simulation', label: 'Operational Simulation', num: '05' },
+  { id: 'strategy',   label: 'Post-Car Strategy',      num: '01', desc: 'City-wide mobility framework'    },
+  { id: 'capacity',   label: 'Capacity Analysis',      num: '02', desc: 'Demand · Fleet · Peak hours'     },
+  { id: 'hub',        label: 'Hub System',             num: '03', desc: 'Placement algorithm · Networks',  hasSubmenu: true },
+  { id: 'urban',      label: 'Urban Design',           num: '04', desc: 'Streetscape · Public space'      },
+  { id: 'simulation', label: 'Operational Simulation', num: '05', desc: 'Real-time modelling'             },
 ]
 
 const HUB_SUBMENU = [
@@ -58,27 +58,27 @@ export default function LeftNav() {
           bottom: 0,
           width: 220,
           zIndex: 399,
-          background: 'rgba(255,255,255,0.97)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          borderLeft: '1px solid rgba(0,0,0,0.06)',
-          borderRight: '1px solid rgba(0,0,0,0.06)',
-          boxShadow: '4px 0 24px rgba(0,0,0,0.08)',
+          background: '#FFFFFF',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
+          borderLeft: '1px solid #E8E8E8',
+          borderRight: '1px solid #E8E8E8',
+          boxShadow: 'none',
           display: 'flex',
           flexDirection: 'column',
         }}>
           {/* Submenu header */}
-          <div style={{ padding: '28px 20px 18px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#bbb', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 5 }}>
+          <div style={{ padding: '28px 24px 20px', borderBottom: '1px solid #E8E8E8' }}>
+            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: '#888888', letterSpacing: '0.04em', marginBottom: 6 }}>
               Hub System
             </div>
-            <div style={{ fontFamily: SERIF, fontSize: 15, color: '#111', lineHeight: 1.3 }}>
+            <div style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 400, color: '#111', lineHeight: 1.3 }}>
               Select analysis
             </div>
           </div>
 
           {/* Submenu items */}
-          <div style={{ flex: 1, padding: '12px 0' }}>
+          <div style={{ flex: 1 }}>
             {HUB_SUBMENU.map(({ id, label, desc }) => {
               const isActive = activeSection === id
               const isHov   = hoveredId === `sub-${id}`
@@ -92,31 +92,31 @@ export default function LeftNav() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-start',
-                    gap: 3,
-                    padding: '12px 20px',
+                    gap: 4,
+                    padding: '18px 24px',
                     width: '100%',
-                    background: isActive ? '#111111' : isHov ? 'rgba(0,0,0,0.05)' : 'transparent',
+                    background: isActive ? 'rgba(0,0,0,0.03)' : isHov ? 'rgba(0,0,0,0.02)' : 'transparent',
                     border: 'none',
-                    borderLeft: isActive ? '3px solid #111' : '3px solid transparent',
+                    borderBottom: '1px solid #E8E8E8',
                     cursor: 'pointer',
                     textAlign: 'left',
                   }}
                 >
                   <span style={{
-                    fontFamily: SANS,
-                    fontSize: 13,
+                    fontFamily: SERIF,
+                    fontSize: 17,
                     fontWeight: isActive ? 600 : 400,
-                    color: isActive ? '#ffffff' : '#111111',
-                    letterSpacing: '-0.01em',
+                    color: '#111111',
                     lineHeight: 1.3,
                   }}>
                     {label}
                   </span>
                   <span style={{
                     fontFamily: SANS,
-                    fontSize: 13,
-                    color: isActive ? 'rgba(255,255,255,0.55)' : '#aaa',
-                    letterSpacing: '-0.005em',
+                    fontSize: 11,
+                    fontWeight: 400,
+                    color: '#888888',
+                    lineHeight: 1.4,
                   }}>
                     {desc}
                   </span>
@@ -126,7 +126,7 @@ export default function LeftNav() {
           </div>
 
           {/* Close submenu button */}
-          <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+          <div style={{ padding: '16px 24px', borderTop: '1px solid #E8E8E8' }}>
             <button
               onClick={() => setHubSubmenuOpen(false)}
               style={{
@@ -148,9 +148,9 @@ export default function LeftNav() {
           left: 0,
           top: 0,
           bottom: 0,
-          width: 8,
+          width: 1,
           zIndex: 401,
-          background: 'rgba(0,0,0,0.10)',
+          background: '#E8E8E8',
           cursor: 'pointer',
         }}
           onClick={() => setNavOpen(true)}
@@ -166,19 +166,19 @@ export default function LeftNav() {
               transform: 'translateY(-50%)',
               width: 28,
               padding: '20px 4px',
-              background: 'rgba(255,255,255,0.97)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,0,0,0.10)',
+              background: '#FFFFFF',
+              backdropFilter: 'none',
+              WebkitBackdropFilter: 'none',
+              border: '1px solid #E8E8E8',
               borderLeft: 'none',
-              borderRadius: '0 10px 10px 0',
-              boxShadow: '3px 0 16px rgba(0,0,0,0.10)',
+              borderRadius: '0 4px 4px 0',
+              boxShadow: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#555',
-              fontSize: 14,
+              color: '#888888',
+              fontSize: 13,
               fontWeight: 600,
               zIndex: 402,
             }}
@@ -197,22 +197,22 @@ export default function LeftNav() {
           bottom: 0,
           width: NAV_W,
           zIndex: 400,
-          background: 'rgba(255,255,255,0.97)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          borderRight: '1px solid rgba(0,0,0,0.08)',
-          boxShadow: '4px 0 32px rgba(0,0,0,0.07)',
+          background: '#FFFFFF',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
+          borderRight: '1px solid #E8E8E8',
+          boxShadow: 'none',
           display: 'flex',
           flexDirection: 'column',
         }}>
 
           {/* Header */}
-          <div style={{ padding: '28px 20px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ padding: '32px 24px 24px', borderBottom: '1px solid #E8E8E8', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#bbb', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 5 }}>
+              <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: '#888888', letterSpacing: '0.04em', marginBottom: 6 }}>
                 Research · 2026
               </div>
-              <div style={{ fontFamily: SERIF, fontSize: 16, color: '#111', lineHeight: 1.3, letterSpacing: '-0.01em' }}>
+              <div style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: '#111111', lineHeight: 1.3, letterSpacing: 0 }}>
                 Post-Car<br />Wolfsburg
               </div>
             </div>
@@ -221,8 +221,8 @@ export default function LeftNav() {
               onClick={handleCollapse}
               title="Collapse menu"
               style={{
-                background: 'none', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 4,
-                cursor: 'pointer', padding: '4px 7px', color: '#999', fontSize: 13, letterSpacing: '0.04em',
+                background: 'none', border: '1px solid #E8E8E8', borderRadius: 4,
+                cursor: 'pointer', padding: '4px 7px', color: '#888888', fontSize: 13, letterSpacing: '0.04em',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 marginTop: 2, flexShrink: 0,
               }}
@@ -232,11 +232,10 @@ export default function LeftNav() {
           </div>
 
           {/* Section buttons */}
-          <div style={{ flex: 1, padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 1, overflowY: 'auto' }}>
-            {SECTIONS.map(({ id, label, num, hasSubmenu }) => {
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            {SECTIONS.map(({ id, label, num, desc, hasSubmenu }) => {
               const isActive  = hasSubmenu ? isHubRelated : activeSection === id
               const isHov     = hoveredId === id
-              const isSubmenu = hasSubmenu && hubSubmenuOpen
 
               return (
                 <button
@@ -246,61 +245,39 @@ export default function LeftNav() {
                   onMouseLeave={() => setHoveredId(null)}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 14,
-                    padding: '12px 20px',
-                    background: isActive ? '#111111' : isHov ? 'rgba(0,0,0,0.05)' : 'transparent',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 4,
+                    padding: '18px 24px',
+                    background: isActive ? 'rgba(0,0,0,0.03)' : isHov ? 'rgba(0,0,0,0.02)' : 'transparent',
                     border: 'none',
-                    borderLeft: isActive ? '3px solid #111' : '3px solid transparent',
+                    borderBottom: '1px solid #E8E8E8',
                     cursor: 'pointer',
                     textAlign: 'left',
                     width: '100%',
-                    whiteSpace: 'nowrap',
                   }}
                 >
                   <span style={{
-                    fontFamily: SANS,
-                    fontSize: 10,
-                    color: isActive ? 'rgba(255,255,255,0.45)' : '#ccc',
-                    letterSpacing: '0.06em',
-                    width: 18,
-                    flexShrink: 0,
-                  }}>
-                    {num}
-                  </span>
-                  <span style={{
-                    fontFamily: SANS,
-                    fontSize: 13,
+                    fontFamily: SERIF,
+                    fontSize: 17,
                     fontWeight: isActive ? 600 : 400,
-                    color: isActive ? '#ffffff' : '#111111',
-                    letterSpacing: '-0.01em',
-                    lineHeight: 1.35,
-                    flex: 1,
+                    color: '#111111',
+                    lineHeight: 1.3,
                   }}>
                     {label}
                   </span>
-                  {hasSubmenu && (
-                    <span style={{
-                      fontFamily: SANS,
-                      fontSize: 13,
-                      color: isActive ? 'rgba(255,255,255,0.5)' : '#bbb',
-                      transform: isSubmenu ? 'rotate(90deg)' : 'none',
-                      display: 'inline-block',
-                    }}>
-                      ›
-                    </span>
-                  )}
+                  <span style={{
+                    fontFamily: SANS,
+                    fontSize: 11,
+                    fontWeight: 400,
+                    color: '#888888',
+                    lineHeight: 1.4,
+                  }}>
+                    {desc}
+                  </span>
                 </button>
               )
             })}
-          </div>
-
-          {/* Footer */}
-          <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-            <div style={{ fontFamily: SANS, fontSize: 13, color: '#bbb', lineHeight: 1.8 }}>
-              Wolfsburg City Centre<br />
-              4 km² · 9 districts
-            </div>
           </div>
 
         </div>
