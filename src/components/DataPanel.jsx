@@ -1585,6 +1585,7 @@ const PART_NAV = [
 export default function DataPanel() {
   const [slide, setSlide] = useState(0)
   const [showMethods, setShowMethods] = useState(false)
+  const showMethodsRef = useRef(false)
   const outerRef = useRef(null)
   const slideRef = useRef(null)
   const goRef    = useRef(null)
@@ -1616,11 +1617,15 @@ export default function DataPanel() {
     return () => clearTimeout(timer)
   }, [slide])
 
-  // Each wheel tick = next/prev slide (slides don't scroll internally)
+  // Mirror showMethods into a ref so the wheel handler (stale closure) can read it
+  useEffect(() => { showMethodsRef.current = showMethods }, [showMethods])
+
+  // Each wheel tick = next/prev slide — disabled while overlay is open
   useEffect(() => {
     const outer = outerRef.current
     if (!outer) return
     const handler = (e) => {
+      if (showMethodsRef.current) return   // let overlay scroll freely
       e.preventDefault()
       goRef.current(e.deltaY > 0 ? 1 : -1)
     }
