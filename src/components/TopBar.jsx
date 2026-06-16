@@ -19,13 +19,13 @@ const pillStyle = (active) => ({
   padding:       '5px 12px',
   borderRadius:   980,
   fontSize:       13,
-  fontWeight:     500,
+  fontWeight:     active ? 600 : 400,
   letterSpacing: '-0.01em',
   cursor:        'pointer',
   fontFamily:    'inherit',
-  border:        `1px solid ${active ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.08)'}`,
-  background:     active ? '#E8E8ED' : 'var(--bg-secondary)',
-  color:          active ? '#1D1D1F' : 'var(--text-secondary)',
+  border:        '1px solid #E8E8E8',
+  background:     'transparent',
+  color:          active ? '#111111' : '#888888',
   whiteSpace:    'nowrap',
 })
 

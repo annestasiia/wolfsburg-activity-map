@@ -22,7 +22,7 @@ function ElementCircle({ el }) {
           : `2.5px solid ${color}`,
         cursor: 'default',
         transform: hovered ? 'scale(1.06)' : 'scale(1)',
-        boxShadow: hovered ? `0 4px 16px ${color}30` : 'none',
+        boxShadow: 'none',
         color,
       }}>
         <HubIcon id={el.id} color={color} />
@@ -37,7 +37,7 @@ function ElementCircle({ el }) {
           position: 'absolute', bottom: '110%', left: '50%', transform: 'translateX(-50%)',
           background: C.text1, color: 'white', borderRadius: 8, padding: '8px 12px',
           fontSize: 13, fontFamily: FONT, lineHeight: 1.5, width: 200, zIndex: 100,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.2)', pointerEvents: 'none',
+          boxShadow: 'none', pointerEvents: 'none',
           textAlign: 'left',
         }}>
           <div style={{ fontWeight: 600, marginBottom: 4, color: color }}>{el.name}</div>
@@ -124,7 +124,7 @@ const STATUS_COLORS = {
   'Mandatory': TERRA + '28',
   'Standard':  '#2471A3' + '20',
   'Optional':  '#1E8449' + '18',
-  '—':         '#F5F5F7',
+  '—':         '#FFFFFF',
 }
 const STATUS_TEXT = {
   'Mandatory': TERRA,
@@ -173,7 +173,7 @@ function TierTable() {
       <div style={{ borderRadius: 10, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FONT }}>
           <thead>
-            <tr style={{ background: '#F5F5F7' }}>
+            <tr style={{ background: '#FFFFFF' }}>
               <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: `1px solid ${C.border}`, width: '46%' }}>Element</th>
               {['S-Hub', 'M-Hub', 'L-Hub'].map(h => (
                 <th key={h} style={{ padding: '10px 14px', textAlign: 'center', fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: `1px solid ${C.border}` }}>{h}</th>
@@ -188,14 +188,14 @@ function TierTable() {
                 <React.Fragment key={row.id}>
                   {isNewCat && (
                     <tr>
-                      <td colSpan={4} style={{ padding: '10px 14px 4px', background: '#FAFAF9', borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
+                      <td colSpan={4} style={{ padding: '10px 14px 4px', background: '#FFFFFF', borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: catColor, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                           {CATS.find(c => c.id === row.cat)?.label}
                         </span>
                       </td>
                     </tr>
                   )}
-                  <tr style={{ borderTop: `1px solid ${C.border}`, background: i % 2 === 0 ? C.card : '#FDFCFC' }}>
+                  <tr style={{ borderTop: `1px solid ${C.border}`, background: '#FFFFFF' }}>
                     <td style={{ padding: '8px 14px', fontSize: 13, color: C.text1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                         <span style={{
@@ -228,7 +228,7 @@ function TierTable() {
                               style={{
                                 display: 'inline-block', padding: '3px 10px', borderRadius: 6,
                                 fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                background: STATUS_COLORS[val] || '#F5F5F7',
+                                background: STATUS_COLORS[val] || '#FFFFFF',
                                 color: STATUS_TEXT[val] || C.text3,
                               }}
                             >{val}</span>
@@ -344,7 +344,7 @@ export default function UrbanDesignPanel() {
           </div>
 
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 40, padding: 4, background: '#EFEFEF', borderRadius: 10, width: 'fit-content' }}>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 40, padding: 4, background: '#FFFFFF', border: `1px solid ${C.border}`, borderRadius: 10, width: 'fit-content' }}>
             <button style={tabStyle('elements')} onClick={() => setTab('elements')}>Design Elements</button>
             <button style={tabStyle('typologies')} onClick={() => setTab('typologies')}>Hub Typologies</button>
           </div>

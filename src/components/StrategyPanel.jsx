@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useState } from 'react'
 const FONT  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 const SERIF = FONT
 const SANS  = FONT
-const C = { bg: '#FAFAF9', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
+const C = { bg: '#FFFFFF', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
 
 const CSS_ANIM = `
 .sp-a{opacity:0;transform:translateY(20px);transition:opacity 650ms cubic-bezier(.4,0,.2,1),transform 650ms cubic-bezier(.4,0,.2,1)}

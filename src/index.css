@@ -9,23 +9,23 @@
   --ease-in:    cubic-bezier(0.7, 0, 1, 1);
 
   --bg-primary:   #ffffff;
-  --bg-secondary: #f7f7f7;
+  --bg-secondary: #ffffff;
   --bg-tertiary:  rgba(0, 0, 0, 0.05);
 
   --text-primary:   #111111;
-  --text-secondary: #666666;
-  --text-tertiary:  #aaaaaa;
+  --text-secondary: #888888;
+  --text-tertiary:  #888888;
 
   --accent:       #111111;
   --accent-hover: #000000;
 
-  --border:        rgba(0, 0, 0, 0.05);
-  --border-medium: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.12);
+  --border:        #E8E8E8;
+  --border-medium: #E8E8E8;
+  --border-strong: #E8E8E8;
 
-  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 8px 40px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.06);
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
 }
 
 html, body, #root {
@@ -47,7 +47,7 @@ html, body, #root {
   flex-direction: column;
   height: 100dvh;
   overflow: hidden;
-  background: var(--bg-secondary);
+  background: #FFFFFF;
 }
 
 .map-area {
@@ -61,14 +61,14 @@ html, body, #root {
 
 .maplibregl-popup-content {
   border-radius: 16px;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
   padding: 0 !important;
   min-width: 240px;
   max-width: 320px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--border);
+  background: #FFFFFF;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid #E8E8E8;
 }
 
 .maplibregl-popup-close-button {
@@ -85,32 +85,32 @@ html, body, #root {
   padding: 10px 14px !important;
   min-width: unset;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
-  box-shadow: var(--shadow-md);
+  background: #FFFFFF;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 .maplibregl-ctrl-attrib { font-size: 10px; }
 .maplibregl-ctrl-attrib-inner a { color: var(--text-tertiary); }
-.maplibregl-ctrl-attrib.maplibregl-compact { background: rgba(255,255,255,0.8); }
+.maplibregl-ctrl-attrib.maplibregl-compact { background: #FFFFFF; }
 
 /* ── Nav zoom controls ── */
 .maplibregl-ctrl-group {
-  background: rgba(255, 255, 255, 0.88) !important;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--border) !important;
+  background: #FFFFFF !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid #E8E8E8 !important;
   border-radius: 12px !important;
-  box-shadow: var(--shadow-sm) !important;
+  box-shadow: none !important;
   overflow: hidden;
 }
 .maplibregl-ctrl-group button {
   background: transparent !important;
   color: var(--text-secondary) !important;
-  border-bottom: 1px solid var(--border) !important;
+  border-bottom: 1px solid #E8E8E8 !important;
 }
 .maplibregl-ctrl-group button:last-child { border-bottom: none !important; }
-.maplibregl-ctrl-group button:hover { background: var(--bg-secondary) !important; }
+.maplibregl-ctrl-group button:hover { background: rgba(0,0,0,0.025) !important; }
 .maplibregl-ctrl-icon { filter: none; }
 
 /* ── Top bar ── */
@@ -121,10 +121,10 @@ html, body, #root {
   padding: 0 24px;
   height: 56px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--border);
+  background: #FFFFFF;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid #E8E8E8;
   z-index: 20;
 }
 
@@ -164,18 +164,18 @@ html, body, #root {
   font-family: inherit;
 }
 .mode-btn:hover:not(.active) {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(0, 0, 0, 0.025);
   color: var(--text-primary);
-  border-color: rgba(0, 0, 0, 0.08);
+  border-color: #E8E8E8;
 }
 .mode-btn.active {
-  background: #111111;
-  color: #ffffff;
-  border-color: transparent;
-  box-shadow: var(--shadow-sm);
-  font-weight: 500;
+  background: transparent;
+  color: #111111;
+  border-color: #111111;
+  box-shadow: none;
+  font-weight: 600;
 }
-.mode-btn.active:hover { background: #000000; }
+.mode-btn.active:hover { background: rgba(0,0,0,0.025); }
 
 .top-bar-meta {
   font-size: 14px;
@@ -195,10 +195,10 @@ html, body, #root {
   align-items: center;
   padding: 8px 0 5px;
   gap: 3px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-top: 1px solid var(--border);
+  background: #FFFFFF;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-top: 1px solid #E8E8E8;
   cursor: ns-resize;
   user-select: none;
   touch-action: none;
@@ -225,9 +225,9 @@ html, body, #root {
 .bottom-sheet-content {
   overflow-y: auto;
   overflow-x: hidden;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: #FFFFFF;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .bottom-panel-inner {
@@ -236,10 +236,10 @@ html, body, #root {
 
 .bottom-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-top: 1px solid var(--border);
+  background: #FFFFFF;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-top: 1px solid #E8E8E8;
 }
 
 .bottom-tab {
@@ -263,7 +263,7 @@ html, body, #root {
 .bottom-tab:last-child { border-right: none; }
 .bottom-tab:hover {
   color: var(--text-primary);
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(0, 0, 0, 0.025);
 }
 .bottom-tab.active { color: var(--text-primary); }
 .bottom-tab.active::before {
@@ -304,7 +304,7 @@ html, body, #root {
   line-height: 1.4;
   font-family: inherit;
 }
-.chip:hover { background: rgba(0,0,0,0.03); color: var(--text-primary); border-color: rgba(0,0,0,0.08); }
+.chip:hover { background: rgba(0,0,0,0.025); color: var(--text-primary); border-color: #E8E8E8; }
 .chip.active { border-color: transparent; background: #111111; color: #fff; font-weight: 500; }
 
 .chip-actions { display: flex; gap: 14px; margin-top: 12px; }
@@ -408,8 +408,8 @@ html, body, #root {
 }
 
 .stat-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  background: #FFFFFF;
+  border: 1px solid #E8E8E8;
   border-radius: 12px;
   padding: 14px 16px;
 }

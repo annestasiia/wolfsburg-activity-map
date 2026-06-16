@@ -204,7 +204,7 @@ const area_pct_of_zone    = (area_total_all_hubs / hub_zone_m2 * 100).toFixed(2)
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 const SERIF = "'Georgia', 'Times New Roman', serif"
 const SANS  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
-const C = { bg: '#FAFAF9', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
+const C = { bg: '#FFFFFF', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
 const fmt = n => Math.round(n).toLocaleString('de-DE')
 
 const CSS_ANIM = `
@@ -378,7 +378,7 @@ function FlowChart() {
           </div>
         </div>
       ))}
-      <div style={{ padding: '14px 18px', background: 'rgba(10,126,69,0.05)', border: '1px solid rgba(10,126,69,0.16)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '14px 18px', background: '#FFFFFF', border: `1px solid ${C.border}`, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: '#0A7E45' }}>D_transport (net)</span>
           <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginLeft: 8 }}>inbound + internal transport</span>
@@ -421,7 +421,7 @@ function ModeCards() {
       {Object.entries(MODE_META).map(([key, { label, color }]) => {
         const f = fleet[key]
         return (
-          <div key={key} style={{ background: C.card, borderRadius: 10, padding: '16px 16px', border: `1px solid ${C.border}`, borderLeft: `3px solid ${color}` }}>
+          <div key={key} style={{ background: C.card, borderRadius: 10, padding: '16px 16px', border: `1px solid ${C.border}` }}>
             <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>{label}</div>
             <div style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 400, color: C.text1, letterSpacing: '-0.02em', lineHeight: 1 }}>{fmt(f.total)}</div>
             <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 2, marginBottom: 12 }}>total fleet</div>
@@ -505,7 +505,7 @@ function ReplacementChart() {
         <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{fmt(total_fleet)} units</div>
       </div>
       <div style={{ flex: 1, paddingBottom: 28 }}>
-        <div style={{ padding: '14px 18px', background: 'rgba(10,126,69,0.05)', border: '1px solid rgba(10,126,69,0.14)', borderRadius: 8, marginBottom: 16 }}>
+        <div style={{ padding: '14px 18px', background: '#FFFFFF', border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 16 }}>
           <div style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: '#0A7E45', letterSpacing: '-0.02em' }}>1 : {replacement_ratio}</div>
           <div style={{ fontFamily: SANS, fontSize: 13, color: '#2D6A4F', marginTop: 3 }}>shared vehicle replaces {replacement_ratio} private cars</div>
         </div>
@@ -827,7 +827,7 @@ function HubInfraTable() {
               </th>
             ))}
           </tr>
-          <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FAFAF9' }}>
+          <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FFFFFF' }}>
             <th style={{ padding: '5px 10px' }} />
             {TIERS.map(t => [
               <th key={`${t}-total`} style={{ textAlign: 'right', padding: '5px 6px', fontSize: 13, color: C.text3, fontWeight: 600, borderLeft: `1px solid ${C.border}` }}>Tier total</th>,
@@ -850,14 +850,14 @@ function HubInfraTable() {
               ])}
             </tr>
           ))}
-          <tr style={{ borderTop: `2px solid ${C.border}`, background: 'rgba(41,128,185,0.04)' }}>
+          <tr style={{ borderTop: `2px solid ${C.border}`, background: '#FFFFFF' }}>
             <td style={{ padding: '9px 10px', fontWeight: 600, color: '#2980B9', fontSize: 13 }}>Charging pts / hub</td>
             {TIERS.map(t => [
               <td key={`${t}-total`} style={{ padding: '9px 6px', textAlign: 'right', color: C.text3, borderLeft: `1px solid ${C.border}` }}>–</td>,
               <td key={`${t}-hub`}   style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 700, color: '#2980B9' }}>{hub_charging_per[t]}</td>,
             ])}
           </tr>
-          <tr style={{ background: 'rgba(230,126,34,0.04)' }}>
+          <tr style={{ background: '#FFFFFF' }}>
             <td style={{ padding: '9px 10px', fontWeight: 600, color: '#E67E22', fontSize: 13 }}>Footprint / hub (m²)</td>
             {TIERS.map(t => [
               <td key={`${t}-total`} style={{ padding: '9px 6px', textAlign: 'right', color: C.text3, borderLeft: `1px solid ${C.border}` }}>–</td>,
@@ -1012,13 +1012,13 @@ function HubAreaTable() {
         </thead>
         <tbody>
           {tableRows.map(({ label, key, formula, accent }) => (
-            <tr key={label} style={{ borderTop: accent ? `2px solid ${C.border}` : undefined, borderBottom: `1px solid ${C.border}`, background: accent ? 'rgba(10,126,69,0.04)' : 'transparent' }}>
+            <tr key={label} style={{ borderTop: accent ? `2px solid ${C.border}` : undefined, borderBottom: `1px solid ${C.border}`, background: '#FFFFFF' }}>
               <td style={{ padding: '10px 10px', fontWeight: accent ? 700 : 500, color: accent ? '#0A7E45' : C.text1 }}>{label}</td>
               {TIERS.map(t => <td key={t} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: accent ? 700 : 400, color: accent ? HUB_COLORS_UI[t] : C.text2, fontVariantNumeric: 'tabular-nums' }}>{Math.round(map[key][t])} m²</td>)}
               <td style={{ padding: '10px 10px', color: C.text3, fontSize: 13 }}>{formula}</td>
             </tr>
           ))}
-          <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FAFAF9' }}>
+          <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FFFFFF' }}>
             <td style={{ padding: '10px 10px', color: C.text3, fontSize: 13 }}>Circ. factor</td>
             {TIERS.map(t => <td key={t} style={{ padding: '10px 10px', textAlign: 'right', color: C.text3, fontSize: 13 }}>×{CIRCULATION_FACTOR[t]}</td>)}
             <td style={{ padding: '10px 10px', color: C.text3, fontSize: 13 }}>driveways + maneuvering</td>
@@ -1104,7 +1104,7 @@ export default function DataPanel() {
       <style>{CSS_ANIM}</style>
 
       {/* Left nav */}
-      <nav style={{ width: 200, flexShrink: 0, overflowY: 'auto', background: C.bg, borderRight: `1px solid ${C.border}`, padding: '32px 14px 32px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <nav style={{ width: 200, flexShrink: 0, overflowY: 'auto', background: '#FFFFFF', borderRight: `1px solid ${C.border}`, padding: '32px 14px 32px', display: 'flex', flexDirection: 'column', gap: 1 }}>
         <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', padding: '0 10px 16px' }}>
           Data Analysis
         </div>
@@ -1122,7 +1122,6 @@ export default function DataPanel() {
               fontFamily: SANS, fontSize: 13,
               fontWeight: active ? 600 : 400,
               color: active ? C.text1 : C.text3,
-              borderLeft: `2px solid ${active ? C.text1 : 'transparent'}`,
               textDecoration: 'none',
             }}>
               {label}
@@ -1357,7 +1356,7 @@ export default function DataPanel() {
                   { label: 'Peak hour (8–9 h)', formula: `D_total × 8.5% MiD profile`, result: `= ${fmt(peak_hour_trips)} trips/h` },
                   { label: 'Private cars/day', formula: `D_total × 62% ÷ 1.3 occupancy`, result: `= ${fmt(car_vehicles_per_day)} vehicles` },
                 ].map(({ label, formula, result }) => (
-                  <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
+                  <div key={label} style={{ background: '#FFFFFF', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
                     <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5 }}>{formula}</div>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
@@ -1394,7 +1393,7 @@ export default function DataPanel() {
                   { label: 'On-street fleet (per mode)', formula: `⌈(peak_trips ÷ capacity) × trip_h⌉`, result: `e.g. e-bike: ${fleet.e_bike.on_street} units` },
                   { label: 'Total fleet (per mode)', formula: `on_street × peak_factor`, result: `total: ${fmt(total_fleet)} vehicles` },
                 ].map(({ label, formula, result }) => (
-                  <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
+                  <div key={label} style={{ background: '#FFFFFF', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
                     <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
@@ -1438,7 +1437,7 @@ export default function DataPanel() {
                   { tier: 'Hub M', color: HUB_COLORS_UI.hub_m, formula: `max(geometry r=400m,\nshuttle_fleet ÷ 3)`, result: `= ${hub_m_count} hubs`, note: '400 m, shuttle coverage' },
                   { tier: 'Hub L', color: HUB_COLORS_UI.hub_l, formula: `min(⌈(bus+car-share) ÷ 8⌉, 6)`, result: `= ${hub_l_count} hubs`, note: 'capped — existing garages' },
                 ].map(({ tier, color, formula, result, note }) => (
-                  <div key={tier} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}`, borderTop: `3px solid ${color}` }}>
+                  <div key={tier} style={{ background: '#FFFFFF', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color, marginBottom: 8 }}>{tier}</div>
                     <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
@@ -1473,7 +1472,7 @@ export default function DataPanel() {
                   { label: 'S_charging — charging stations', formula: `Σ ⌈units × rate⌉ × station_m²`, note: '0.5 m² e-bike dock · 4 m² EV charger' },
                   { label: 'S_program — shelter & services', formula: `(S_fleet + S_circ + S_charging) × 10%`, note: 'waiting areas, info points, shelter' },
                 ].map(({ label, formula, note }) => (
-                  <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
+                  <div key={label} style={{ background: '#FFFFFF', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
                     <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5 }}>{formula}</div>
                     <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 5 }}>{note}</div>

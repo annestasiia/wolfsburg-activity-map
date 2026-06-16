@@ -26,7 +26,6 @@ export default function DistrictsPanel({ noTitle }) {
               style={on ? {
                 background: toRgba(d.color, 0.22),
                 borderColor: d.color,
-                boxShadow: `0 0 8px ${toRgba(d.color, 0.28)}`,
               } : {}}
               onClick={() => toggleDistrict(d.name)}
             >
@@ -43,7 +42,7 @@ export default function DistrictsPanel({ noTitle }) {
           <button
             className="chip-action-btn"
             onClick={clearAllDistricts}
-            style={{ color: 'rgba(255,90,90,0.7)' }}
+style={{ color: '#888888' }}
           >
             Clear ({selectedDistricts.size})
           </button>

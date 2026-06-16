@@ -95,7 +95,7 @@ export default function LeftNav() {
                     gap: 4,
                     padding: '18px 24px',
                     width: '100%',
-                    background: isActive ? 'rgba(0,0,0,0.03)' : isHov ? 'rgba(0,0,0,0.02)' : 'transparent',
+                    background: isHov ? 'rgba(0,0,0,0.025)' : 'transparent',
                     border: 'none',
                     borderBottom: '1px solid #E8E8E8',
                     cursor: 'pointer',
@@ -249,7 +249,7 @@ export default function LeftNav() {
                     alignItems: 'flex-start',
                     gap: 4,
                     padding: '18px 24px',
-                    background: isActive ? 'rgba(0,0,0,0.03)' : isHov ? 'rgba(0,0,0,0.02)' : 'transparent',
+                    background: isHov ? 'rgba(0,0,0,0.025)' : 'transparent',
                     border: 'none',
                     borderBottom: '1px solid #E8E8E8',
                     cursor: 'pointer',
@@ -265,15 +265,6 @@ export default function LeftNav() {
                     lineHeight: 1.3,
                   }}>
                     {label}
-                  </span>
-                  <span style={{
-                    fontFamily: SANS,
-                    fontSize: 11,
-                    fontWeight: 400,
-                    color: '#888888',
-                    lineHeight: 1.4,
-                  }}>
-                    {desc}
                   </span>
                 </button>
               )
