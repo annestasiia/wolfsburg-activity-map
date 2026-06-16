@@ -29,7 +29,6 @@ function ModeButton({ onClick, active, color, icon, label, sub, loading }) {
           : '0 2px 8px rgba(0,0,0,0.08)',
         cursor:         'pointer',
         fontFamily:     'inherit',
-        transition:     'all 0.2s ease',
         minWidth:        72,
       }}
     >
@@ -37,7 +36,7 @@ function ModeButton({ onClick, active, color, icon, label, sub, loading }) {
         {loading ? '⏳' : icon}
       </span>
       <span style={{
-        fontSize:      11,
+        fontSize:      13,
         fontWeight:    700,
         color:          active ? color : '#6E6E73',
         lineHeight:    1.2,
@@ -46,7 +45,7 @@ function ModeButton({ onClick, active, color, icon, label, sub, loading }) {
         {label}
       </span>
       <span style={{
-        fontSize:   10,
+        fontSize:   11,
         color:       active ? color : '#AEAEB2',
         lineHeight:  1.2,
       }}>
@@ -70,7 +69,6 @@ export default function MobilityLeftBar() {
       position:       'absolute',
       left:            navOpen ? 238 : 10,
       top:             112,
-      transition:     'left 0.3s ease',
       zIndex:          10,
       display:        'flex',
       flexDirection:  'column',

@@ -1,7 +1,7 @@
 import React from 'react'
 
 // ── Shared design tokens ─────────────────────────────────────────────────────
-export const FONT  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+export const FONT  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 export const SERIF = "'Georgia', 'Times New Roman', serif"
 export const C = { bg: '#FAFAF9', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
 export const TERRA = '#B5541A'

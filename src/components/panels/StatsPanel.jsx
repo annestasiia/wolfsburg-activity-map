@@ -90,7 +90,7 @@ export default function StatsPanel({ noTitle }) {
               <span style={{ fontSize: 13, color: '#AEAEB2', fontWeight: 400 }}>/{c.total}</span>
             </div>
             <div style={{
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: 600,
               letterSpacing: '-0.01em',
               color: '#6E6E73',

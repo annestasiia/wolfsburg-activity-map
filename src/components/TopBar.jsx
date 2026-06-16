@@ -26,7 +26,6 @@ const pillStyle = (active) => ({
   border:        `1px solid ${active ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.08)'}`,
   background:     active ? '#E8E8ED' : 'var(--bg-secondary)',
   color:          active ? '#1D1D1F' : 'var(--text-secondary)',
-  transition:    'all 0.18s ease',
   whiteSpace:    'nowrap',
 })
 
@@ -101,7 +100,7 @@ export default function TopBar() {
 
           <div className="top-bar-meta">
             <div>{selectedDay} · {selectedTime}</div>
-            <div style={{ fontSize: 11, marginTop: 2, color: 'var(--text-tertiary)' }}>
+            <div style={{ fontSize: 13, marginTop: 2, color: 'var(--text-tertiary)' }}>
               {filteredVenues.length} venues
             </div>
           </div>

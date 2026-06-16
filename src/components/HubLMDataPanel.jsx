@@ -1,7 +1,7 @@
 import React from 'react'
 import { useAppStore } from '../store/appStore'
-const SANS  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
-const SERIF = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+const SANS  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
+const SERIF = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 const C = {
   bg:     '#FFFFFF', border: '#E8E8E8',
   text1:  '#111111', text2:  '#444444', text3:  '#888888',
@@ -19,10 +19,10 @@ function LayerToggle({ label, active, onToggle, color, dot = true }) {
       background: 'none', border: 'none', cursor: 'pointer',
       borderBottom: `1px solid ${C.border}`, textAlign: 'left',
     }}>
-      <span style={{ width: 10, height: 10, borderRadius: dot ? '50%' : 2, flexShrink: 0, background: active ? color : C.border, transition: 'background 0.15s' }} />
-      <span style={{ fontFamily: SANS, fontSize: 12, color: active ? C.text1 : C.text3, flex: 1 }}>{label}</span>
-      <span style={{ width: 28, height: 14, borderRadius: 7, background: active ? C.text1 : C.border, position: 'relative', flexShrink: 0, transition: 'background 0.15s' }}>
-        <span style={{ position: 'absolute', top: 2, left: active ? 14 : 2, width: 10, height: 10, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
+      <span style={{ width: 10, height: 10, borderRadius: dot ? '50%' : 2, flexShrink: 0, background: active ? color : C.border }} />
+      <span style={{ fontFamily: SANS, fontSize: 13, color: active ? C.text1 : C.text3, flex: 1 }}>{label}</span>
+      <span style={{ width: 28, height: 14, borderRadius: 7, background: active ? C.text1 : C.border, position: 'relative', flexShrink: 0 }}>
+        <span style={{ position: 'absolute', top: 2, left: active ? 14 : 2, width: 10, height: 10, borderRadius: '50%', background: '#fff' }} />
       </span>
     </button>
   )
@@ -30,7 +30,7 @@ function LayerToggle({ label, active, onToggle, color, dot = true }) {
 
 function SectionLabel({ children }) {
   return (
-    <div style={{ fontFamily: SANS, fontSize: 9, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', margin: '14px 0 6px' }}>
+    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', margin: '14px 0 6px' }}>
       {children}
     </div>
   )
@@ -39,8 +39,8 @@ function SectionLabel({ children }) {
 function MiniStat({ label, value, color }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: `1px solid ${C.border}` }}>
-      <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{label}</span>
-      <span style={{ fontFamily: 'monospace', fontSize: 11, color: color || C.text1, fontWeight: 600 }}>{value}</span>
+      <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{label}</span>
+      <span style={{ fontFamily: 'monospace', fontSize: 13, color: color || C.text1, fontWeight: 600 }}>{value}</span>
     </div>
   )
 }
@@ -68,7 +68,7 @@ export default function HubLMDataPanel() {
     }}>
       {/* Header */}
       <div style={{ padding: '16px 16px 12px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-        <div style={{ fontFamily: SANS, fontSize: 9, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 5 }}>
+        <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 5 }}>
           Layers
         </div>
         <div style={{ fontFamily: SERIF, fontSize: 16, color: C.text1 }}>Hub Network</div>
@@ -88,7 +88,7 @@ export default function HubLMDataPanel() {
             <MiniStat label="Coverage" value={fmtKm2(hubL.coverageM2)} />
             <MiniStat label="Centre / Outer" value={`${hubL.centreCount} / ${hubL.outerCount}`} />
           </>
-        ) : <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, padding: '4px 0' }}>Run analysis</div>}
+        ) : <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, padding: '4px 0' }}>Run analysis</div>}
 
         {/* ── Hub M ── */}
         <SectionLabel>Hub M — Transfer Node</SectionLabel>
@@ -102,7 +102,7 @@ export default function HubLMDataPanel() {
             <MiniStat label="Coverage" value={fmtKm2(hubM.coverageM2)} />
             <MiniStat label="Centre / Outer" value={`${hubM.centreCount} / ${hubM.outerCount}`} />
           </>
-        ) : <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, padding: '4px 0' }}>Run analysis</div>}
+        ) : <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, padding: '4px 0' }}>Run analysis</div>}
 
         {/* ── Legend ── */}
         <SectionLabel>Legend</SectionLabel>
@@ -115,7 +115,7 @@ export default function HubLMDataPanel() {
             <svg width={r * 2 + 4} height={r * 2 + 4}>
               <circle cx={r + 2} cy={r + 2} r={r} fill={color} />
             </svg>
-            <span style={{ fontFamily: SANS, fontSize: 11, color: C.text2 }}>{label}</span>
+            <span style={{ fontFamily: SANS, fontSize: 13, color: C.text2 }}>{label}</span>
           </div>
         ))}
       </div>

@@ -52,7 +52,6 @@ export default function GreenerySidebar() {
           position:       'absolute',
           left:            navOpen ? 240 : 12,
           top:            '50%',
-          transition:     'left 0.3s ease',
           transform:      'translateY(-50%)',
           zIndex:          10,
           background:     'rgba(255,255,255,0.92)',
@@ -73,7 +72,7 @@ export default function GreenerySidebar() {
         <span style={{ fontSize: 18 }}>🌿</span>
         <span style={{
           writingMode:    'vertical-rl',
-          fontSize:        12,
+          fontSize:        13,
           fontWeight:      600,
           color:          '#2D6A4F',
           letterSpacing:  '-0.01em',
@@ -92,7 +91,6 @@ export default function GreenerySidebar() {
       top:            0,
       bottom:         0,
       width:          width + 6,   // +6 for the resize handle strip
-      transition:    'left 0.3s ease',
       zIndex:         10,
       display:       'flex',
       pointerEvents: 'none',       // let map clicks through the transparent handle area
@@ -140,7 +138,6 @@ export default function GreenerySidebar() {
               cursor:       'pointer',
               fontFamily:   'inherit',
               lineHeight:    1,
-              transition:   'all 0.15s ease',
             }}
           >
             ✕
@@ -164,11 +161,10 @@ export default function GreenerySidebar() {
                 border:     'none',
                 borderBottom: `2px solid ${panelTab === tab.id ? '#2D6A4F' : 'transparent'}`,
                 cursor:     'pointer',
-                fontSize:    12,
+                fontSize:    13,
                 fontWeight:  panelTab === tab.id ? 600 : 400,
                 color:       panelTab === tab.id ? '#2D6A4F' : '#6E6E73',
                 fontFamily: 'inherit',
-                transition: 'all 0.15s ease',
                 letterSpacing: '-0.01em',
               }}
             >

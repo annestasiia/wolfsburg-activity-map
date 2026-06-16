@@ -64,7 +64,6 @@ export default function VenuePopup({ venue, onClose }) {
               flexShrink: 0,
               marginLeft: 8,
               fontFamily: 'inherit',
-              transition: 'background 0.15s',
             }}
           >×</button>
         </div>
@@ -121,7 +120,7 @@ function Row({ label, value }) {
       <dt style={{
         width: 56,
         flexShrink: 0,
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: 600,
         letterSpacing: '0.02em',
         textTransform: 'uppercase',

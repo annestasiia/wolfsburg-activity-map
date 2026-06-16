@@ -21,7 +21,6 @@ function ElementCircle({ el }) {
           ? `2.5px dashed ${color}`
           : `2.5px solid ${color}`,
         cursor: 'default',
-        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
         transform: hovered ? 'scale(1.06)' : 'scale(1)',
         boxShadow: hovered ? `0 4px 16px ${color}30` : 'none',
         color,
@@ -29,7 +28,7 @@ function ElementCircle({ el }) {
         <HubIcon id={el.id} color={color} />
       </div>
 
-      <div style={{ fontFamily: FONT, fontSize: 10.5, color: C.text2, textAlign: 'center', lineHeight: 1.35, maxWidth: 80, letterSpacing: '-0.01em' }}>
+      <div style={{ fontFamily: FONT, fontSize: 13, color: C.text2, textAlign: 'center', lineHeight: 1.35, maxWidth: 80, letterSpacing: '-0.01em' }}>
         {el.name}
       </div>
 
@@ -37,7 +36,7 @@ function ElementCircle({ el }) {
         <div style={{
           position: 'absolute', bottom: '110%', left: '50%', transform: 'translateX(-50%)',
           background: C.text1, color: 'white', borderRadius: 8, padding: '8px 12px',
-          fontSize: 12, fontFamily: FONT, lineHeight: 1.5, width: 200, zIndex: 100,
+          fontSize: 13, fontFamily: FONT, lineHeight: 1.5, width: 200, zIndex: 100,
           boxShadow: '0 4px 20px rgba(0,0,0,0.2)', pointerEvents: 'none',
           textAlign: 'left',
         }}>
@@ -73,17 +72,17 @@ function DesignElementsSection() {
         {CATS.map(cat => (
           <div key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 20, background: cat.color + '14', border: `1px solid ${cat.color}35` }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color }} />
-            <span style={{ fontFamily: FONT, fontSize: 11, color: cat.color, fontWeight: 600, letterSpacing: '-0.01em' }}>{cat.label}</span>
+            <span style={{ fontFamily: FONT, fontSize: 13, color: cat.color, fontWeight: 600, letterSpacing: '-0.01em' }}>{cat.label}</span>
           </div>
         ))}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #888' }} />
-            <span style={{ fontFamily: FONT, fontSize: 11, color: C.text3 }}>Core</span>
+            <span style={{ fontFamily: FONT, fontSize: 13, color: C.text3 }}>Core</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px dashed #888' }} />
-            <span style={{ fontFamily: FONT, fontSize: 11, color: C.text3 }}>Optional</span>
+            <span style={{ fontFamily: FONT, fontSize: 13, color: C.text3 }}>Optional</span>
           </div>
         </div>
       </div>
@@ -92,7 +91,7 @@ function DesignElementsSection() {
         <div key={cat.id} style={{ marginBottom: 40 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
-            <span style={{ fontFamily: FONT, fontSize: 12, fontWeight: 700, color: cat.color, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{cat.label}</span>
+            <span style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: cat.color, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{cat.label}</span>
             <div style={{ flex: 1, height: 1, background: cat.color + '25' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(92px, 1fr))', gap: '20px 12px' }}>
@@ -103,7 +102,7 @@ function DesignElementsSection() {
 
       <div style={{ height: 1, background: C.border, margin: '8px 0 36px' }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-        <span style={{ fontFamily: FONT, fontSize: 12, fontWeight: 700, color: C.text3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Context-specific optional elements</span>
+        <span style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Context-specific optional elements</span>
         <div style={{ flex: 1, height: 1, background: C.border }} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(92px, 1fr))', gap: '20px 12px' }}>
@@ -159,12 +158,12 @@ function TierTable() {
     return header + rows.map(r => `| ${r.name} | ${r.cat} | ${r.s} | ${r.m} | ${r.l} |`).join('\n')
   }
 
-  const btnStyle = { fontFamily: FONT, fontSize: 12, fontWeight: 600, padding: '7px 16px', borderRadius: 8, cursor: 'pointer', border: `1px solid ${C.border}`, background: C.card, color: C.text2, transition: 'background 0.15s ease' }
+  const btnStyle = { fontFamily: FONT, fontSize: 13, fontWeight: 600, padding: '7px 16px', borderRadius: 4, cursor: 'pointer', border: `1px solid ${C.border}`, background: C.card, color: C.text2, letterSpacing: '0.04em' }
 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div style={{ fontFamily: FONT, fontSize: 12, color: C.text3 }}>Click any cell to edit · Changes are local to this session</div>
+        <div style={{ fontFamily: FONT, fontSize: 13, color: C.text3 }}>Click any cell to edit · Changes are local to this session</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button style={btnStyle} onClick={() => downloadFile(genMarkdown(), 'hub-typologies.md')}>Download .md</button>
           <button style={btnStyle} onClick={() => downloadFile(rows.map(r => `${r.name} | S: ${r.s} | M: ${r.m} | L: ${r.l}`).join('\n'), 'hub-typologies.txt')}>Download .txt</button>
@@ -175,9 +174,9 @@ function TierTable() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FONT }}>
           <thead>
             <tr style={{ background: '#F5F5F7' }}>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: `1px solid ${C.border}`, width: '46%' }}>Element</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: `1px solid ${C.border}`, width: '46%' }}>Element</th>
               {['S-Hub', 'M-Hub', 'L-Hub'].map(h => (
-                <th key={h} style={{ padding: '10px 14px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                <th key={h} style={{ padding: '10px 14px', textAlign: 'center', fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: `1px solid ${C.border}` }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -190,7 +189,7 @@ function TierTable() {
                   {isNewCat && (
                     <tr>
                       <td colSpan={4} style={{ padding: '10px 14px 4px', background: '#FAFAF9', borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: catColor, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: catColor, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                           {CATS.find(c => c.id === row.cat)?.label}
                         </span>
                       </td>
@@ -221,17 +220,16 @@ function TierTable() {
                               onChange={e => setEditVal(e.target.value)}
                               onBlur={commitEdit}
                               onKeyDown={e => { if (e.key === 'Enter') commitEdit() }}
-                              style={{ width: '100%', textAlign: 'center', fontFamily: FONT, fontSize: 12, padding: '4px 6px', borderRadius: 6, border: `1px solid ${TERRA}`, outline: 'none', background: TERRA + '10' }}
+                              style={{ width: '100%', textAlign: 'center', fontFamily: FONT, fontSize: 13, padding: '4px 6px', borderRadius: 6, border: `1px solid ${TERRA}`, outline: 'none', background: TERRA + '10' }}
                             />
                           ) : (
                             <span
                               onClick={() => startEdit(row.id, col, val)}
                               style={{
                                 display: 'inline-block', padding: '3px 10px', borderRadius: 6,
-                                fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                                fontSize: 13, fontWeight: 500, cursor: 'pointer',
                                 background: STATUS_COLORS[val] || '#F5F5F7',
                                 color: STATUS_TEXT[val] || C.text3,
-                                transition: 'opacity 0.15s',
                               }}
                             >{val}</span>
                           )}
@@ -254,11 +252,10 @@ function HubTypologiesSection() {
   const [activeTier, setActiveTier] = useState('s')
 
   const tierBtnStyle = (t) => ({
-    fontFamily: FONT, fontSize: 13, fontWeight: 600, padding: '7px 20px', borderRadius: 8,
+    fontFamily: FONT, fontSize: 13, fontWeight: 600, padding: '7px 20px', borderRadius: 4, letterSpacing: '0.04em',
     cursor: 'pointer', border: `1px solid ${activeTier === t ? TERRA : C.border}`,
     background: activeTier === t ? TERRA : C.card,
     color: activeTier === t ? 'white' : C.text2,
-    transition: 'all 0.15s ease',
   })
 
   const d = TIER_DIMS[activeTier]
@@ -274,15 +271,15 @@ function HubTypologiesSection() {
       </div>
 
       <div style={{ padding: '20px 24px', background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, marginBottom: 28 }}>
-        <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, color: TERRA, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>
+        <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: TERRA, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>
           {d.label} — Ground Field Dimensions
         </div>
         <div style={{ display: 'flex', gap: 32, fontFamily: FONT }}>
-          <div><span style={{ fontSize: 22, fontWeight: 700, color: C.text1 }}>{d.width}</span><span style={{ fontSize: 12, color: C.text3, marginLeft: 4 }}>wide (across street)</span></div>
-          <div><span style={{ fontSize: 22, fontWeight: 700, color: C.text1 }}>{d.length}</span><span style={{ fontSize: 12, color: C.text3, marginLeft: 4 }}>long (along street)</span></div>
+          <div><span style={{ fontSize: 22, fontWeight: 700, color: C.text1 }}>{d.width}</span><span style={{ fontSize: 13, color: C.text3, marginLeft: 4 }}>wide (across street)</span></div>
+          <div><span style={{ fontSize: 22, fontWeight: 700, color: C.text1 }}>{d.length}</span><span style={{ fontSize: 13, color: C.text3, marginLeft: 4 }}>long (along street)</span></div>
         </div>
-        <div style={{ fontFamily: FONT, fontSize: 12, color: C.text3, marginTop: 8 }}>{d.context}</div>
-        <div style={{ fontFamily: FONT, fontSize: 12, color: C.text2, marginTop: 6, fontStyle: 'italic' }}>
+        <div style={{ fontFamily: FONT, fontSize: 13, color: C.text3, marginTop: 8 }}>{d.context}</div>
+        <div style={{ fontFamily: FONT, fontSize: 13, color: C.text2, marginTop: 6, fontStyle: 'italic' }}>
           Includes road surface — the stone field spans the full carriageway. Dimensions are context-responsive working ranges.
         </div>
       </div>
@@ -290,7 +287,7 @@ function HubTypologiesSection() {
       {/* Interactive plan + axonometric scene */}
       <HubScene tier={activeTier} />
 
-      <div style={{ fontFamily: FONT, fontSize: 12, fontWeight: 600, color: C.text3, letterSpacing: '0.04em', textTransform: 'uppercase', margin: '44px 0 16px' }}>Element Assignments by Tier</div>
+      <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 600, color: C.text3, letterSpacing: '0.04em', textTransform: 'uppercase', margin: '44px 0 16px' }}>Element Assignments by Tier</div>
       <TierTable />
     </div>
   )
@@ -314,9 +311,9 @@ export default function UrbanDesignPanel() {
   }, [])
 
   const tabStyle = (t) => ({
-    fontFamily: FONT, fontSize: 13, fontWeight: 600, padding: '8px 20px', borderRadius: 8,
+    fontFamily: FONT, fontSize: 13, fontWeight: 600, padding: '8px 20px', borderRadius: 4, letterSpacing: '0.04em',
     cursor: 'pointer', border: 'none', background: tab === t ? TERRA + '18' : 'transparent',
-    color: tab === t ? TERRA : C.text3, transition: 'all 0.15s ease',
+    color: tab === t ? TERRA : C.text3,
   })
 
   // Typologies tab gets a wider band so plan + axonometric sit side by side legibly
@@ -330,11 +327,11 @@ export default function UrbanDesignPanel() {
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ maxWidth: contentMax, margin: '0 auto', padding: '56px 48px 120px', transition: 'max-width 0.2s ease' }}>
+        <div style={{ maxWidth: contentMax, margin: '0 auto', padding: '56px 48px 120px' }}>
 
           {/* Header */}
           <div style={{ marginBottom: 48 }}>
-            <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, color: TERRA, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 16 }}>
+            <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: TERRA, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 16 }}>
               Urban Design · Wolfsburg 2026
             </div>
             <h1 style={{ fontFamily: SERIF, fontSize: 52, fontWeight: 400, color: C.text1, lineHeight: 1.08, letterSpacing: '-0.5px', margin: '0 0 20px' }}>

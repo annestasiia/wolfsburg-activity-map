@@ -193,11 +193,11 @@ function Toggle({ checked, onChange, label, color, indent = false }) {
     <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#1D1D1F', paddingLeft: indent ? 12 : 0 }}>
       <div onClick={onChange} style={{
         width: 32, height: 18, borderRadius: 9, flexShrink: 0, cursor: 'pointer',
-        background: checked ? (color || '#0071E3') : '#E0E0E0', position: 'relative', transition: 'background 0.2s',
+        background: checked ? (color || '#0071E3') : '#E0E0E0', position: 'relative',
       }}>
         <div style={{
           position: 'absolute', top: 2, left: checked ? 15 : 2, width: 14, height: 14,
-          borderRadius: 7, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s',
+          borderRadius: 7, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
         }} />
       </div>
       {label}
@@ -207,7 +207,7 @@ function Toggle({ checked, onChange, label, color, indent = false }) {
 
 function SectionHead({ children }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#AEAEB2', marginBottom: 8, marginTop: 4 }}>
+    <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#AEAEB2', marginBottom: 8, marginTop: 4 }}>
       {children}
     </div>
   )
@@ -314,14 +314,14 @@ export function IntermodalDataPanel() {
       </div>
 
       {intermodalLoading && (
-        <div style={{ background: '#FFF3CD', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '5px 14px', fontSize: 11, color: '#856404', flexShrink: 0 }}>
+        <div style={{ background: '#FFF3CD', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '5px 14px', fontSize: 13, color: '#856404', flexShrink: 0 }}>
           {intermodalLoadProgress || 'Loading…'}
         </div>
       )}
       {intermodalError && (
-        <div style={{ background: '#FEF2F2', padding: '5px 14px', fontSize: 11, color: '#EF4444', flexShrink: 0 }}>
+        <div style={{ background: '#FEF2F2', padding: '5px 14px', fontSize: 13, color: '#EF4444', flexShrink: 0 }}>
           {intermodalError}
-          <button onClick={handleLoadData} style={{ marginLeft: 6, fontFamily: 'inherit', fontSize: 11, color: '#0071E3', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+          <button onClick={handleLoadData} style={{ marginLeft: 6, fontFamily: 'inherit', fontSize: 13, color: '#0071E3', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
             Retry
           </button>
         </div>
@@ -349,11 +349,11 @@ export function IntermodalDataPanel() {
                 return (
                   <button key={key} onClick={() => toggleIntermodalFacilityCategory(key)}
                     style={{
-                      fontSize: 10, fontWeight: 500, padding: '2px 7px', borderRadius: 980,
+                      fontSize: 13, fontWeight: 500, padding: '2px 7px', borderRadius: 980,
                       fontFamily: 'inherit', cursor: 'pointer',
                       border: `1.5px solid ${active ? color : 'rgba(0,0,0,0.10)'}`,
                       background: active ? `${color}18` : 'transparent',
-                      color: active ? color : '#AEAEB2', transition: 'all 0.15s',
+                      color: active ? color : '#AEAEB2',
                     }}>
                     {label}
                   </button>
@@ -368,7 +368,7 @@ export function IntermodalDataPanel() {
 
         {!dataLoaded && !intermodalLoading && (
           <button onClick={handleLoadData} style={{
-            width: '100%', padding: '6px 0', borderRadius: 8, fontSize: 12, fontWeight: 500,
+            width: '100%', padding: '6px 0', borderRadius: 8, fontSize: 13, fontWeight: 500,
             fontFamily: 'inherit', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.12)',
             background: '#F5F5F7', color: '#1D1D1F', marginTop: 6,
           }}>
@@ -405,28 +405,28 @@ export function IntermodalDataPanel() {
           ].map(({ key, label, color }) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 8, height: 8, borderRadius: 4, background: color, flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: '#6E6E73', flex: 1, lineHeight: 1.3 }}>{label}</span>
+              <span style={{ fontSize: 13, color: '#6E6E73', flex: 1, lineHeight: 1.3 }}>{label}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <input
                   type="number" min={50} max={3000} step={50}
                   value={densityConfig[key]}
                   onChange={e => setDensityConfig(key, Number(e.target.value))}
                   style={{
-                    width: 56, padding: '3px 6px', borderRadius: 6, fontSize: 12,
+                    width: 56, padding: '3px 6px', borderRadius: 6, fontSize: 13,
                     border: '1px solid rgba(0,0,0,0.15)', fontFamily: 'inherit',
                     color: '#1D1D1F', background: '#fff', textAlign: 'right',
                   }}
                 />
-                <span style={{ fontSize: 10, color: '#AEAEB2' }}>m</span>
+                <span style={{ fontSize: 13, color: '#AEAEB2' }}>m</span>
               </div>
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 10, color: '#AEAEB2', lineHeight: 1.5, marginTop: 6 }}>
+        <div style={{ fontSize: 13, color: '#AEAEB2', lineHeight: 1.5, marginTop: 6 }}>
           Exclusion radius per score tier · Re-run Analysis to apply
         </div>
 
-        <div style={{ fontSize: 10, color: '#AEAEB2', lineHeight: 1.5, marginTop: 12 }}>
+        <div style={{ fontSize: 13, color: '#AEAEB2', lineHeight: 1.5, marginTop: 12 }}>
           Local GeoJSON library · OSM Overpass (residential)
         </div>
       </div>
@@ -501,16 +501,16 @@ export default function IntermodalSidebar() {
       {/* Header */}
       <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: '#1D1D1F' }}>Intermodal Hub</div>
-        <div style={{ fontSize: 12, color: '#6E6E73' }}>Wolfsburg · Multi-modal transfer points</div>
+        <div style={{ fontSize: 13, color: '#6E6E73' }}>Wolfsburg · Multi-modal transfer points</div>
       </div>
 
       {intermodalLoading && (
-        <div style={{ background: '#FFF3CD', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '6px 16px', fontSize: 12, color: '#856404', flexShrink: 0 }}>
+        <div style={{ background: '#FFF3CD', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '6px 16px', fontSize: 13, color: '#856404', flexShrink: 0 }}>
           {intermodalLoadProgress || 'Loading…'}
         </div>
       )}
       {intermodalError && !intermodalLoading && (
-        <div style={{ background: '#FEF2F2', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '8px 16px', fontSize: 12, color: '#EF4444', flexShrink: 0 }}>
+        <div style={{ background: '#FEF2F2', borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '8px 16px', fontSize: 13, color: '#EF4444', flexShrink: 0 }}>
           {intermodalError}
         </div>
       )}
@@ -521,20 +521,19 @@ export default function IntermodalSidebar() {
         <SectionHead>Analysis</SectionHead>
         <button onClick={handleRunAnalysis} disabled={intermodalLoading || !dataLoaded}
           style={{
-            width: '100%', padding: '9px 0', borderRadius: 10, fontSize: 13, fontWeight: 600,
+            width: '100%', padding: '9px 0', borderRadius: 4, fontSize: 13, fontWeight: 600, letterSpacing: '0.04em',
             fontFamily: 'inherit', cursor: (intermodalLoading || !dataLoaded) ? 'not-allowed' : 'pointer',
             border: 'none', marginBottom: 12,
             background: (intermodalLoading || !dataLoaded) ? '#E0E0E0' : '#1D1D1F',
             color: (intermodalLoading || !dataLoaded) ? '#999' : '#fff',
-            transition: 'background 0.15s',
-          }}>
+                      }}>
           {intermodalLoading && intermodalLoadProgress === 'Running algorithm…' ? 'Running…'
             : intermodalHubs.length ? 'Re-run Analysis' : 'Run Analysis'}
         </button>
 
         {/* Results summary */}
         {intermodalHubs.length > 0 && (
-          <div style={{ background: '#F5F5F7', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 12 }}>
+          <div style={{ background: '#F5F5F7', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 13 }}>
             <div style={{ fontWeight: 600, marginBottom: 6, color: '#1D1D1F' }}>{intermodalHubs.length} hubs identified</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {[
@@ -542,7 +541,7 @@ export default function IntermodalSidebar() {
                 { label: `${hubCounts.existing} existing`, color: '#22C55E' },
                 { label: `${hubCounts.proposed} proposed`, color: '#0071E3' },
               ].map(({ label, color }) => (
-                <span key={label} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 980, padding: '2px 8px', color, fontWeight: 500, fontSize: 11 }}>
+                <span key={label} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 980, padding: '2px 8px', color, fontWeight: 500, fontSize: 13 }}>
                   {label}
                 </span>
               ))}
@@ -553,7 +552,7 @@ export default function IntermodalSidebar() {
         {/* Hub Types */}
         {intermodalHubs.length > 0 && (
           <>
-            <div style={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 7 }}>Hub Types</div>
+            <div style={{ fontSize: 13, color: '#AEAEB2', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 7 }}>Hub Types</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
               {[
                 { type: 'bus_bike',      label: 'Bus + Bike',        color: '#EF4444' },
@@ -565,22 +564,22 @@ export default function IntermodalSidebar() {
                   <div key={type} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <button onClick={() => toggleIntermodalHubType(type)} style={{
                       display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px',
-                      borderRadius: 980, fontSize: 12, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
+                      borderRadius: 980, fontSize: 13, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
                       border: `1.5px solid ${active ? color : 'rgba(0,0,0,0.10)'}`,
                       background: active ? `${color}18` : 'transparent',
-                      color: active ? color : '#6E6E73', transition: 'all 0.15s',
+                      color: active ? color : '#6E6E73',
                     }}>
                       <span style={{ width: 8, height: 8, borderRadius: 4, background: active ? color : '#ccc', flexShrink: 0 }} />
                       {label}
                     </button>
-                    <span style={{ fontSize: 11, color: '#AEAEB2' }}>{hubCounts[type]}</span>
+                    <span style={{ fontSize: 13, color: '#AEAEB2' }}>{hubCounts[type]}</span>
                   </div>
                 )
               })}
             </div>
 
             {/* Status filter */}
-            <div style={{ fontSize: 11, color: '#AEAEB2', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 7 }}>Status</div>
+            <div style={{ fontSize: 13, color: '#AEAEB2', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 7 }}>Status</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 4 }}>
               {[
                 { value: 'all',      label: 'All hubs' },
@@ -616,12 +615,12 @@ export default function IntermodalSidebar() {
                 { type: 'auto_bike',     label: 'Auto + Bike hub' },
                 { type: 'auto_bus_bike', label: 'Auto + Bus + Bike hub' },
               ].map(({ type, label }) => (
-                <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#1D1D1F' }}>
+                <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#1D1D1F' }}>
                   <span dangerouslySetInnerHTML={{ __html: makePieSVG(type, 'potential', 20) }} style={{ display: 'inline-block', width: 20, height: 20, flexShrink: 0 }} />
                   {label}
                 </div>
               ))}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#6E6E73' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#6E6E73' }}>
                 <span dangerouslySetInnerHTML={{ __html: makePieSVG('bus_bike', 'priority', 20) }} style={{ display: 'inline-block', width: 20, height: 20, flexShrink: 0 }} />
                 Priority hub (score above median)
               </div>
@@ -633,7 +632,7 @@ export default function IntermodalSidebar() {
         <SectionHead>Object Size</SectionHead>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <button onClick={() => setIntermodalObjectScale(intermodalObjectScale - 0.25)} style={scaleBtn}>−</button>
-          <div style={{ flex: 1, background: '#F5F5F7', borderRadius: 8, padding: '4px 10px', fontSize: 12, textAlign: 'center', color: '#1D1D1F', fontWeight: 500 }}>
+          <div style={{ flex: 1, background: '#F5F5F7', borderRadius: 8, padding: '4px 10px', fontSize: 13, textAlign: 'center', color: '#1D1D1F', fontWeight: 500 }}>
             ×{intermodalObjectScale.toFixed(2)}
           </div>
           <button onClick={() => setIntermodalObjectScale(intermodalObjectScale + 0.25)} style={scaleBtn}>+</button>

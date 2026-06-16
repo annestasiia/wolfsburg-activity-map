@@ -40,7 +40,6 @@ function TagChip({ label, count, enabled, parentEnabled, onClick }) {
         cursor:       parentEnabled ? 'pointer' : 'default',
         color:         enabled ? '#1D1D1F' : '#6E6E73',
         fontFamily:   'inherit',
-        transition:   'all 0.15s ease',
         opacity:       parentEnabled ? 1 : 0.45,
         display:      'flex',
         alignItems:   'center',
@@ -49,7 +48,7 @@ function TagChip({ label, count, enabled, parentEnabled, onClick }) {
     >
       {label}
       {count > 0 && (
-        <span style={{ fontSize: 10, color: '#AEAEB2' }}>{count}</span>
+        <span style={{ fontSize: 13, color: '#AEAEB2' }}>{count}</span>
       )}
     </button>
   )
@@ -77,8 +76,7 @@ function CategoryRow({ cat, counts, expanded, onToggle, onExpandToggle,
             border:       `1px solid ${catEnabled ? cat.color : 'rgba(0,0,0,0.08)'}`,
             cursor:       'pointer',
             fontFamily:   'inherit',
-            transition:   'all 0.15s ease',
-            textAlign:    'left',
+                textAlign:    'left',
           }}
         >
           <span style={{ fontSize: 15, lineHeight: 1 }}>{cat.icon}</span>
@@ -117,8 +115,7 @@ function CategoryRow({ cat, counts, expanded, onToggle, onExpandToggle,
               color:         expanded ? '#2D6A4F' : '#6E6E73',
               fontFamily:   'inherit',
               lineHeight:    1,
-              transition:   'all 0.15s ease',
-            }}
+                  }}
           >
             {expanded ? '▲' : '▼'}
           </button>
@@ -257,7 +254,6 @@ export default function GreeneryPanel({ noTitle = false }) {
           fontFamily:     'inherit',
           textAlign:      'left',
           marginBottom:    10,
-          transition:     'all 0.15s ease',
         }}
       >
         <span style={{ fontSize: 14, letterSpacing: 1, color: showGreeneryDistrictBorders ? '#1D1D1F' : '#6E6E73' }}>
@@ -318,10 +314,10 @@ export default function GreeneryPanel({ noTitle = false }) {
           })}
 
           {/* ── Summary + attribution ── */}
-          <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 6, letterSpacing: '-0.01em' }}>
+          <p style={{ fontSize: 13, color: '#AEAEB2', marginTop: 6, letterSpacing: '-0.01em' }}>
             {totalFeatures} features · Toggle categories or individual tags to control map visibility
           </p>
-          <p style={{ fontSize: 11, color: '#AEAEB2', marginTop: 2 }}>
+          <p style={{ fontSize: 13, color: '#AEAEB2', marginTop: 2 }}>
             © <a
               href="https://www.openstreetmap.org/copyright"
               target="_blank"

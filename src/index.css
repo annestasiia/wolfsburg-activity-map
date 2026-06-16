@@ -32,7 +32,7 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 15px;
@@ -159,25 +159,20 @@ html, body, #root {
   background: transparent;
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: color 0.3s var(--ease-apple), background 0.3s var(--ease-apple), border-color 0.3s var(--ease-apple), box-shadow 0.3s var(--ease-apple);
   white-space: nowrap;
   user-select: none;
   font-family: inherit;
-  filter: blur(0.3px);
 }
 .mode-btn:hover:not(.active) {
   background: rgba(0, 0, 0, 0.03);
   color: var(--text-primary);
-  filter: blur(0px);
   border-color: rgba(0, 0, 0, 0.08);
 }
-.mode-btn:active { transform: scale(0.97); }
 .mode-btn.active {
   background: #111111;
   color: #ffffff;
   border-color: transparent;
   box-shadow: var(--shadow-sm);
-  filter: blur(0px);
   font-weight: 500;
 }
 .mode-btn.active:hover { background: #000000; }
@@ -261,13 +256,10 @@ html, body, #root {
   cursor: pointer;
   background: transparent;
   border: none;
-  transition: color 0.3s var(--ease-apple), background 0.3s var(--ease-apple);
   position: relative;
   border-right: 1px solid var(--border);
   font-family: inherit;
-  filter: blur(0.3px);
 }
-.bottom-tab:hover { filter: blur(0px); }
 .bottom-tab:last-child { border-right: none; }
 .bottom-tab:hover {
   color: var(--text-primary);
@@ -308,15 +300,12 @@ html, body, #root {
   border: 1px solid var(--border);
   color: var(--text-tertiary);
   background: transparent;
-  transition: color 0.3s var(--ease-apple), background 0.3s var(--ease-apple), border-color 0.3s var(--ease-apple);
   white-space: nowrap;
   line-height: 1.4;
   font-family: inherit;
-  filter: blur(0.3px);
 }
-.chip:hover { background: rgba(0,0,0,0.03); color: var(--text-primary); filter: blur(0px); border-color: rgba(0,0,0,0.08); }
-.chip.active { border-color: transparent; background: #111111; color: #fff; font-weight: 500; filter: blur(0px); }
-.chip:active { transform: scale(0.97); }
+.chip:hover { background: rgba(0,0,0,0.03); color: var(--text-primary); border-color: rgba(0,0,0,0.08); }
+.chip.active { border-color: transparent; background: #111111; color: #fff; font-weight: 500; }
 
 .chip-actions { display: flex; gap: 14px; margin-top: 12px; }
 
@@ -329,11 +318,9 @@ html, body, #root {
   cursor: pointer;
   padding: 0;
   letter-spacing: -0.01em;
-  transition: color 0.3s var(--ease-apple);
   font-family: inherit;
-  filter: blur(0.3px);
 }
-.chip-action-btn:hover { color: var(--text-primary); filter: blur(0px); }
+.chip-action-btn:hover { color: var(--text-primary); }
 
 /* ── Time panel ── */
 .time-panel-grid {
@@ -454,7 +441,6 @@ html, body, #root {
   opacity: 0;
   transform: translateY(10px);
   visibility: hidden;
-  transition: opacity 0.4s var(--ease-apple), transform 0.4s var(--ease-apple), visibility 0.4s var(--ease-apple);
 }
 .panel-enter-active {
   opacity: 1;

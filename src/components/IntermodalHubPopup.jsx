@@ -60,7 +60,7 @@ export default function IntermodalHubPopup() {
           <div style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', lineHeight: 1.3 }}>
             {HUB_TYPE_LABEL[hub.hubType]}
           </div>
-          <div style={{ fontSize: 12, color: '#6E6E73', marginTop: 2 }}>
+          <div style={{ fontSize: 13, color: '#6E6E73', marginTop: 2 }}>
             {hub.labelBus || hub.labelCar || 'Intermodal point'}
           </div>
         </div>
@@ -77,7 +77,7 @@ export default function IntermodalHubPopup() {
         {/* Priority + Status badges */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
           <span style={{
-            fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 980,
+            fontSize: 13, fontWeight: 600, padding: '3px 9px', borderRadius: 980,
             background: hub.priority === 'priority' ? '#1D1D1F' : '#F5F5F7',
             color: hub.priority === 'priority' ? '#fff' : '#6E6E73',
             border: '1px solid rgba(0,0,0,0.06)',
@@ -85,7 +85,7 @@ export default function IntermodalHubPopup() {
             {PRIORITY_LABEL[hub.priority]}
           </span>
           <span style={{
-            fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 980,
+            fontSize: 13, fontWeight: 600, padding: '3px 9px', borderRadius: 980,
             background: hub.status === 'existing' ? '#D1FAE5' : '#EFF6FF',
             color: hub.status === 'existing' ? '#065F46' : '#1D4ED8',
             border: `1px solid ${hub.status === 'existing' ? '#A7F3D0' : '#BFDBFE'}`,
@@ -98,7 +98,7 @@ export default function IntermodalHubPopup() {
         <Row label="Score" value={hub.score.toLocaleString()} />
 
         {/* Status explanation */}
-        <div style={{ fontSize: 12, color: '#6E6E73', marginBottom: 10, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13, color: '#6E6E73', marginBottom: 10, lineHeight: 1.5 }}>
           {STATUS_LABEL[hub.status]}
         </div>
 
@@ -107,7 +107,7 @@ export default function IntermodalHubPopup() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
           {(hub.conditions || []).map(cond => (
             <span key={cond} title={CONDITION_DESC[cond]} style={{
-              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 980,
+              fontSize: 13, fontWeight: 600, padding: '2px 8px', borderRadius: 980,
               background: '#F5F5F7', color: '#1D1D1F', border: '1px solid rgba(0,0,0,0.08)',
             }}>
               {cond}
@@ -116,7 +116,7 @@ export default function IntermodalHubPopup() {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
           {(hub.conditions || []).map(cond => (
-            <div key={cond} style={{ fontSize: 12, color: '#6E6E73', display: 'flex', gap: 6 }}>
+            <div key={cond} style={{ fontSize: 13, color: '#6E6E73', display: 'flex', gap: 6 }}>
               <span style={{ fontWeight: 600, color: '#1D1D1F', flexShrink: 0 }}>{cond}:</span>
               {CONDITION_DESC[cond]}
             </div>
@@ -127,7 +127,7 @@ export default function IntermodalHubPopup() {
         {hub.nearbyParkName && (
           <>
             <SectionHead>Nearby greenery</SectionHead>
-            <div style={{ fontSize: 12, color: '#065F46', background: '#D1FAE5', borderRadius: 8, padding: '6px 10px', marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: '#065F46', background: '#D1FAE5', borderRadius: 8, padding: '6px 10px', marginBottom: 12 }}>
               🌳 {hub.nearbyParkName}
             </div>
           </>
@@ -139,7 +139,7 @@ export default function IntermodalHubPopup() {
             <SectionHead>Facilities in radius</SectionHead>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
               {topFacilities.map((f, i) => (
-                <div key={i} style={{ fontSize: 12, background: '#F5F5F7', borderRadius: 8, padding: '6px 10px' }}>
+                <div key={i} style={{ fontSize: 13, background: '#F5F5F7', borderRadius: 8, padding: '6px 10px' }}>
                   <div style={{ fontWeight: 500, color: '#1D1D1F' }}>{f.name}</div>
                   <div style={{ color: '#6E6E73', display: 'flex', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
                     <span>{f.footfall} visitors/day</span>
@@ -149,7 +149,7 @@ export default function IntermodalHubPopup() {
                 </div>
               ))}
               {(hub.nearbyFacilities || []).length > 5 && (
-                <div style={{ fontSize: 11, color: '#AEAEB2', textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: '#AEAEB2', textAlign: 'center' }}>
                   +{(hub.nearbyFacilities || []).length - 5} more facilities
                 </div>
               )}
@@ -158,7 +158,7 @@ export default function IntermodalHubPopup() {
         )}
 
         {/* Coordinates */}
-        <div style={{ fontSize: 11, color: '#AEAEB2' }}>
+        <div style={{ fontSize: 13, color: '#AEAEB2' }}>
           {hub.lat.toFixed(5)}, {hub.lng.toFixed(5)}
         </div>
       </div>
@@ -168,7 +168,7 @@ export default function IntermodalHubPopup() {
 
 function SectionHead({ children }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#AEAEB2', marginBottom: 6 }}>
+    <div style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#AEAEB2', marginBottom: 6 }}>
       {children}
     </div>
   )
@@ -176,7 +176,7 @@ function SectionHead({ children }) {
 
 function Row({ label, value }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
       <span style={{ color: '#6E6E73' }}>{label}</span>
       <span style={{ fontWeight: 500, color: '#1D1D1F' }}>{value}</span>
     </div>

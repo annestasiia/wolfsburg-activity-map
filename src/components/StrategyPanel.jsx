@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 
-const FONT  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+const FONT  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 const SERIF = FONT
 const SANS  = FONT
 const C = { bg: '#FAFAF9', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
@@ -83,7 +83,7 @@ export default function StrategyPanel() {
         <div style={{ maxWidth: 660, margin: '0 auto', padding: '72px 56px 120px' }}>
 
           <Block>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 16 }}>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 400, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 16 }}>
               Post-Car Strategy · Wolfsburg 2026
             </div>
             <h1 style={{ fontFamily: SERIF, fontSize: 64, fontWeight: 400, color: C.text1, lineHeight: 1.05, letterSpacing: '-0.5px', margin: '0 0 28px', maxWidth: 600 }}>
@@ -141,7 +141,7 @@ export default function StrategyPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {PILLARS.map(({ num, title, body }) => (
                 <div key={num} style={{ display: 'flex', gap: 24, padding: '24px 0', borderTop: `1px solid ${C.border}` }}>
-                  <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', width: 24, paddingTop: 3, flexShrink: 0 }}>{num}</div>
+                  <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, letterSpacing: '0.14em', width: 24, paddingTop: 3, flexShrink: 0 }}>{num}</div>
                   <div>
                     <div style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 400, color: C.text1, marginBottom: 8, letterSpacing: '-0.3px' }}>{title}</div>
                     <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0, maxWidth: 460 }}>{body}</p>
@@ -171,7 +171,7 @@ export default function StrategyPanel() {
           </Block>
 
           <div style={{ padding: '24px 28px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, marginTop: 8 }}>
-            <p style={{ fontFamily: SANS, fontSize: 12, color: C.text3, margin: 0, lineHeight: 1.9 }}>
+            <p style={{ fontFamily: SANS, fontSize: 13, color: C.text3, margin: 0, lineHeight: 1.9 }}>
               <strong style={{ color: C.text2 }}>Status:</strong> This section is in development — quantitative analysis, policy proposals, and scenario modelling will follow.<br />
               <strong style={{ color: C.text2 }}>See also:</strong> Capacity Analysis for fleet sizing calculations · Hub System for spatial network · Geo-Data Analysis for baseline data.
             </p>

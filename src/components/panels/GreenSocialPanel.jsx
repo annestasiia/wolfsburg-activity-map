@@ -99,7 +99,6 @@ function ToggleRow({ active, onToggle, icon, label, rightLabel, color = '#2D6A4F
         background:  active ? `${color}12` : '#F5F5F7',
         border:     `1px solid ${active ? color : 'rgba(0,0,0,0.08)'}`,
         cursor:     'pointer',
-        transition: 'all 0.15s ease',
         width:      '100%',
         textAlign:  'left',
       }}
@@ -150,7 +149,7 @@ const ENCOUNTER_LABELS = {
 function WeightSlider({ label, value, min, max, step, color, onChange }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 2 }}>
-      <div style={{ width: 130, fontSize: 11, color: '#3D3D3F', flexShrink: 0, letterSpacing: '-0.01em' }}>
+      <div style={{ width: 130, fontSize: 13, color: '#3D3D3F', flexShrink: 0, letterSpacing: '-0.01em' }}>
         {label}
       </div>
       <input
@@ -160,7 +159,7 @@ function WeightSlider({ label, value, min, max, step, color, onChange }) {
         style={{ flex: 1, accentColor: color, cursor: 'pointer' }}
       />
       <div style={{
-        width: 30, fontSize: 11, fontWeight: 600, color,
+        width: 30, fontSize: 13, fontWeight: 600, color,
         textAlign: 'right', flexShrink: 0,
       }}>
         {value % 1 === 0 ? value : value.toFixed(1)}
@@ -196,10 +195,10 @@ function WeightControls({ activeId, color }) {
           cursor: 'pointer', fontFamily: 'inherit',
         }}
       >
-        <span style={{ fontSize: 11, fontWeight: 600, color: open ? color : '#6E6E73', letterSpacing: '-0.01em' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: open ? color : '#6E6E73', letterSpacing: '-0.01em' }}>
           ⚙ Weight controls
         </span>
-        <span style={{ fontSize: 11, color: '#AEAEB2' }}>{open ? '▲' : '▼'}</span>
+        <span style={{ fontSize: 13, color: '#AEAEB2' }}>{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
@@ -210,7 +209,7 @@ function WeightControls({ activeId, color }) {
         }}>
           {showCoverage && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
                 Category weights (relative)
               </div>
               {Object.entries(coverageWeights).map(([key, val]) => (
@@ -226,7 +225,7 @@ function WeightControls({ activeId, color }) {
               <button
                 onClick={resetCoverageWeights}
                 style={{
-                  marginTop: 8, fontSize: 10, color: '#AEAEB2',
+                  marginTop: 8, fontSize: 13, color: '#AEAEB2',
                   background: 'none', border: 'none', cursor: 'pointer',
                   fontFamily: 'inherit', padding: 0, letterSpacing: '-0.01em',
                 }}
@@ -238,7 +237,7 @@ function WeightControls({ activeId, color }) {
 
           {showEncounter && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
                 Component weights (%)
               </div>
               {Object.entries(encounterWeights).map(([key, val]) => (
@@ -251,13 +250,13 @@ function WeightControls({ activeId, color }) {
                   onChange={v => setEncounterWeight(key, v)}
                 />
               ))}
-              <div style={{ fontSize: 10, color: '#AEAEB2', marginTop: 6, lineHeight: 1.4 }}>
+              <div style={{ fontSize: 13, color: '#AEAEB2', marginTop: 6, lineHeight: 1.4 }}>
                 Weights auto-normalise to 100% regardless of values.
               </div>
               <button
                 onClick={resetEncounterWeights}
                 style={{
-                  marginTop: 6, fontSize: 10, color: '#AEAEB2',
+                  marginTop: 6, fontSize: 13, color: '#AEAEB2',
                   background: 'none', border: 'none', cursor: 'pointer',
                   fontFamily: 'inherit', padding: 0, letterSpacing: '-0.01em',
                 }}
@@ -328,7 +327,7 @@ export default function GreenSocialPanel() {
 
       {/* ── Header description ── */}
       <p style={{
-        fontSize: 12, color: '#6E6E73', lineHeight: 1.55,
+        fontSize: 13, color: '#6E6E73', lineHeight: 1.55,
         letterSpacing: '-0.01em', margin: 0,
       }}>
         Understand how green infrastructure supports social life, mobility, and encounter
@@ -354,7 +353,6 @@ export default function GreenSocialPanel() {
                 background:     active ? `${a.color}18` : '#F5F5F7',
                 border:        `1.5px solid ${active ? a.color : 'rgba(0,0,0,0.08)'}`,
                 cursor:        'pointer',
-                transition:    'all 0.15s ease',
                 boxShadow:      active ? `0 2px 8px ${a.color}28` : 'none',
                 userSelect:    'none',
               }}
@@ -399,7 +397,7 @@ export default function GreenSocialPanel() {
       {/* ── Active analysis description ── */}
       {activeAnalysis && (
         <p style={{
-          fontSize: 12, color: '#3D3D3F', lineHeight: 1.55, margin: 0,
+          fontSize: 13, color: '#3D3D3F', lineHeight: 1.55, margin: 0,
           background: `${color}0C`, borderRadius: 9,
           padding: '9px 12px',
           border: `1px solid ${color}22`,
@@ -418,7 +416,7 @@ export default function GreenSocialPanel() {
       {needsGreenery && greenSocialActiveAnalysis && (
         <div style={{
           background: '#FFFDE7', border: '1px solid #F9A825',
-          borderRadius: 10, padding: '10px 13px', fontSize: 12, color: '#7B5700',
+          borderRadius: 10, padding: '10px 13px', fontSize: 13, color: '#7B5700',
           lineHeight: 1.5,
         }}>
           Switch to the <strong>Layers</strong> tab first to load OSM greenery data, then return here.
@@ -455,14 +453,14 @@ export default function GreenSocialPanel() {
 
       {/* ── Loading social data ── */}
       {socialAmenitiesLoading && (
-        <p style={{ fontSize: 12, color: '#AEAEB2', letterSpacing: '-0.01em', margin: 0 }}>
+        <p style={{ fontSize: 13, color: '#AEAEB2', letterSpacing: '-0.01em', margin: 0 }}>
           Fetching social amenities from OpenStreetMap…
         </p>
       )}
 
       {/* ── Waiting for social data to compute ── */}
       {waitingForSocial && (
-        <p style={{ fontSize: 12, color: '#AEAEB2', margin: 0 }}>
+        <p style={{ fontSize: 13, color: '#AEAEB2', margin: 0 }}>
           Waiting for social amenity data…
         </p>
       )}
@@ -471,7 +469,7 @@ export default function GreenSocialPanel() {
       {greenSocialError && (
         <div style={{
           background: '#FFF3F3', border: '1px solid #FFCDD2',
-          borderRadius: 10, padding: '9px 12px', fontSize: 12, color: '#C62828',
+          borderRadius: 10, padding: '9px 12px', fontSize: 13, color: '#C62828',
         }}>
           {greenSocialError}
         </div>
@@ -510,11 +508,11 @@ export default function GreenSocialPanel() {
               flexDirection:'column',
               gap:           5,
             }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color, margin: 0, letterSpacing: '-0.01em' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color, margin: 0, letterSpacing: '-0.01em' }}>
                 Key findings
               </p>
               {insights.map((text, i) => (
-                <p key={i} style={{ fontSize: 11, color: '#3D3D3F', margin: 0, lineHeight: 1.55 }}>
+                <p key={i} style={{ fontSize: 13, color: '#3D3D3F', margin: 0, lineHeight: 1.55 }}>
                   {text}
                 </p>
               ))}
@@ -525,7 +523,7 @@ export default function GreenSocialPanel() {
           {amenityBreakdown.length > 0 &&
             (greenSocialActiveAnalysis === 'social' || greenSocialActiveAnalysis === 'encounter') && (
             <div>
-              <p style={{ fontSize: 12, fontWeight: 600, color: '#1D1D1F', marginBottom: 6, letterSpacing: '-0.01em' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F', marginBottom: 6, letterSpacing: '-0.01em' }}>
                 Social amenities · {socialAmenitiesGeoJSON.features.length} found
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -551,7 +549,7 @@ export default function GreenSocialPanel() {
           )}
 
           {/* Attribution */}
-          <p style={{ fontSize: 11, color: '#AEAEB2', margin: 0 }}>
+          <p style={{ fontSize: 13, color: '#AEAEB2', margin: 0 }}>
             Data:{' '}
             <a
               href="https://www.openstreetmap.org/copyright"
@@ -568,7 +566,7 @@ export default function GreenSocialPanel() {
 
       {/* ── Empty state ── */}
       {!greenSocialActiveAnalysis && (
-        <p style={{ fontSize: 12, color: '#AEAEB2', margin: 0, letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: 13, color: '#AEAEB2', margin: 0, letterSpacing: '-0.01em' }}>
           Select an analysis type above to begin.
         </p>
       )}

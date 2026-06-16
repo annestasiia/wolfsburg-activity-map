@@ -77,7 +77,7 @@ function PlanView({ layout, hoveredRef, selectedRef, onHover, onSelect, svgRef }
       <g key={el.uid}
         onMouseEnter={() => onHover(el.ref)} onMouseLeave={() => onHover(null)}
         onClick={() => onSelect(el.ref)}
-        style={{ cursor: 'pointer', opacity: dim ? 0.4 : 1, transition: 'opacity 0.15s',
+        style={{ cursor: 'pointer', opacity: dim ? 0.4 : 1,
           filter: active ? `drop-shadow(0 0 3px ${color}) drop-shadow(0 0 6px ${color}90)` : 'none' }}
       >
         {inner}
@@ -306,7 +306,7 @@ function AxonView({ layout, azimuth, hoveredRef, selectedRef, onHover, onSelect,
           <g key={e.uid}
             onMouseEnter={() => onHover(e.ref)} onMouseLeave={() => onHover(null)}
             onClick={() => onSelect(e.ref)}
-            style={{ cursor: 'pointer', opacity: dim ? 0.38 : 1, transition: 'opacity 0.15s',
+            style={{ cursor: 'pointer', opacity: dim ? 0.38 : 1,
               filter: active ? `drop-shadow(0 0 4px ${color}) drop-shadow(0 0 9px ${color}80)` : 'none' }}
           >
             {/* soft ground shadow */}
@@ -358,13 +358,13 @@ function ConnDiagram({ id }) {
 function ConnectivityStrip() {
   return (
     <div style={{ marginTop: 40 }}>
-      <div style={{ fontFamily: FONT, fontSize: 12, fontWeight: 600, color: C.text3, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 16 }}>Street Connectivity Strategies</div>
+      <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 600, color: C.text3, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 16 }}>Street Connectivity Strategies</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
         {CONNECTIVITY.map(s => (
           <div key={s.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
             <div style={{ background: '#FBFAF8', borderRadius: 6, padding: '6px 6px 2px' }}><ConnDiagram id={s.id} /></div>
             <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 600, color: C.text1, marginTop: 10 }}>{s.title}</div>
-            <div style={{ fontFamily: FONT, fontSize: 12, color: C.text3, lineHeight: 1.5, marginTop: 4 }}>{s.caption}</div>
+            <div style={{ fontFamily: FONT, fontSize: 13, color: C.text3, lineHeight: 1.5, marginTop: 4 }}>{s.caption}</div>
           </div>
         ))}
       </div>
@@ -435,18 +435,18 @@ function DetailCard({ layout, tier, ref_, onClose }) {
           <div style={{ fontFamily: FONT, fontSize: 15, fontWeight: 700, color: C.text1, letterSpacing: '-0.01em' }}>{el.name}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: color }} />
-            <span style={{ fontFamily: FONT, fontSize: 11, color: color, fontWeight: 600 }}>{el.cat.charAt(0).toUpperCase()+el.cat.slice(1)}</span>
+            <span style={{ fontFamily: FONT, fontSize: 13, color: color, fontWeight: 600 }}>{el.cat.charAt(0).toUpperCase()+el.cat.slice(1)}</span>
           </div>
         </div>
       </div>
       <p style={{ fontFamily: FONT, fontSize: 13, color: C.text2, lineHeight: 1.6, margin: '0 0 14px' }}>{el.def}</p>
       <div style={{ display: 'flex', gap: 22, fontFamily: FONT }}>
         <div>
-          <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Zone</div>
+          <div style={{ fontSize: 13, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Zone</div>
           <div style={{ fontSize: 13, color: C.text1, fontWeight: 600 }}>{zone || '—'}</div>
         </div>
         <div>
-          <div style={{ fontSize: 10, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Role in {tier.toUpperCase()}-Hub</div>
+          <div style={{ fontSize: 13, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Role in {tier.toUpperCase()}-Hub</div>
           <div style={{ fontSize: 13, color: role === 'Mandatory' ? TERRA : role === 'Standard' ? '#2471A3' : C.text2, fontWeight: 600 }}>{role}</div>
         </div>
       </div>
@@ -459,7 +459,7 @@ function ElementList({ layout, hoveredRef, selectedRef, onHover, onSelect }) {
   layout.elements.forEach(e => { if (!refs.includes(e.ref)) refs.push(e.ref) })
   return (
     <div style={{ width: 250, flexShrink: 0 }}>
-      <div style={{ fontFamily: FONT, fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Elements in this hub</div>
+      <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Elements in this hub</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {refs.map(ref => {
           const el = ELEMENT_BY_ID[ref]; if (!el) return null
@@ -470,7 +470,7 @@ function ElementList({ layout, hoveredRef, selectedRef, onHover, onSelect }) {
               onMouseEnter={() => onHover(ref)} onMouseLeave={() => onHover(null)}
               onClick={() => onSelect(ref)}
               style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '5px 8px', borderRadius: 7, cursor: 'pointer',
-                background: active ? color+'16' : 'transparent', transition: 'background 0.12s' }}
+                background: active ? color+'16' : 'transparent' }}
             >
               <span style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: color+'14', border: `1.5px solid ${active ? color : color+'55'}` }}>
                 <HubIcon id={el.id} color={color} size={16} />
@@ -505,8 +505,8 @@ export default function HubScene({ tier }) {
   const onMove = (e) => { if (!drag.current) return; setAzimuth(drag.current.az + (e.clientX - drag.current.x) * 0.5) }
   const onUp = (e) => { drag.current = null; if (e.currentTarget) e.currentTarget.style.cursor = 'grab' }
 
-  const figCaption = { fontFamily: FONT, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }
-  const expBtn = { fontFamily: FONT, fontSize: 11, fontWeight: 600, padding: '4px 11px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${C.border}`, background: C.card, color: C.text2 }
+  const figCaption = { fontFamily: FONT, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }
+  const expBtn = { fontFamily: FONT, fontSize: 13, fontWeight: 600, padding: '4px 11px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${C.border}`, background: C.card, color: C.text2 }
   const presetBtn = (label, az) => (
     <button onClick={() => setAzimuth(az)} style={{ ...expBtn, padding: '4px 9px', background: Math.round(((azimuth%360)+360)%360) === az ? TERRA+'18' : C.card, color: Math.round(((azimuth%360)+360)%360) === az ? TERRA : C.text2 }}>{label}</button>
   )

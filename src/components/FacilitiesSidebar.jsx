@@ -46,7 +46,7 @@ export default function FacilitiesSidebar() {
       >
         <span style={{ fontSize: 18 }}>⊞</span>
         <span style={{
-          writingMode: 'vertical-rl', fontSize: 12, fontWeight: 600,
+          writingMode: 'vertical-rl', fontSize: 13, fontWeight: 600,
           color: '#3D3D3F', letterSpacing: '-0.01em',
         }}>
           Facilities
@@ -79,7 +79,7 @@ export default function FacilitiesSidebar() {
               onClick={() => setSelectedFacilityVenueId(null)}
               style={{
                 background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
-                borderRadius: 8, padding: '4px 10px', fontSize: 12,
+                borderRadius: 8, padding: '4px 10px', fontSize: 13,
                 cursor: 'pointer', fontFamily: 'inherit', color: '#3D3D3F',
                 flexShrink: 0,
               }}
@@ -106,7 +106,7 @@ export default function FacilitiesSidebar() {
             background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
             borderRadius: 8, padding: '4px 9px', fontSize: 13, color: '#6E6E73',
             cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1,
-            transition: 'all 0.15s ease', flexShrink: 0, marginLeft: 8,
+            flexShrink: 0, marginLeft: 8,
           }}
         >✕</button>
       </div>
@@ -148,7 +148,6 @@ function CategoriesView({ categories, selectedCategories, toggleCategory, venues
                 background: on ? `${c.color}12` : '#F5F5F7',
                 border: `1px solid ${on ? c.color + '40' : 'rgba(0,0,0,0.08)'}`,
                 cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 textAlign: 'left', width: '100%',
               }}
             >
@@ -156,7 +155,7 @@ function CategoriesView({ categories, selectedCategories, toggleCategory, venues
               <span style={{ flex: 1 }}>
                 <span style={{
                   display: 'block', fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em',
-                  color: on ? '#1D1D1F' : '#6E6E73', marginBottom: 2, transition: 'color 0.2s',
+                  color: on ? '#1D1D1F' : '#6E6E73', marginBottom: 2,
                 }}>
                   {c.name}
                 </span>
@@ -168,7 +167,6 @@ function CategoriesView({ categories, selectedCategories, toggleCategory, venues
                 width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
                 background: on ? c.color : '#E8E8ED',
                 boxShadow: on ? `0 0 6px ${c.color}60` : 'none',
-                transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
               }} />
             </button>
           )
@@ -196,21 +194,21 @@ function VenueDetail({ venue, selectedDay }) {
         <span style={{
           padding: '3px 10px', borderRadius: 980,
           background: catColor + '18', color: catColor,
-          fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em',
+          fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em',
         }}>
           {ICONS[venue.category]} {venue.category}
         </span>
         <span style={{
           padding: '3px 10px', borderRadius: 980,
           background: '#F5F5F7', color: '#6E6E73',
-          fontSize: 12, letterSpacing: '-0.01em',
+          fontSize: 13, letterSpacing: '-0.01em',
         }}>
           {venue.type}
         </span>
         <span style={{
           padding: '3px 10px', borderRadius: 980,
           background: status.bg, color: status.color,
-          fontSize: 12, fontWeight: 500, letterSpacing: '-0.01em',
+          fontSize: 13, fontWeight: 500, letterSpacing: '-0.01em',
         }}>
           {status.text}
         </span>
@@ -227,7 +225,7 @@ function VenueDetail({ venue, selectedDay }) {
           <div style={{ fontSize: 20, fontWeight: 700, color: catColor, lineHeight: 1 }}>
             {venue.activityLevel || '—'}
           </div>
-          <div style={{ fontSize: 12, color: catColor + 'AA', marginTop: 3 }}>
+          <div style={{ fontSize: 13, color: catColor + 'AA', marginTop: 3 }}>
             activity level today
           </div>
         </div>
@@ -235,7 +233,7 @@ function VenueDetail({ venue, selectedDay }) {
 
       {/* Weekly heatmap label */}
       <p style={{
-        fontSize: 11, fontWeight: 600, color: '#AEAEB2',
+        fontSize: 13, fontWeight: 600, color: '#AEAEB2',
         letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8,
       }}>
         Weekly Pattern
@@ -258,7 +256,7 @@ function VenueDetail({ venue, selectedDay }) {
                 boxShadow: isToday ? `0 0 0 2px ${catColor}30` : 'none',
               }} />
               <span style={{
-                fontSize: 10, letterSpacing: '0.03em',
+                fontSize: 13, letterSpacing: '0.03em',
                 color: isToday ? '#1D1D1F' : '#AEAEB2',
                 fontWeight: isToday ? 700 : 400,
               }}>
@@ -285,7 +283,7 @@ function VenueDetail({ venue, selectedDay }) {
               width: 12, height: 12, borderRadius: 3,
               background: color, border: '1px solid rgba(0,0,0,0.08)', flexShrink: 0,
             }} />
-            <span style={{ fontSize: 11, color: '#6E6E73' }}>{label}</span>
+            <span style={{ fontSize: 13, color: '#6E6E73' }}>{label}</span>
           </div>
         ))}
       </div>
@@ -308,7 +306,7 @@ function VenueDetail({ venue, selectedDay }) {
       )}
 
       {/* Address */}
-      <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 14, letterSpacing: '-0.01em' }}>
+      <p style={{ fontSize: 13, color: '#AEAEB2', marginTop: 14, letterSpacing: '-0.01em' }}>
         {venue.street}, {venue.city}
       </p>
     </div>
@@ -319,7 +317,7 @@ function InfoRow({ label, value }) {
   return (
     <div style={{ display: 'flex', gap: 10 }}>
       <span style={{
-        width: 44, flexShrink: 0, fontSize: 11, fontWeight: 600,
+        width: 44, flexShrink: 0, fontSize: 13, fontWeight: 600,
         letterSpacing: '0.04em', textTransform: 'uppercase',
         color: '#AEAEB2', paddingTop: 2,
       }}>

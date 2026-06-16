@@ -203,7 +203,7 @@ const area_pct_of_zone    = (area_total_all_hubs / hub_zone_m2 * 100).toFixed(2)
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 const SERIF = "'Georgia', 'Times New Roman', serif"
-const SANS  = "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+const SANS  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 const C = { bg: '#FAFAF9', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
 const fmt = n => Math.round(n).toLocaleString('de-DE')
 
@@ -221,7 +221,7 @@ function Sect({ id, eyebrow, title, children }) {
   return (
     <div id={id} className="dp-a" style={{ padding: '44px 0', borderTop: `1px solid ${C.border}` }}>
       <div style={{ maxWidth: 520, marginBottom: 28 }}>
-        {eyebrow && <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>{eyebrow}</div>}
+        {eyebrow && <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>{eyebrow}</div>}
         <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: C.text1, margin: 0, lineHeight: 1.35 }}>{title}</h2>
       </div>
       {children}
@@ -234,7 +234,7 @@ function KCard({ label, value, sub, color }) {
     <div style={{ background: C.card, borderRadius: 10, padding: '20px 22px', border: `1px solid ${C.border}` }}>
       <div style={{ fontFamily: SERIF, fontSize: 30, fontWeight: 400, color: color || C.text1, lineHeight: 1, letterSpacing: '-0.02em' }}>{value}</div>
       <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1, marginTop: 8 }}>{label}</div>
-      <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 3 }}>{sub}</div>
+      <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 3 }}>{sub}</div>
     </div>
   )
 }
@@ -243,7 +243,7 @@ function Rule({ label }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '56px 0 44px' }}>
       <div style={{ width: 28, height: 2, background: C.text1 }} />
-      <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text1, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{label}</span>
+      <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{label}</span>
       <div style={{ flex: 1, height: 1, background: C.border }} />
     </div>
   )
@@ -256,7 +256,7 @@ function DataTable({ head, rows, renderRow }) {
         <thead>
           <tr style={{ borderBottom: `2px solid ${C.border}` }}>
             {head.map(({ label, align }) => (
-              <th key={label} style={{ textAlign: align || 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</th>
+              <th key={label} style={{ textAlign: align || 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 13, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</th>
             ))}
           </tr>
         </thead>
@@ -279,7 +279,7 @@ function ModalShareChart() {
           <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: 'hidden' }}>
             <div className="dp-bh" style={{ width: `${(share / 0.62) * 100}%`, height: '100%', background: color, borderRadius: 4, transitionDelay: `${i * 80}ms` }} />
           </div>
-          <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 4 }}>{fmt(D_total * share)} trips/day</div>
+          <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 4 }}>{fmt(D_total * share)} trips/day</div>
         </div>
       ))}
     </div>
@@ -292,11 +292,11 @@ function DistrictChart() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
       {Object.entries(DISTRICT_POP).sort(([, a], [, b]) => b - a).map(([name, pop], i) => (
         <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontFamily: SANS, width: 112, fontSize: 12, color: C.text2, flexShrink: 0 }}>{name}</div>
+          <div style={{ fontFamily: SANS, width: 112, fontSize: 13, color: C.text2, flexShrink: 0 }}>{name}</div>
           <div style={{ flex: 1, height: 6, background: C.border, borderRadius: 3, overflow: 'hidden' }}>
             <div className="dp-bh" style={{ width: `${(pop / maxPop) * 100}%`, height: '100%', background: '#2980B9', borderRadius: 3, transitionDelay: `${i * 35}ms` }} />
           </div>
-          <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, width: 44, textAlign: 'right', flexShrink: 0 }}>{pop.toLocaleString('de-DE')}</div>
+          <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, width: 44, textAlign: 'right', flexShrink: 0 }}>{pop.toLocaleString('de-DE')}</div>
         </div>
       ))}
     </div>
@@ -319,13 +319,13 @@ function HourlyChart() {
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, borderTop: `1px solid ${C.border}`, paddingTop: 5 }}>
-        {[0, 4, 8, 12, 16, 20, 23].map(h => <span key={h} style={{ fontFamily: SANS, fontSize: 10, color: C.text3 }}>{h}h</span>)}
+        {[0, 4, 8, 12, 16, 20, 23].map(h => <span key={h} style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{h}h</span>)}
       </div>
       <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
         {[['#E63946', 'Peak (7–9h, 16–18h)'], ['#2980B9', 'Off-peak']].map(([c, l]) => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 10, height: 10, background: c, borderRadius: 2 }} />
-            <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{l}</span>
+            <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{l}</span>
           </div>
         ))}
       </div>
@@ -369,7 +369,7 @@ function FlowChart() {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
             <div>
               <span style={{ fontFamily: SANS, fontSize: 13, color: C.text1, fontWeight: 500 }}>{label}</span>
-              <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginLeft: 8 }}>{sub}</span>
+              <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginLeft: 8 }}>{sub}</span>
             </div>
             <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color }}>{fmt(value)}</span>
           </div>
@@ -381,15 +381,15 @@ function FlowChart() {
       <div style={{ padding: '14px 18px', background: 'rgba(10,126,69,0.05)', border: '1px solid rgba(10,126,69,0.16)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: '#0A7E45' }}>D_transport (net)</span>
-          <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginLeft: 8 }}>inbound + internal transport</span>
+          <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginLeft: 8 }}>inbound + internal transport</span>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontFamily: SERIF, fontSize: 20, color: '#0A7E45' }}>{fmt(D_transport)}</div>
-          <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>−{reduction_pct}% vs D_total</div>
+          <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>−{reduction_pct}% vs D_total</div>
         </div>
       </div>
       <div>
-        <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, marginBottom: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Trips/day by mode</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text3, marginBottom: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Trips/day by mode</div>
         {Object.entries(MODE_META).map(([mode, { label, color }]) => {
           const f = fleet[mode]
           return (
@@ -398,8 +398,8 @@ function FlowChart() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
                   <span style={{ fontFamily: SANS, fontSize: 13, color: C.text2 }}>{label}</span>
-                  {f.inbound > 0 && <span style={{ fontFamily: SANS, fontSize: 10, color: '#E63946', background: 'rgba(230,57,70,0.07)', padding: '1px 6px', borderRadius: 4 }}>inbound</span>}
-                  {f.internal > 0 && <span style={{ fontFamily: SANS, fontSize: 10, color: '#2980B9', background: 'rgba(41,128,185,0.07)', padding: '1px 6px', borderRadius: 4 }}>internal</span>}
+                  {f.inbound > 0 && <span style={{ fontFamily: SANS, fontSize: 13, color: '#111111', background: 'rgba(230,57,70,0.07)', padding: '1px 6px', borderRadius: 4 }}>inbound</span>}
+                  {f.internal > 0 && <span style={{ fontFamily: SANS, fontSize: 13, color: '#2980B9', background: 'rgba(41,128,185,0.07)', padding: '1px 6px', borderRadius: 4 }}>internal</span>}
                 </div>
                 <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color }}>{fmt(f.trips)}</span>
               </div>
@@ -422,14 +422,14 @@ function ModeCards() {
         const f = fleet[key]
         return (
           <div key={key} style={{ background: C.card, borderRadius: 10, padding: '16px 16px', border: `1px solid ${C.border}`, borderLeft: `3px solid ${color}` }}>
-            <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>{label}</div>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>{label}</div>
             <div style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 400, color: C.text1, letterSpacing: '-0.02em', lineHeight: 1 }}>{fmt(f.total)}</div>
-            <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, marginTop: 2, marginBottom: 12 }}>total fleet</div>
+            <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 2, marginBottom: 12 }}>total fleet</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {[['On-street', f.on_street], ['Peak trips/h', f.peak_hour], ['Charging pts', f.charging]].map(([lbl, val]) => (
                 <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{lbl}</span>
-                  <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text2 }}>{fmt(val)}</span>
+                  <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{lbl}</span>
+                  <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text2 }}>{fmt(val)}</span>
                 </div>
               ))}
             </div>
@@ -452,7 +452,7 @@ function OnStreetChart() {
           <div key={mode}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
               <span style={{ fontFamily: SANS, fontSize: 13, color: C.text2 }}>{label}</span>
-              <span style={{ fontFamily: SANS, fontSize: 12, color: C.text3 }}>
+              <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>
                 <span style={{ fontWeight: 700, color }}>{fmt(on_street)}</span>
                 <span style={{ color: C.border }}> / </span>
                 <span style={{ fontWeight: 700, color: C.text1 }}>{fmt(total)}</span>
@@ -470,7 +470,7 @@ function OnStreetChart() {
         {[['solid', 'On-street at peak hour'], ['transparent 28%', 'Total fleet (with reserve)']].map(([t, l]) => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 24, height: 8, background: '#444', borderRadius: 2, opacity: t === 'solid' ? 1 : 0.28 }} />
-            <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{l}</span>
+            <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{l}</span>
           </div>
         ))}
       </div>
@@ -486,35 +486,35 @@ function ReplacementChart() {
   return (
     <div style={{ display: 'flex', gap: 36, alignItems: 'flex-end' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Baseline</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Baseline</div>
         <div className="dp-bv" style={{ width: BAR_W, height: Math.round((CARS_REPLACED / scaleMax) * 260), background: '#E63946', borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 10 }}>
-          <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: '#fff' }}>{fmt(CARS_REPLACED)}</span>
+          <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#fff' }}>{fmt(CARS_REPLACED)}</span>
         </div>
-        <div style={{ fontFamily: SANS, fontSize: 12, color: '#E63946', fontWeight: 600, marginTop: 6 }}>Private cars</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, color: '#111111', fontWeight: 600, marginTop: 6 }}>Private cars</div>
       </div>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Post-Car</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Post-Car</div>
         <div className="dp-bv" style={{ width: BAR_W, height: Math.round((total_fleet / scaleMax) * 260), borderRadius: '6px 6px 0 0', overflow: 'hidden', display: 'flex', flexDirection: 'column-reverse' }}>
           {segments.map(({ mode, color, val }) => (
             <div key={mode} style={{ flex: val, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {val > 150 && <span style={{ fontFamily: SANS, fontSize: 9, color: '#fff', fontWeight: 600 }}>{fmt(val)}</span>}
+              {val > 150 && <span style={{ fontFamily: SANS, fontSize: 13, color: '#fff', fontWeight: 600 }}>{fmt(val)}</span>}
             </div>
           ))}
         </div>
-        <div style={{ fontFamily: SANS, fontSize: 12, color: C.text1, fontWeight: 600, marginTop: 6 }}>Shared fleet</div>
-        <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{fmt(total_fleet)} units</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, color: C.text1, fontWeight: 600, marginTop: 6 }}>Shared fleet</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{fmt(total_fleet)} units</div>
       </div>
       <div style={{ flex: 1, paddingBottom: 28 }}>
         <div style={{ padding: '14px 18px', background: 'rgba(10,126,69,0.05)', border: '1px solid rgba(10,126,69,0.14)', borderRadius: 8, marginBottom: 16 }}>
           <div style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: '#0A7E45', letterSpacing: '-0.02em' }}>1 : {replacement_ratio}</div>
-          <div style={{ fontFamily: SANS, fontSize: 12, color: '#2D6A4F', marginTop: 3 }}>shared vehicle replaces {replacement_ratio} private cars</div>
+          <div style={{ fontFamily: SANS, fontSize: 13, color: '#2D6A4F', marginTop: 3 }}>shared vehicle replaces {replacement_ratio} private cars</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
           {segments.map(({ mode, color, label, val }) => (
             <div key={mode} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 10, height: 10, background: color, borderRadius: 2, flexShrink: 0 }} />
-              <span style={{ fontFamily: SANS, fontSize: 12, color: C.text2, flex: 1 }}>{label}</span>
-              <span style={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: C.text1 }}>{fmt(val)}</span>
+              <span style={{ fontFamily: SANS, fontSize: 13, color: C.text2, flex: 1 }}>{label}</span>
+              <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1 }}>{fmt(val)}</span>
             </div>
           ))}
         </div>
@@ -550,13 +550,13 @@ function DotMatrix() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div>
-        <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: '#E63946', marginBottom: 8 }}>
+        <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: '#111111', marginBottom: 8 }}>
           Private Cars — {fmt(CARS_REPLACED)} <span style={{ fontWeight: 400, color: C.text3 }}>(each dot = {UNIT} vehicles)</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>{renderDots(carDots, () => '#E63946')}</div>
       </div>
       <div>
-        <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 8 }}>
+        <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1, marginBottom: 8 }}>
           Post-Car Fleet — {fmt(total_fleet)} <span style={{ fontWeight: 400, color: C.text3 }}>(each dot = {UNIT} vehicles)</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>{renderDots(fleetDots, fleetColorFn)}</div>
@@ -564,7 +564,7 @@ function DotMatrix() {
           {modeOrder.map(m => (
             <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <div style={{ width: 9, height: 9, borderRadius: '50%', background: MODE_META[m].color }} />
-              <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{MODE_META[m].label}</span>
+              <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{MODE_META[m].label}</span>
             </div>
           ))}
         </div>
@@ -676,11 +676,11 @@ function HubHeatmap() {
       <table style={{ borderCollapse: 'separate', borderSpacing: 4, width: '100%' }}>
         <thead>
           <tr>
-            <th style={{ width: 120, textAlign: 'left', fontFamily: SANS, fontSize: 11, color: C.text3, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '0 8px 10px' }} />
+            <th style={{ width: 120, textAlign: 'left', fontFamily: SANS, fontSize: 13, color: C.text3, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '0 8px 10px' }} />
             {TIERS.map(t => (
-              <th key={t} style={{ textAlign: 'center', fontFamily: SANS, fontSize: 12, fontWeight: 700, color: HUB_COLORS_UI[t], padding: '0 0 10px', letterSpacing: '-0.01em' }}>
+              <th key={t} style={{ textAlign: 'center', fontFamily: SANS, fontSize: 13, fontWeight: 700, color: HUB_COLORS_UI[t], padding: '0 0 10px', letterSpacing: '-0.01em' }}>
                 {HUB_LABELS_UI[t]}<br />
-                <span style={{ fontWeight: 400, color: C.text3, fontSize: 10 }}>{HUB_COUNTS[t]} hubs</span>
+                <span style={{ fontWeight: 400, color: C.text3, fontSize: 13 }}>{HUB_COUNTS[t]} hubs</span>
               </th>
             ))}
           </tr>
@@ -688,7 +688,7 @@ function HubHeatmap() {
         <tbody>
           {modes.map(mode => (
             <tr key={mode}>
-              <td style={{ fontFamily: SANS, fontSize: 12, color: C.text2, padding: '0 8px 0 0', whiteSpace: 'nowrap' }}>
+              <td style={{ fontFamily: SANS, fontSize: 13, color: C.text2, padding: '0 8px 0 0', whiteSpace: 'nowrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: MODE_META[mode].color }} />
                   {MODE_META[mode].label}
@@ -708,7 +708,7 @@ function HubHeatmap() {
           ))}
         </tbody>
       </table>
-      <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 10 }}>Units per single hub · incl. 20% reserve</div>
+      <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 10 }}>Units per single hub · incl. 20% reserve</div>
     </div>
   )
 }
@@ -733,7 +733,7 @@ function HubBars() {
                   const segH = (val / total) * barH
                   return (
                     <div key={mode} title={`${MODE_META[mode].label}: ${val}`} style={{ height: segH, background: MODE_META[mode].color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {segH > 20 && <span style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: '#fff' }}>{val}</span>}
+                      {segH > 20 && <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#fff' }}>{val}</span>}
                     </div>
                   )
                 })}
@@ -741,7 +741,7 @@ function HubBars() {
             </div>
             <div style={{ marginTop: 8, textAlign: 'center' }}>
               <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: HUB_COLORS_UI[tier] }}>{HUB_LABELS_UI[tier]}</div>
-              <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{HUB_COUNTS[tier]} hubs · {fmt(total)} total</div>
+              <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{HUB_COUNTS[tier]} hubs · {fmt(total)} total</div>
             </div>
           </div>
         )
@@ -750,7 +750,7 @@ function HubBars() {
         {modes.map(mode => (
           <div key={mode} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <div style={{ width: 10, height: 10, background: MODE_META[mode].color, borderRadius: 2, flexShrink: 0 }} />
-            <span style={{ fontFamily: SANS, fontSize: 12, color: C.text2 }}>{MODE_META[mode].label}</span>
+            <span style={{ fontFamily: SANS, fontSize: 13, color: C.text2 }}>{MODE_META[mode].label}</span>
           </div>
         ))}
       </div>
@@ -781,7 +781,7 @@ function HubCards() {
                 <div style={{ width: 12, height: 12, borderRadius: '50%', background: color }} />
                 <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: C.text1 }}>{HUB_LABELS_UI[tier]}</span>
               </div>
-              <div style={{ fontFamily: SANS, fontSize: 12, color: C.text3, marginTop: 5 }}>{HUB_COUNTS[tier]} hubs · {HUB_CARD_DESC[tier]}</div>
+              <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 5 }}>{HUB_COUNTS[tier]} hubs · {HUB_CARD_DESC[tier]}</div>
             </div>
             <div style={{ padding: '14px 20px' }}>
               {HUB_CARD_MODES[tier].map(mode => {
@@ -800,8 +800,8 @@ function HubCards() {
               <div style={{ marginTop: 12 }}>
                 {[['Charging points', hub_charging_per[tier]], ['Footprint', `${hub_footprint_per[tier].toLocaleString('de-DE')} m²`]].map(([label, value]) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                    <span style={{ fontFamily: SANS, fontSize: 12, color: C.text3 }}>{label}</span>
-                    <span style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: C.text1 }}>{value}</span>
+                    <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{label}</span>
+                    <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1 }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -820,9 +820,9 @@ function HubInfraTable() {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: SANS, fontSize: 13 }}>
         <thead>
           <tr style={{ borderBottom: `2px solid ${C.border}` }}>
-            <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Mode</th>
+            <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 13, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Mode</th>
             {TIERS.map(t => (
-              <th key={t} colSpan={2} style={{ textAlign: 'center', padding: '8px 6px', fontWeight: 700, color: HUB_COLORS_UI[t], fontSize: 11, letterSpacing: '0.04em', textTransform: 'uppercase', borderLeft: `1px solid ${C.border}` }}>
+              <th key={t} colSpan={2} style={{ textAlign: 'center', padding: '8px 6px', fontWeight: 700, color: HUB_COLORS_UI[t], fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase', borderLeft: `1px solid ${C.border}` }}>
                 {HUB_LABELS_UI[t]} ({HUB_COUNTS[t]})
               </th>
             ))}
@@ -830,8 +830,8 @@ function HubInfraTable() {
           <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FAFAF9' }}>
             <th style={{ padding: '5px 10px' }} />
             {TIERS.map(t => [
-              <th key={`${t}-total`} style={{ textAlign: 'right', padding: '5px 6px', fontSize: 10, color: C.text3, fontWeight: 600, borderLeft: `1px solid ${C.border}` }}>Tier total</th>,
-              <th key={`${t}-hub`}   style={{ textAlign: 'right', padding: '5px 6px', fontSize: 10, color: C.text3, fontWeight: 600 }}>Per hub</th>,
+              <th key={`${t}-total`} style={{ textAlign: 'right', padding: '5px 6px', fontSize: 13, color: C.text3, fontWeight: 600, borderLeft: `1px solid ${C.border}` }}>Tier total</th>,
+              <th key={`${t}-hub`}   style={{ textAlign: 'right', padding: '5px 6px', fontSize: 13, color: C.text3, fontWeight: 600 }}>Per hub</th>,
             ])}
           </tr>
         </thead>
@@ -851,14 +851,14 @@ function HubInfraTable() {
             </tr>
           ))}
           <tr style={{ borderTop: `2px solid ${C.border}`, background: 'rgba(41,128,185,0.04)' }}>
-            <td style={{ padding: '9px 10px', fontWeight: 600, color: '#2980B9', fontSize: 12 }}>Charging pts / hub</td>
+            <td style={{ padding: '9px 10px', fontWeight: 600, color: '#2980B9', fontSize: 13 }}>Charging pts / hub</td>
             {TIERS.map(t => [
               <td key={`${t}-total`} style={{ padding: '9px 6px', textAlign: 'right', color: C.text3, borderLeft: `1px solid ${C.border}` }}>–</td>,
               <td key={`${t}-hub`}   style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 700, color: '#2980B9' }}>{hub_charging_per[t]}</td>,
             ])}
           </tr>
           <tr style={{ background: 'rgba(230,126,34,0.04)' }}>
-            <td style={{ padding: '9px 10px', fontWeight: 600, color: '#E67E22', fontSize: 12 }}>Footprint / hub (m²)</td>
+            <td style={{ padding: '9px 10px', fontWeight: 600, color: '#E67E22', fontSize: 13 }}>Footprint / hub (m²)</td>
             {TIERS.map(t => [
               <td key={`${t}-total`} style={{ padding: '9px 6px', textAlign: 'right', color: C.text3, borderLeft: `1px solid ${C.border}` }}>–</td>,
               <td key={`${t}-hub`}   style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 700, color: '#E67E22' }}>{fmt(hub_footprint_per[t])}</td>,
@@ -903,7 +903,7 @@ function HubAreaBars() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: HUB_COLORS_UI[tier] }} />
                 <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: HUB_COLORS_UI[tier] }}>{HUB_LABELS_UI[tier]}</span>
-                <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{HUB_COUNTS[tier]} hubs · {fmt(S_hub_area[tier] * HUB_COUNTS[tier])} m² total</span>
+                <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{HUB_COUNTS[tier]} hubs · {fmt(S_hub_area[tier] * HUB_COUNTS[tier])} m² total</span>
               </div>
               <span style={{ fontFamily: SANS, fontSize: 14, fontWeight: 700, color: C.text1 }}>{Math.round(total)} m²</span>
             </div>
@@ -916,7 +916,7 @@ function HubAreaBars() {
                     width: `${pct}%`, background: COMP_COLORS_AREA[ck],
                     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                   }}>
-                    {pct > 8 && <span style={{ fontFamily: SANS, fontSize: 9, fontWeight: 700, color: 'white' }}>{Math.round(val)}</span>}
+                    {pct > 8 && <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: 'white' }}>{Math.round(val)}</span>}
                   </div>
                 )
               })}
@@ -925,8 +925,8 @@ function HubAreaBars() {
               {COMP_KEYS_AREA.map(ck => (
                 <div key={ck} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: 8, height: 8, background: COMP_COLORS_AREA[ck], borderRadius: 2 }} />
-                  <span style={{ fontFamily: SANS, fontSize: 10, color: C.text3 }}>{COMP_LABELS_AREA[ck]}</span>
-                  <span style={{ fontFamily: SANS, fontSize: 10, fontWeight: 600, color: C.text2 }}>{Math.round(AREA_MAPS[ck][tier])} m²</span>
+                  <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{COMP_LABELS_AREA[ck]}</span>
+                  <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text2 }}>{Math.round(AREA_MAPS[ck][tier])} m²</span>
                 </div>
               ))}
             </div>
@@ -937,7 +937,7 @@ function HubAreaBars() {
         <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1 }}>All hubs combined</span>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: '#E67E22' }}>{fmt(area_total_all_hubs)} m²</div>
-          <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{area_pct_of_zone}% of zone · {(area_total_all_hubs / 10000).toFixed(2)} ha</div>
+          <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{area_pct_of_zone}% of zone · {(area_total_all_hubs / 10000).toFixed(2)} ha</div>
         </div>
       </div>
     </div>
@@ -951,7 +951,7 @@ function HubAreaFleetDonut() {
       {TIERS.map(tier => {
         const modeAreas = modes.map(m => ({ mode: m, val: (fleet_per_hub[tier][m] || 0) * FOOTPRINT_PER_UNIT[m] })).filter(x => x.val > 0)
         const total = modeAreas.reduce((s, x) => s + x.val, 0)
-        if (total === 0) return <div key={tier} style={{ textAlign: 'center', padding: 20, color: C.text3, fontFamily: SANS, fontSize: 12 }}>{HUB_LABELS_UI[tier]}<br />no fleet area</div>
+        if (total === 0) return <div key={tier} style={{ textAlign: 'center', padding: 20, color: C.text3, fontFamily: SANS, fontSize: 13 }}>{HUB_LABELS_UI[tier]}<br />no fleet area</div>
         const R = 52, r = 32, cx = 68, cy = 68
         let angle = -Math.PI / 2
         const paths = []
@@ -971,16 +971,16 @@ function HubAreaFleetDonut() {
             <svg width={136} height={136} style={{ overflow: 'visible' }}>
               {paths}
               <text x={cx} y={cy - 6} textAnchor="middle" fontSize={14} fontWeight={400} fontFamily="Georgia, serif" fill={C.text1}>{Math.round(total)}</text>
-              <text x={cx} y={cy + 9} textAnchor="middle" fontSize={9} fontFamily="system-ui, sans-serif" fill={C.text3}>m² fleet</text>
+              <text x={cx} y={cy + 9} textAnchor="middle" fontSize={10} fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fill={C.text3}>m² fleet</text>
             </svg>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', padding: '0 8px' }}>
               {modeAreas.map(({ mode, val }) => (
                 <div key={mode} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <div style={{ width: 7, height: 7, borderRadius: '50%', background: MODE_META[mode].color }} />
-                    <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{MODE_META[mode].label}</span>
+                    <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{MODE_META[mode].label}</span>
                   </div>
-                  <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text1 }}>{Math.round(val)} m²</span>
+                  <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1 }}>{Math.round(val)} m²</span>
                 </div>
               ))}
             </div>
@@ -1005,9 +1005,9 @@ function HubAreaTable() {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: SANS, fontSize: 13 }}>
         <thead>
           <tr style={{ borderBottom: `2px solid ${C.border}` }}>
-            <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Component</th>
-            {TIERS.map(t => <th key={t} style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700, color: HUB_COLORS_UI[t], fontSize: 11, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{HUB_LABELS_UI[t]}</th>)}
-            <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Formula</th>
+            <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 13, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Component</th>
+            {TIERS.map(t => <th key={t} style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700, color: HUB_COLORS_UI[t], fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{HUB_LABELS_UI[t]}</th>)}
+            <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 13, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Formula</th>
           </tr>
         </thead>
         <tbody>
@@ -1015,18 +1015,18 @@ function HubAreaTable() {
             <tr key={label} style={{ borderTop: accent ? `2px solid ${C.border}` : undefined, borderBottom: `1px solid ${C.border}`, background: accent ? 'rgba(10,126,69,0.04)' : 'transparent' }}>
               <td style={{ padding: '10px 10px', fontWeight: accent ? 700 : 500, color: accent ? '#0A7E45' : C.text1 }}>{label}</td>
               {TIERS.map(t => <td key={t} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: accent ? 700 : 400, color: accent ? HUB_COLORS_UI[t] : C.text2, fontVariantNumeric: 'tabular-nums' }}>{Math.round(map[key][t])} m²</td>)}
-              <td style={{ padding: '10px 10px', color: C.text3, fontSize: 11 }}>{formula}</td>
+              <td style={{ padding: '10px 10px', color: C.text3, fontSize: 13 }}>{formula}</td>
             </tr>
           ))}
           <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FAFAF9' }}>
-            <td style={{ padding: '10px 10px', color: C.text3, fontSize: 12 }}>Circ. factor</td>
-            {TIERS.map(t => <td key={t} style={{ padding: '10px 10px', textAlign: 'right', color: C.text3, fontSize: 12 }}>×{CIRCULATION_FACTOR[t]}</td>)}
-            <td style={{ padding: '10px 10px', color: C.text3, fontSize: 11 }}>driveways + maneuvering</td>
+            <td style={{ padding: '10px 10px', color: C.text3, fontSize: 13 }}>Circ. factor</td>
+            {TIERS.map(t => <td key={t} style={{ padding: '10px 10px', textAlign: 'right', color: C.text3, fontSize: 13 }}>×{CIRCULATION_FACTOR[t]}</td>)}
+            <td style={{ padding: '10px 10px', color: C.text3, fontSize: 13 }}>driveways + maneuvering</td>
           </tr>
           <tr style={{ borderTop: `1px solid ${C.border}` }}>
             <td style={{ padding: '10px 10px', fontWeight: 600, color: C.text1 }}>All hubs (×count)</td>
             {TIERS.map(t => <td key={t} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: C.text1, fontVariantNumeric: 'tabular-nums' }}>{fmt(S_hub_area[t] * HUB_COUNTS[t])} m²</td>)}
-            <td style={{ padding: '10px 10px', color: C.text3, fontSize: 11 }}>S_hub × hub count</td>
+            <td style={{ padding: '10px 10px', color: C.text3, fontSize: 13 }}>S_hub × hub count</td>
           </tr>
         </tbody>
       </table>
@@ -1105,13 +1105,13 @@ export default function DataPanel() {
 
       {/* Left nav */}
       <nav style={{ width: 200, flexShrink: 0, overflowY: 'auto', background: C.bg, borderRight: `1px solid ${C.border}`, padding: '32px 14px 32px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', padding: '0 10px 16px' }}>
+        <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.10em', textTransform: 'uppercase', padding: '0 10px 16px' }}>
           Data Analysis
         </div>
         {NAV.map(({ href, label }) => {
           const isSect = label.startsWith('—')
           if (isSect) return (
-            <div key={href} style={{ padding: '12px 10px 5px', fontFamily: SANS, fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div key={href} style={{ padding: '12px 10px 5px', fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               {label.replace('— ', '')}
             </div>
           )
@@ -1123,14 +1123,14 @@ export default function DataPanel() {
               fontWeight: active ? 600 : 400,
               color: active ? C.text1 : C.text3,
               borderLeft: `2px solid ${active ? C.text1 : 'transparent'}`,
-              textDecoration: 'none', transition: 'all 0.15s ease',
+              textDecoration: 'none',
             }}>
               {label}
             </a>
           )
         })}
         <div style={{ marginTop: 'auto', padding: '20px 10px 0', borderTop: `1px solid ${C.border}` }}>
-          <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, lineHeight: 1.8 }}>
+          <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, lineHeight: 1.8 }}>
             <div style={{ fontWeight: 600, marginBottom: 4, color: C.text2 }}>Sources</div>
             {['MiD 2017', 'WOKS 2023/2025', 'KBA 2023', 'UITP benchmarks', 'MOIA Hamburg'].map(s => <div key={s}>{s}</div>)}
           </div>
@@ -1148,7 +1148,7 @@ export default function DataPanel() {
 
           {/* ── PART 1 ── */}
           <div id="overview" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
               Part 1 · Baseline
             </div>
             <h1 style={{ fontFamily: SERIF, fontSize: 38, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
@@ -1215,7 +1215,7 @@ export default function DataPanel() {
           <Rule label="Part 2 · Post-Car Fleet Sizing" />
 
           <div id="fleet" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 2 · Fleet Sizing</div>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 2 · Fleet Sizing</div>
             <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Post-Car Fleet</h2>
             <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
               If private cars are replaced by a shared fleet, peak-hour demand determines
@@ -1261,7 +1261,7 @@ export default function DataPanel() {
           <Rule label="Part 3 · Hub Network" />
 
           <div id="hubs" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 3 · Hub Network</div>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 3 · Hub Network</div>
             <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Hub Count &amp; Distribution</h2>
             <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
               Three hub tiers serve different functions: {hub_l_count} large interchange hubs anchor
@@ -1294,7 +1294,7 @@ export default function DataPanel() {
           <Rule label="Part 4 · Hub Area Calculation" />
 
           <div id="hub-area" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 4 · Hub Area</div>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 4 · Hub Area</div>
             <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
               S_hub = S_fleet + S_circ + S_charging + S_program
             </h2>
@@ -1326,7 +1326,7 @@ export default function DataPanel() {
           <Rule label="Methodology" />
 
           <div id="methodology" className="dp-a" style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Appendix · Methods</div>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Appendix · Methods</div>
             <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>How the Numbers Were Made</h2>
             <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
               Each section builds on publicly available data and standard urban transport benchmarks.
@@ -1358,7 +1358,7 @@ export default function DataPanel() {
                   { label: 'Private cars/day', formula: `D_total × 62% ÷ 1.3 occupancy`, result: `= ${fmt(car_vehicles_per_day)} vehicles` },
                 ].map(({ label, formula, result }) => (
                   <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
-                    <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
                     <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5 }}>{formula}</div>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
                   </div>
@@ -1395,7 +1395,7 @@ export default function DataPanel() {
                   { label: 'Total fleet (per mode)', formula: `on_street × peak_factor`, result: `total: ${fmt(total_fleet)} vehicles` },
                 ].map(({ label, formula, result }) => (
                   <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
-                    <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
                     <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
                   </div>
@@ -1439,10 +1439,10 @@ export default function DataPanel() {
                   { tier: 'Hub L', color: HUB_COLORS_UI.hub_l, formula: `min(⌈(bus+car-share) ÷ 8⌉, 6)`, result: `= ${hub_l_count} hubs`, note: 'capped — existing garages' },
                 ].map(({ tier, color, formula, result, note }) => (
                   <div key={tier} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}`, borderTop: `3px solid ${color}` }}>
-                    <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color, marginBottom: 8 }}>{tier}</div>
-                    <div style={{ fontFamily: 'monospace', fontSize: 12, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color, marginBottom: 8 }}>{tier}</div>
+                    <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
                     <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
-                    <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 3 }}>{note}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 3 }}>{note}</div>
                   </div>
                 ))}
               </div>
@@ -1474,9 +1474,9 @@ export default function DataPanel() {
                   { label: 'S_program — shelter & services', formula: `(S_fleet + S_circ + S_charging) × 10%`, note: 'waiting areas, info points, shelter' },
                 ].map(({ label, formula, note }) => (
                   <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '13px 16px', border: `1px solid ${C.border}` }}>
-                    <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
                     <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5 }}>{formula}</div>
-                    <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 5 }}>{note}</div>
+                    <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 5 }}>{note}</div>
                   </div>
                 ))}
               </div>
@@ -1501,14 +1501,14 @@ export default function DataPanel() {
 
           {/* Sources */}
           <div className="dp-a" style={{ marginTop: 20, padding: '20px 24px', background: C.card, borderRadius: 8, border: `1px solid ${C.border}` }}>
-            <p style={{ fontFamily: SANS, fontSize: 11, color: C.text3, margin: 0, lineHeight: 1.9 }}>
+            <p style={{ fontFamily: SANS, fontSize: 13, color: C.text3, margin: 0, lineHeight: 1.9 }}>
               <strong style={{ color: C.text2 }}>Baseline:</strong> MiD 2017 (BMVI) · WOKS Wolfsburg 2023/2025 · KBA 2023<br />
               <strong style={{ color: C.text2 }}>Fleet:</strong> Nextbike operational data · UITP autonomous shuttle &amp; bus benchmarks · MOIA Hamburg · Share Now / Stadtmobil<br />
               <strong style={{ color: C.text2 }}>Hub geometry:</strong> Coverage radius 200 m (S) / 400 m (M) · 1.35× overlap factor · max 6 Hub L (existing parking garages)<br />
               <strong style={{ color: C.text2 }}>Hub area:</strong> Footprint/unit + circulation factor + charging stations + 10% program<br />
               <strong style={{ color: C.text2 }}>Scripts:</strong>{' '}
               {['modal_distribution.py', 'fleet_calculation.py', 'hub_calculation.py', 'hub_area.py'].map(s => (
-                <code key={s} style={{ background: '#F0EFED', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace', fontSize: 10, marginRight: 6 }}>{s}</code>
+                <code key={s} style={{ background: '#F0EFED', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace', fontSize: 13, marginRight: 6 }}>{s}</code>
               ))}
             </p>
           </div>

@@ -2509,7 +2509,7 @@ function ScaleBarOverlay({ mapRef }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
       fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
     }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: '#1D1D1F',
+      <div style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F',
         textShadow: '0 0 3px white, 0 0 6px white, 0 0 3px white' }}>
         {bar.label}
       </div>

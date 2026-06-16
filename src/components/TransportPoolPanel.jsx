@@ -11,7 +11,6 @@ function Toggle({ label, active, onToggle, color = '#FF4D6D', count, disabled })
         background: active && !disabled ? `${color}18` : 'transparent',
         border: 'none', cursor: disabled ? 'default' : 'pointer',
         width: '100%', textAlign: 'left', fontFamily: 'inherit',
-        transition: 'background 0.15s ease',
         opacity: disabled ? 0.38 : 1,
       }}
     >
@@ -19,7 +18,6 @@ function Toggle({ label, active, onToggle, color = '#FF4D6D', count, disabled })
         width: 32, height: 18, borderRadius: 9,
         background: active && !disabled ? color : '#D1D1D6',
         flexShrink: 0, position: 'relative',
-        transition: 'background 0.2s ease',
       }}>
         <div style={{
           position: 'absolute', top: 2,
@@ -27,14 +25,13 @@ function Toggle({ label, active, onToggle, color = '#FF4D6D', count, disabled })
           width: 14, height: 14, borderRadius: 7,
           background: '#FFFFFF',
           boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
-          transition: 'left 0.2s ease',
         }} />
       </div>
-      <span style={{ fontSize: 12, fontWeight: 500, color: '#1D1D1F', flex: 1, lineHeight: 1.3 }}>
+      <span style={{ fontSize: 13, fontWeight: 500, color: '#1D1D1F', flex: 1, lineHeight: 1.3 }}>
         {label}
       </span>
       {count != null && (
-        <span style={{ fontSize: 10, color: '#AEAEB2', flexShrink: 0 }}>{count}</span>
+        <span style={{ fontSize: 13, color: '#AEAEB2', flexShrink: 0 }}>{count}</span>
       )}
     </button>
   )
@@ -92,7 +89,7 @@ export default function TransportPoolPanel() {
       >
         <span style={{ fontSize: 18, lineHeight: 1 }}>🚌</span>
         <span style={{
-          fontSize: 10, fontWeight: 700,
+          fontSize: 13, fontWeight: 700,
           color: anyActive ? '#1D1D1F' : '#6E6E73',
           letterSpacing: '-0.01em',
           writingMode: 'vertical-rl',
@@ -131,7 +128,7 @@ export default function TransportPoolPanel() {
         paddingLeft: 6, marginBottom: 2,
       }}>
         <span style={{
-          fontSize: 11, fontWeight: 700, color: '#1D1D1F',
+          fontSize: 13, fontWeight: 700, color: '#1D1D1F',
           letterSpacing: '0.04em', textTransform: 'uppercase',
         }}>
           Transport Pool
@@ -140,7 +137,7 @@ export default function TransportPoolPanel() {
           onClick={() => setIsOpen(false)}
           style={{
             background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
-            borderRadius: 7, padding: '2px 7px', fontSize: 11, color: '#6E6E73',
+            borderRadius: 7, padding: '2px 7px', fontSize: 13, color: '#6E6E73',
             cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1,
           }}
         >
@@ -166,14 +163,13 @@ export default function TransportPoolPanel() {
                 background: active ? `${m.color}14` : 'transparent',
                 border: 'none', cursor: 'pointer', width: '100%',
                 textAlign: 'left', fontFamily: 'inherit',
-                transition: 'background 0.15s ease',
-              }}
+                      }}
             >
               <span style={{ fontSize: 15, lineHeight: 1 }}>
                 {loading ? '⏳' : m.icon}
               </span>
               <span style={{
-                fontSize: 11, fontWeight: 700, flex: 1,
+                fontSize: 13, fontWeight: 700, flex: 1,
                 color: active ? m.color : '#AEAEB2',
                 textTransform: 'uppercase', letterSpacing: '0.04em',
               }}>
@@ -183,7 +179,6 @@ export default function TransportPoolPanel() {
                 width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
                 background: active ? m.color : '#E8E8ED',
                 boxShadow: active ? `0 0 6px ${m.color}60` : 'none',
-                transition: 'all 0.2s ease',
               }} />
             </button>
 

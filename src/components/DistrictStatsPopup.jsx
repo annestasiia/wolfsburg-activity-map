@@ -77,7 +77,7 @@ export default function DistrictStatsPopup() {
           <span style={{ fontSize: 14, fontWeight: 700, color, lineHeight: 1 }}>
             {score.toFixed(1)}
           </span>
-          <span style={{ fontSize: 9, color: '#AEAEB2', letterSpacing: '0.02em' }}>/ 10</span>
+          <span style={{ fontSize: 11, color: '#AEAEB2', letterSpacing: '0.02em' }}>/ 10</span>
         </div>
       </div>
 
@@ -119,12 +119,12 @@ export default function DistrictStatsPopup() {
               transition: 'width 0.3s ease',
             }} />
           </div>
-          <span style={{ fontSize: 11, color: diffColor, fontWeight: 600, whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 13, color: diffColor, fontWeight: 600, whiteSpace: 'nowrap' }}>
             {diffLabel}
           </span>
         </div>
 
-        <div style={{ marginTop: 5, fontSize: 11, color: '#AEAEB2', letterSpacing: '-0.01em' }}>
+        <div style={{ marginTop: 5, fontSize: 13, color: '#AEAEB2', letterSpacing: '-0.01em' }}>
           Rank <strong style={{ color: '#3D3D3F' }}>#{rank}</strong> of {total} districts
           · City avg <strong style={{ color: '#3D3D3F' }}>{avg.toFixed(1)}</strong>
         </div>
@@ -145,7 +145,7 @@ export default function DistrictStatsPopup() {
           alignItems:     'center',
           justifyContent: 'center',
           cursor:         'pointer',
-          fontSize:        12,
+          fontSize:        13,
           color:          '#6E6E73',
           flexShrink:      0,
         }}

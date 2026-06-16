@@ -3,7 +3,7 @@ import { useAppStore } from '../store/appStore'
 
 const NAV_W   = 228
 const SERIF = "'Georgia', 'Times New Roman', serif"
-const SANS  = "system-ui, -apple-system, sans-serif"
+const SANS  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
 // 'geo' is removed from the main list — it lives inside Hub System submenu
 const SECTIONS = [
@@ -69,7 +69,7 @@ export default function LeftNav() {
         }}>
           {/* Submenu header */}
           <div style={{ padding: '28px 20px 18px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-            <div style={{ fontFamily: SANS, fontSize: 9, fontWeight: 700, color: '#bbb', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 5 }}>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#bbb', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 5 }}>
               Hub System
             </div>
             <div style={{ fontFamily: SERIF, fontSize: 15, color: '#111', lineHeight: 1.3 }}>
@@ -100,7 +100,6 @@ export default function LeftNav() {
                     borderLeft: isActive ? '3px solid #111' : '3px solid transparent',
                     cursor: 'pointer',
                     textAlign: 'left',
-                    transition: 'background 0.12s ease',
                   }}
                 >
                   <span style={{
@@ -115,7 +114,7 @@ export default function LeftNav() {
                   </span>
                   <span style={{
                     fontFamily: SANS,
-                    fontSize: 10,
+                    fontSize: 13,
                     color: isActive ? 'rgba(255,255,255,0.55)' : '#aaa',
                     letterSpacing: '-0.005em',
                   }}>
@@ -132,7 +131,7 @@ export default function LeftNav() {
               onClick={() => setHubSubmenuOpen(false)}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: SANS, fontSize: 11, color: '#aaa',
+                fontFamily: SANS, fontSize: 13, color: '#aaa',
                 display: 'flex', alignItems: 'center', gap: 5, padding: 0,
               }}
             >
@@ -210,7 +209,7 @@ export default function LeftNav() {
           {/* Header */}
           <div style={{ padding: '28px 20px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontFamily: SANS, fontSize: 9, fontWeight: 700, color: '#bbb', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 5 }}>
+              <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#bbb', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 5 }}>
                 Research · 2026
               </div>
               <div style={{ fontFamily: SERIF, fontSize: 16, color: '#111', lineHeight: 1.3, letterSpacing: '-0.01em' }}>
@@ -222,8 +221,8 @@ export default function LeftNav() {
               onClick={handleCollapse}
               title="Collapse menu"
               style={{
-                background: 'none', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6,
-                cursor: 'pointer', padding: '4px 7px', color: '#999', fontSize: 12,
+                background: 'none', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 4,
+                cursor: 'pointer', padding: '4px 7px', color: '#999', fontSize: 13, letterSpacing: '0.04em',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 marginTop: 2, flexShrink: 0,
               }}
@@ -256,7 +255,6 @@ export default function LeftNav() {
                     cursor: 'pointer',
                     textAlign: 'left',
                     width: '100%',
-                    transition: 'background 0.12s ease',
                     whiteSpace: 'nowrap',
                   }}
                 >
@@ -284,10 +282,9 @@ export default function LeftNav() {
                   {hasSubmenu && (
                     <span style={{
                       fontFamily: SANS,
-                      fontSize: 11,
+                      fontSize: 13,
                       color: isActive ? 'rgba(255,255,255,0.5)' : '#bbb',
                       transform: isSubmenu ? 'rotate(90deg)' : 'none',
-                      transition: 'transform 0.2s ease',
                       display: 'inline-block',
                     }}>
                       ›
@@ -300,7 +297,7 @@ export default function LeftNav() {
 
           {/* Footer */}
           <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-            <div style={{ fontFamily: SANS, fontSize: 10, color: '#bbb', lineHeight: 1.8 }}>
+            <div style={{ fontFamily: SANS, fontSize: 13, color: '#bbb', lineHeight: 1.8 }}>
               Wolfsburg City Centre<br />
               4 km² · 9 districts
             </div>

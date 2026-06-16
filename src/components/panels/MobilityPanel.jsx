@@ -154,7 +154,7 @@ export default function MobilityPanel({ noTitle }) {
               onClick={() => setSelectedMobilityDistrict(null)}
               style={{
                 background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
-                borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer',
+                borderRadius: 8, padding: '4px 10px', fontSize: 13, cursor: 'pointer',
                 fontFamily: 'inherit', color: '#3D3D3F',
               }}
             >
@@ -174,7 +174,7 @@ export default function MobilityPanel({ noTitle }) {
               <div style={{ fontSize: 20, fontWeight: 700, color: '#0055CC', lineHeight: 1 }}>
                 {districtStats.stopCount}
               </div>
-              <div style={{ fontSize: 12, color: '#5588AA', marginTop: 2 }}>bus stops in district</div>
+              <div style={{ fontSize: 13, color: '#5588AA', marginTop: 2 }}>bus stops in district</div>
             </div>
           </div>
 
@@ -182,7 +182,7 @@ export default function MobilityPanel({ noTitle }) {
             Routes through district · {districtStats.routes.length}
           </p>
           {districtStats.routes.length === 0 ? (
-            <p style={{ fontSize: 12, color: '#AEAEB2' }}>No routes found in this district.</p>
+            <p style={{ fontSize: 13, color: '#AEAEB2' }}>No routes found in this district.</p>
           ) : (
             <div style={{
               display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
@@ -200,7 +200,7 @@ export default function MobilityPanel({ noTitle }) {
                       border: `1px solid ${isSelected ? '#FF1744' : 'rgba(0,0,0,0.06)'}`,
                       borderRadius: 10, padding: '7px 11px',
                       fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                      fontFamily: 'inherit', transition: 'all 0.15s ease',
+                      fontFamily: 'inherit',
                       boxShadow: isSelected ? '0 1px 6px rgba(255,23,68,0.20)' : 'none',
                     }}
                   >
@@ -208,15 +208,15 @@ export default function MobilityPanel({ noTitle }) {
                       <span style={{
                         background: isSelected ? '#FF1744' : '#FF4D6D',
                         color: '#fff', borderRadius: 6, padding: '1px 7px',
-                        fontWeight: 700, fontSize: 12, flexShrink: 0,
+                        fontWeight: 700, fontSize: 13, flexShrink: 0,
                         minWidth: 28, textAlign: 'center',
                       }}>{r.ref}</span>
                     )}
-                    <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 12 }}>
+                    <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 13 }}>
                       {r.from && r.to ? `${r.from} → ${r.to}` : r.name || 'Route'}
                     </span>
                     {isSelected && (
-                      <span style={{ marginLeft: 'auto', color: '#FF1744', fontSize: 11, flexShrink: 0 }}>
+                      <span style={{ marginLeft: 'auto', color: '#FF1744', fontSize: 13, flexShrink: 0 }}>
                         on map ✓
                       </span>
                     )}
@@ -225,7 +225,7 @@ export default function MobilityPanel({ noTitle }) {
               })}
             </div>
           )}
-          <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>Source: OpenStreetMap</p>
+          <p style={{ fontSize: 13, color: '#AEAEB2', marginTop: 8 }}>Source: OpenStreetMap</p>
         </div>
       )}
 
@@ -237,7 +237,7 @@ export default function MobilityPanel({ noTitle }) {
               onClick={() => setSelectedMobilityDistrict(null)}
               style={{
                 background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
-                borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer',
+                borderRadius: 8, padding: '4px 10px', fontSize: 13, cursor: 'pointer',
                 fontFamily: 'inherit', color: '#3D3D3F',
               }}
             >
@@ -258,7 +258,7 @@ export default function MobilityPanel({ noTitle }) {
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#007A33', lineHeight: 1 }}>
                   {districtStats.parkingCount}
                 </div>
-                <div style={{ fontSize: 12, color: '#2E7D53', marginTop: 2 }}>parking spots</div>
+                <div style={{ fontSize: 13, color: '#2E7D53', marginTop: 2 }}>parking spots</div>
               </div>
             </div>
             <div style={{
@@ -270,7 +270,7 @@ export default function MobilityPanel({ noTitle }) {
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#007A33', lineHeight: 1 }}>
                   {districtStats.totalCapacity}
                 </div>
-                <div style={{ fontSize: 12, color: '#2E7D53', marginTop: 2 }}>total capacity</div>
+                <div style={{ fontSize: 13, color: '#2E7D53', marginTop: 2 }}>total capacity</div>
               </div>
             </div>
           </div>
@@ -296,21 +296,21 @@ export default function MobilityPanel({ noTitle }) {
                         border: `1px solid ${isSelected ? '#FF6900' : 'rgba(0,0,0,0.06)'}`,
                         borderRadius: 10, padding: '7px 11px',
                         fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                        fontFamily: 'inherit', transition: 'all 0.15s ease',
+                        fontFamily: 'inherit',
                       }}
                     >
                       {r.ref && (
                         <span style={{
                           background: isSelected ? '#FF6900' : '#FF8C42',
                           color: '#fff', borderRadius: 6, padding: '1px 7px',
-                          fontWeight: 700, fontSize: 12, flexShrink: 0,
+                          fontWeight: 700, fontSize: 13, flexShrink: 0,
                         }}>{r.ref}</span>
                       )}
-                      <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 12 }}>
+                      <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 13 }}>
                         {r.from && r.to ? `${r.from} → ${r.to}` : r.name || 'Route'}
                       </span>
                       {isSelected && (
-                        <span style={{ marginLeft: 'auto', color: '#FF6900', fontSize: 11, flexShrink: 0 }}>
+                        <span style={{ marginLeft: 'auto', color: '#FF6900', fontSize: 13, flexShrink: 0 }}>
                           on map ✓
                         </span>
                       )}
@@ -320,7 +320,7 @@ export default function MobilityPanel({ noTitle }) {
               </div>
             </>
           )}
-          <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
+          <p style={{ fontSize: 13, color: '#AEAEB2', marginTop: 8 }}>
             Source: OpenStreetMap · capacity based on tagged values
           </p>
         </div>
@@ -332,7 +332,7 @@ export default function MobilityPanel({ noTitle }) {
           <p style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', marginBottom: 6 }}>
             Leisure cycling routes · {leisureRoutes.length} found
           </p>
-          <p style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 10, letterSpacing: '-0.01em' }}>
+          <p style={{ fontSize: 13, color: '#AEAEB2', marginBottom: 10, letterSpacing: '-0.01em' }}>
             Click a route to highlight on map · click a district for local stats
           </p>
           <div style={{
@@ -351,7 +351,7 @@ export default function MobilityPanel({ noTitle }) {
                     border: `1px solid ${isSelected ? '#FF6900' : 'rgba(0,0,0,0.06)'}`,
                     borderRadius: 10, padding: '7px 11px',
                     fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                    fontFamily: 'inherit', transition: 'all 0.15s ease',
+                    fontFamily: 'inherit',
                     boxShadow: isSelected ? '0 1px 6px rgba(255,105,0,0.20)' : 'none',
                   }}
                 >
@@ -359,20 +359,20 @@ export default function MobilityPanel({ noTitle }) {
                     <span style={{
                       background: isSelected ? '#FF6900' : '#FF8C42',
                       color: '#fff', borderRadius: 6, padding: '1px 7px',
-                      fontWeight: 700, fontSize: 12, flexShrink: 0,
+                      fontWeight: 700, fontSize: 13, flexShrink: 0,
                       minWidth: 28, textAlign: 'center',
                     }}>{r.ref}</span>
                   )}
-                  <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 12 }}>
+                  <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 13 }}>
                     {r.from && r.to ? `${r.from} → ${r.to}` : r.name || 'Route'}
                   </span>
                   {r.network && (
-                    <span style={{ marginLeft: 'auto', fontSize: 10, color: '#AEAEB2', flexShrink: 0 }}>
+                    <span style={{ marginLeft: 'auto', fontSize: 13, color: '#AEAEB2', flexShrink: 0 }}>
                       {r.network}
                     </span>
                   )}
                   {isSelected && (
-                    <span style={{ marginLeft: r.network ? 4 : 'auto', color: '#FF6900', fontSize: 11, flexShrink: 0 }}>
+                    <span style={{ marginLeft: r.network ? 4 : 'auto', color: '#FF6900', fontSize: 13, flexShrink: 0 }}>
                       on map ✓
                     </span>
                   )}
@@ -380,7 +380,7 @@ export default function MobilityPanel({ noTitle }) {
               )
             })}
           </div>
-          <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
+          <p style={{ fontSize: 13, color: '#AEAEB2', marginTop: 8 }}>
             Source: OpenStreetMap · official routes from wolfsburg.de/radfahren
           </p>
         </div>
@@ -392,7 +392,7 @@ export default function MobilityPanel({ noTitle }) {
           <p style={{ fontSize: 14, fontWeight: 600, color: '#1D1D1F', marginBottom: 6 }}>
             Public transport routes · {routes.length} found
           </p>
-          <p style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 10, letterSpacing: '-0.01em' }}>
+          <p style={{ fontSize: 13, color: '#AEAEB2', marginBottom: 10, letterSpacing: '-0.01em' }}>
             Click a route to highlight · click a district on the map for details
           </p>
           <div style={{
@@ -415,7 +415,7 @@ export default function MobilityPanel({ noTitle }) {
                     border: `1px solid ${isSelected ? '#FF1744' : 'rgba(0,0,0,0.06)'}`,
                     borderRadius: 10, padding: '7px 11px',
                     fontSize: 13, cursor: 'pointer', textAlign: 'left',
-                    fontFamily: 'inherit', transition: 'all 0.15s ease',
+                    fontFamily: 'inherit',
                     boxShadow: isSelected ? '0 1px 6px rgba(255,23,68,0.20)' : 'none',
                   }}
                 >
@@ -423,15 +423,15 @@ export default function MobilityPanel({ noTitle }) {
                     <span style={{
                       background: isSelected ? '#FF1744' : '#FF4D6D',
                       color: '#fff', borderRadius: 6, padding: '1px 7px',
-                      fontWeight: 700, fontSize: 12, flexShrink: 0,
+                      fontWeight: 700, fontSize: 13, flexShrink: 0,
                       minWidth: 28, textAlign: 'center',
                     }}>{r.ref}</span>
                   )}
-                  <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 12 }}>
+                  <span style={{ color: '#3D3D3F', lineHeight: 1.3, fontSize: 13 }}>
                     {r.from && r.to ? `${r.from} → ${r.to}` : r.name || 'Route'}
                   </span>
                   {isSelected && (
-                    <span style={{ marginLeft: 'auto', color: '#FF1744', fontSize: 11, flexShrink: 0 }}>
+                    <span style={{ marginLeft: 'auto', color: '#FF1744', fontSize: 13, flexShrink: 0 }}>
                       on map ✓
                     </span>
                   )}
@@ -439,7 +439,7 @@ export default function MobilityPanel({ noTitle }) {
               )
             })}
           </div>
-          <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>Source: OpenStreetMap</p>
+          <p style={{ fontSize: 13, color: '#AEAEB2', marginTop: 8 }}>Source: OpenStreetMap</p>
         </div>
       )}
 
@@ -462,13 +462,13 @@ export default function MobilityPanel({ noTitle }) {
                     transition:   'width 0.4s ease',
                   }} />
                 </div>
-                <span style={{ fontSize: 12, color: '#6E6E73', width: 24, textAlign: 'right' }}>
+                <span style={{ fontSize: 13, color: '#6E6E73', width: 24, textAlign: 'right' }}>
                   {score}
                 </span>
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 8 }}>
+          <p style={{ fontSize: 13, color: '#AEAEB2', marginTop: 8 }}>
             Score 1–9 · Source: OpenStreetMap
           </p>
         </div>

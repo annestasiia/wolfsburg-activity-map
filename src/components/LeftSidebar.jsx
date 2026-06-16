@@ -43,7 +43,7 @@ export default function LeftSidebar() {
         onClick={() => setIsOpen(true)}
         title={`Open ${meta.label}`}
         style={{
-          position: 'absolute', left: navOpen ? 240 : 12, top: '50%', transition: 'left 0.3s ease',
+          position: 'absolute', left: navOpen ? 240 : 12, top: '50%',
           transform: 'translateY(-50%)', zIndex: 10,
           background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(20px) saturate(180%)',
@@ -56,7 +56,7 @@ export default function LeftSidebar() {
       >
         <span style={{ fontSize: 18 }}>{meta.icon}</span>
         <span style={{
-          writingMode: 'vertical-rl', fontSize: 12, fontWeight: 600,
+          writingMode: 'vertical-rl', fontSize: 13, fontWeight: 600,
           color: '#3D3D3F', letterSpacing: '-0.01em',
         }}>
           {meta.label}
@@ -68,7 +68,7 @@ export default function LeftSidebar() {
   // ── Open sidebar ───────────────────────────────────────────────────────────
   return (
     <div style={{
-      position: 'absolute', left: navOpen ? 228 : 0, top: 0, bottom: 0, width: 300, zIndex: 10, transition: 'left 0.3s ease',
+      position: 'absolute', left: navOpen ? 228 : 0, top: 0, bottom: 0, width: 300, zIndex: 10,
       background: 'rgba(255,255,255,0.93)',
       backdropFilter: 'blur(24px) saturate(180%)',
       WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -89,7 +89,7 @@ export default function LeftSidebar() {
               onClick={() => setSelectedFacilityVenueId(null)}
               style={{
                 background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
-                borderRadius: 8, padding: '4px 10px', fontSize: 12,
+                borderRadius: 8, padding: '4px 10px', fontSize: 13,
                 cursor: 'pointer', fontFamily: 'inherit', color: '#3D3D3F', flexShrink: 0,
               }}
             >← {meta.label}</button>
@@ -112,7 +112,7 @@ export default function LeftSidebar() {
             background: '#F5F5F7', border: '1px solid rgba(0,0,0,0.08)',
             borderRadius: 8, padding: '4px 9px', fontSize: 13, color: '#6E6E73',
             cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1,
-            transition: 'all 0.15s ease', flexShrink: 0, marginLeft: 8,
+            flexShrink: 0, marginLeft: 8,
           }}
         >✕</button>
       </div>
@@ -165,7 +165,7 @@ function ConnectionsSection() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <p style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 4, letterSpacing: '-0.01em', lineHeight: 1.4 }}>
+      <p style={{ fontSize: 13, color: '#AEAEB2', marginBottom: 4, letterSpacing: '-0.01em', lineHeight: 1.4 }}>
         Toggle a transport mode to overlay its network on the map.
       </p>
       {TRANSPORT_MODES.map(m => {
@@ -181,7 +181,6 @@ function ConnectionsSection() {
               background: active ? `${m.color}12` : '#F5F5F7',
               border: `1px solid ${active ? m.color + '50' : 'rgba(0,0,0,0.08)'}`,
               cursor: 'pointer', textAlign: 'left', width: '100%',
-              transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
               boxShadow: active ? `0 1px 6px ${m.color}28` : 'none',
             }}
           >
@@ -191,11 +190,11 @@ function ConnectionsSection() {
             <span style={{ flex: 1 }}>
               <span style={{
                 display: 'block', fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em',
-                color: active ? '#1D1D1F' : '#6E6E73', marginBottom: 1, transition: 'color 0.2s',
+                color: active ? '#1D1D1F' : '#6E6E73', marginBottom: 1,
               }}>
                 {m.label}
               </span>
-              <span style={{ fontSize: 12, color: '#AEAEB2', letterSpacing: '-0.01em' }}>
+              <span style={{ fontSize: 13, color: '#AEAEB2', letterSpacing: '-0.01em' }}>
                 {m.sub}
               </span>
             </span>
@@ -203,13 +202,12 @@ function ConnectionsSection() {
               width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
               background: active ? m.color : '#E8E8ED',
               boxShadow: active ? `0 0 6px ${m.color}60` : 'none',
-              transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
             }} />
           </button>
         )
       })}
       {activeMobilityModes.size > 0 && (
-        <p style={{ fontSize: 12, color: '#6E6E73', marginTop: 4, letterSpacing: '-0.01em' }}>
+        <p style={{ fontSize: 13, color: '#6E6E73', marginTop: 4, letterSpacing: '-0.01em' }}>
           Layer controls appear on the right →
         </p>
       )}
@@ -230,7 +228,6 @@ function Section({ title, icon, defaultOpen = false, children }) {
           width: '100%', padding: '13px 18px',
           background: open ? 'rgba(0,0,0,0.015)' : 'transparent',
           border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-          transition: 'background 0.15s ease',
         }}
       >
         <span style={{
@@ -241,10 +238,9 @@ function Section({ title, icon, defaultOpen = false, children }) {
           {title}
         </span>
         <span style={{
-          fontSize: 11, color: '#AEAEB2', lineHeight: 1,
+          fontSize: 13, color: '#AEAEB2', lineHeight: 1,
           display: 'inline-block',
           transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-          transition: 'transform 0.2s ease',
         }}>▾</span>
       </button>
       {open && (
@@ -270,21 +266,21 @@ function VenueDetail({ venue, selectedDay }) {
         <span style={{
           padding: '3px 10px', borderRadius: 980,
           background: catColor + '18', color: catColor,
-          fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em',
+          fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em',
         }}>
           {ICONS[venue.category]} {venue.category}
         </span>
         <span style={{
           padding: '3px 10px', borderRadius: 980,
           background: '#F5F5F7', color: '#6E6E73',
-          fontSize: 12, letterSpacing: '-0.01em',
+          fontSize: 13, letterSpacing: '-0.01em',
         }}>
           {venue.type}
         </span>
         <span style={{
           padding: '3px 10px', borderRadius: 980,
           background: status.bg, color: status.color,
-          fontSize: 12, fontWeight: 500, letterSpacing: '-0.01em',
+          fontSize: 13, fontWeight: 500, letterSpacing: '-0.01em',
         }}>
           {status.text}
         </span>
@@ -301,7 +297,7 @@ function VenueDetail({ venue, selectedDay }) {
           <div style={{ fontSize: 20, fontWeight: 700, color: catColor, lineHeight: 1 }}>
             {venue.activityLevel || '—'}
           </div>
-          <div style={{ fontSize: 12, color: catColor + 'AA', marginTop: 3 }}>
+          <div style={{ fontSize: 13, color: catColor + 'AA', marginTop: 3 }}>
             activity level today
           </div>
         </div>
@@ -309,7 +305,7 @@ function VenueDetail({ venue, selectedDay }) {
 
       {/* Heatmap label */}
       <p style={{
-        fontSize: 11, fontWeight: 600, color: '#AEAEB2',
+        fontSize: 13, fontWeight: 600, color: '#AEAEB2',
         letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8,
       }}>
         Weekly Pattern
@@ -332,7 +328,7 @@ function VenueDetail({ venue, selectedDay }) {
                 boxShadow: isToday ? `0 0 0 2px ${catColor}30` : 'none',
               }} />
               <span style={{
-                fontSize: 10, letterSpacing: '0.03em',
+                fontSize: 13, letterSpacing: '0.03em',
                 color: isToday ? '#1D1D1F' : '#AEAEB2',
                 fontWeight: isToday ? 700 : 400,
               }}>
@@ -354,7 +350,7 @@ function VenueDetail({ venue, selectedDay }) {
               width: 12, height: 12, borderRadius: 3,
               background: color, border: '1px solid rgba(0,0,0,0.08)', flexShrink: 0,
             }} />
-            <span style={{ fontSize: 11, color: '#6E6E73' }}>{label}</span>
+            <span style={{ fontSize: 13, color: '#6E6E73' }}>{label}</span>
           </div>
         ))}
       </div>
@@ -376,7 +372,7 @@ function VenueDetail({ venue, selectedDay }) {
         </p>
       )}
 
-      <p style={{ fontSize: 12, color: '#AEAEB2', marginTop: 14, letterSpacing: '-0.01em' }}>
+      <p style={{ fontSize: 13, color: '#AEAEB2', marginTop: 14, letterSpacing: '-0.01em' }}>
         {venue.street}, {venue.city}
       </p>
     </div>
@@ -387,7 +383,7 @@ function InfoRow({ label, value }) {
   return (
     <div style={{ display: 'flex', gap: 10 }}>
       <span style={{
-        width: 44, flexShrink: 0, fontSize: 11, fontWeight: 600,
+        width: 44, flexShrink: 0, fontSize: 13, fontWeight: 600,
         letterSpacing: '0.04em', textTransform: 'uppercase',
         color: '#AEAEB2', paddingTop: 2,
       }}>

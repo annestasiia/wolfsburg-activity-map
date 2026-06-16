@@ -31,11 +31,11 @@ function Toggle({ checked, onChange, label, color, indent = false }) {
     <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#1D1D1F', paddingLeft: indent ? 16 : 0 }}>
       <div onClick={onChange} style={{
         width: 32, height: 18, borderRadius: 9, flexShrink: 0, cursor: 'pointer',
-        background: checked ? (color || '#0071E3') : '#E0E0E0', position: 'relative', transition: 'background 0.2s',
+        background: checked ? (color || '#0071E3') : '#E0E0E0', position: 'relative',
       }}>
         <div style={{
           position: 'absolute', top: 2, left: checked ? 15 : 2, width: 14, height: 14,
-          borderRadius: 7, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s',
+          borderRadius: 7, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
         }} />
       </div>
       {label}
@@ -45,7 +45,7 @@ function Toggle({ checked, onChange, label, color, indent = false }) {
 
 function SectionHead({ children }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#AEAEB2', marginBottom: 8, marginTop: 4 }}>
+    <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#AEAEB2', marginBottom: 8, marginTop: 4 }}>
       {children}
     </div>
   )
@@ -111,7 +111,7 @@ export default function RadSidebar() {
   return (
     <div style={{
       position: 'absolute', top: 0, left: navOpen ? 228 : 0, bottom: 0,
-      width: 260, zIndex: 20, transition: 'left 0.3s ease',
+      width: 260, zIndex: 20,
       background: 'rgba(255,255,255,0.96)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
@@ -121,13 +121,13 @@ export default function RadSidebar() {
     }}>
       <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1D1D1F', letterSpacing: '-0.02em' }}>Rad Network</div>
-        <div style={{ fontSize: 12, color: '#6E6E73', marginTop: 2 }}>Bike route network analysis</div>
+        <div style={{ fontSize: 13, color: '#6E6E73', marginTop: 2 }}>Bike route network analysis</div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
 
         {!hasHubs && (
-          <div style={{ background: '#FFF3CD', border: '1px solid #FBBF24', borderRadius: 10, padding: '10px 12px', fontSize: 12, color: '#78350F', marginBottom: 12 }}>
+          <div style={{ background: '#FFF3CD', border: '1px solid #FBBF24', borderRadius: 10, padding: '10px 12px', fontSize: 13, color: '#78350F', marginBottom: 12 }}>
             ⚠ Please run <strong>Intermodal Hub</strong> analysis first — rad network is built on top of hub locations.
           </div>
         )}
@@ -145,10 +145,10 @@ export default function RadSidebar() {
         </button>
 
         {radLoadProgress && (
-          <div style={{ fontSize: 12, color: '#0071E3', marginTop: 6 }}>{radLoadProgress}</div>
+          <div style={{ fontSize: 13, color: '#0071E3', marginTop: 6 }}>{radLoadProgress}</div>
         )}
         {radError && (
-          <div style={{ fontSize: 12, color: '#FF453A', marginTop: 6 }}>{radError}</div>
+          <div style={{ fontSize: 13, color: '#FF453A', marginTop: 6 }}>{radError}</div>
         )}
 
         {radNodes.length > 0 && (
@@ -164,7 +164,7 @@ export default function RadSidebar() {
               ].map(({ label, v }) => (
                 <div key={label} style={{ background: '#F5F5F7', borderRadius: 8, padding: '8px 10px' }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: '#1D1D1F', lineHeight: 1 }}>{v}</div>
-                  <div style={{ fontSize: 11, color: '#6E6E73', marginTop: 2 }}>{label}</div>
+                  <div style={{ fontSize: 13, color: '#6E6E73', marginTop: 2 }}>{label}</div>
                 </div>
               ))}
             </div>
@@ -197,12 +197,12 @@ export default function RadSidebar() {
             { type: 'B', label: 'Hub → Hub / Village → Hub', thick: 3 },
             { type: 'C', label: 'Historic → Hub', thick: 2 },
           ].map(({ type, label, thick }) => (
-            <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+            <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
               <div style={{ width: 28, height: thick, borderRadius: thick, background: ROUTE_COLOR[type], flexShrink: 0 }} />
               <span style={{ color: '#1D1D1F' }}><strong>{type}</strong> — {label}</span>
             </div>
           ))}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
             <div style={{ width: 28, height: 2, borderRadius: 2, background: '#FF453A', flexShrink: 0,
               backgroundImage: 'repeating-linear-gradient(to right, #FF453A 0, #FF453A 4px, transparent 4px, transparent 8px)' }} />
             <span style={{ color: '#1D1D1F' }}>Gap — no path found</span>
@@ -274,7 +274,7 @@ export function RadDataPanel() {
     }}>
       <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1D1D1F', letterSpacing: '-0.02em' }}>Data & Layers</div>
-        <div style={{ fontSize: 12, color: '#6E6E73', marginTop: 2 }}>Map overlays for Rad Network</div>
+        <div style={{ fontSize: 13, color: '#6E6E73', marginTop: 2 }}>Map overlays for Rad Network</div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
@@ -291,15 +291,15 @@ export function RadDataPanel() {
             {radLoading ? 'Loading…' : 'Load Historic & Villages'}
           </button>
         ) : (
-          <div style={{ fontSize: 12, color: '#34C759', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <div style={{ fontSize: 13, color: '#34C759', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
             <span>✓</span> {(radRawHistoric || []).length} historic sites · {(radRawVillages || []).length} settlements
           </div>
         )}
         {radLoadProgress && (
-          <div style={{ fontSize: 12, color: '#0071E3', marginTop: 6 }}>{radLoadProgress}</div>
+          <div style={{ fontSize: 13, color: '#0071E3', marginTop: 6 }}>{radLoadProgress}</div>
         )}
         {radError && (
-          <div style={{ fontSize: 12, color: '#FF453A', marginTop: 6 }}>{radError}</div>
+          <div style={{ fontSize: 13, color: '#FF453A', marginTop: 6 }}>{radError}</div>
         )}
 
         <Divider />
@@ -320,11 +320,11 @@ export function RadDataPanel() {
         {/* Intermodal Hubs */}
         <SectionHead>Intermodal Hubs</SectionHead>
         {intermodalHubs.length === 0 ? (
-          <div style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 8 }}>Run Intermodal Hub analysis first</div>
+          <div style={{ fontSize: 13, color: '#AEAEB2', marginBottom: 8 }}>Run Intermodal Hub analysis first</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {HUB_TYPES.map(({ id, label }) => (
-              <label key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer', color: '#1D1D1F' }}>
+              <label key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: '#1D1D1F' }}>
                 <input type="checkbox" checked={radHubTypes.has(id)} onChange={() => toggleRadHubType(id)}
                   style={{ accentColor: '#1D1D1F', width: 13, height: 13, flexShrink: 0 }} />
                 <span
@@ -334,13 +334,13 @@ export function RadDataPanel() {
                 <span>{label}</span>
               </label>
             ))}
-            <div style={{ fontSize: 11, color: '#AEAEB2' }}>{intermodalHubs.length} hubs loaded</div>
+            <div style={{ fontSize: 13, color: '#AEAEB2' }}>{intermodalHubs.length} hubs loaded</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <span style={{ fontSize: 11, color: '#6E6E73', minWidth: 36 }}>Size</span>
+              <span style={{ fontSize: 13, color: '#6E6E73', minWidth: 36 }}>Size</span>
               <button
                 onClick={() => setRadHubObjectScale((radHubObjectScale ?? 1) - 0.25)}
                 style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)', background: '#F5F5F7', cursor: 'pointer', fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1D1D1F', flexShrink: 0 }}>−</button>
-              <span style={{ fontSize: 12, color: '#1D1D1F', minWidth: 38, textAlign: 'center' }}>×{(radHubObjectScale ?? 1).toFixed(2)}</span>
+              <span style={{ fontSize: 13, color: '#1D1D1F', minWidth: 38, textAlign: 'center' }}>×{(radHubObjectScale ?? 1).toFixed(2)}</span>
               <button
                 onClick={() => setRadHubObjectScale((radHubObjectScale ?? 1) + 0.25)}
                 style={{ width: 22, height: 22, borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)', background: '#F5F5F7', cursor: 'pointer', fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1D1D1F', flexShrink: 0 }}>+</button>
@@ -367,7 +367,7 @@ export function RadDataPanel() {
         {/* Heatmap legend */}
         {radShowAutoHeatmap && (
           <>
-            <div style={{ marginTop: 10, fontSize: 11, color: '#6E6E73', marginBottom: 6 }}>Road type colors</div>
+            <div style={{ marginTop: 10, fontSize: 13, color: '#6E6E73', marginBottom: 6 }}>Road type colors</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {[
                 { color: '#EF4444', label: 'Motorway / Trunk' },
@@ -377,7 +377,7 @@ export function RadDataPanel() {
                 { color: '#60A5FA', label: 'Residential' },
                 { color: '#9CA3AF', label: 'Other' },
               ].map(({ color, label }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                   <div style={{ width: 20, height: 3, borderRadius: 2, background: color, flexShrink: 0 }} />
                   <span style={{ color: '#1D1D1F' }}>{label}</span>
                 </div>
@@ -415,7 +415,7 @@ export function RadNodePopup() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: NODE_TYPE_COLOR[node.node_type] || '#6B7280', display: 'inline-block', flexShrink: 0 }} />
-            <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#6E6E73' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#6E6E73' }}>
               {node.node_type?.replace(/_/g, ' ')} · order {node.order}
             </span>
           </div>
@@ -427,12 +427,12 @@ export function RadNodePopup() {
       <div style={{ padding: '10px 16px', maxHeight: 340, overflowY: 'auto' }}>
         {connectedEdges.length > 0 && (
           <>
-            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: '#AEAEB2', marginBottom: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', color: '#AEAEB2', marginBottom: 6 }}>
               Routes from this point ({connectedEdges.length})
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {connectedEdges.slice(0, 6).map(e => (
-                <div key={e.id} style={{ background: '#F5F5F7', borderRadius: 8, padding: '6px 10px', fontSize: 12 }}>
+                <div key={e.id} style={{ background: '#F5F5F7', borderRadius: 8, padding: '6px 10px', fontSize: 13 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                     <span style={{ width: 12, height: 3, borderRadius: 2, background: ROUTE_COLOR[e.route_type] || '#ccc', display: 'inline-block' }} />
                     <span style={{ fontWeight: 600, color: '#1D1D1F' }}>
@@ -447,12 +447,12 @@ export function RadNodePopup() {
                 </div>
               ))}
               {connectedEdges.length > 6 && (
-                <div style={{ fontSize: 11, color: '#AEAEB2', textAlign: 'center' }}>+{connectedEdges.length - 6} more</div>
+                <div style={{ fontSize: 13, color: '#AEAEB2', textAlign: 'center' }}>+{connectedEdges.length - 6} more</div>
               )}
             </div>
           </>
         )}
-        <div style={{ fontSize: 11, color: '#AEAEB2', marginTop: 8 }}>
+        <div style={{ fontSize: 13, color: '#AEAEB2', marginTop: 8 }}>
           {node.lat?.toFixed(5)}, {node.lng?.toFixed(5)}
         </div>
       </div>
@@ -480,7 +480,7 @@ export function RadEdgePopup() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
             <span style={{ width: 20, height: 3, borderRadius: 2, background: ROUTE_COLOR[edge.route_type] || '#ccc', display: 'inline-block' }} />
-            <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: '#6E6E73' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', color: '#6E6E73' }}>
               Route {edge.route_type}
             </span>
           </div>
@@ -491,7 +491,7 @@ export function RadEdgePopup() {
       </div>
       <div style={{ padding: '10px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {edge.status === 'no_path_found' ? (
-          <div style={{ gridColumn: '1/-1', background: '#FEE2E2', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#991B1B' }}>
+          <div style={{ gridColumn: '1/-1', background: '#FEE2E2', borderRadius: 8, padding: '8px 12px', fontSize: 13, color: '#991B1B' }}>
             ⚠ No path found — infrastructure gap
           </div>
         ) : (
@@ -506,10 +506,10 @@ export function RadEdgePopup() {
         )}
         {edge.road_types?.length > 0 && (
           <div style={{ gridColumn: '1/-1' }}>
-            <div style={{ fontSize: 11, color: '#6E6E73', marginBottom: 4 }}>Road types</div>
+            <div style={{ fontSize: 13, color: '#6E6E73', marginBottom: 4 }}>Road types</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {edge.road_types.map(t => (
-                <span key={t} style={{ fontSize: 11, background: '#F5F5F7', borderRadius: 6, padding: '2px 7px', color: '#1D1D1F' }}>{t}</span>
+                <span key={t} style={{ fontSize: 13, background: '#F5F5F7', borderRadius: 6, padding: '2px 7px', color: '#1D1D1F' }}>{t}</span>
               ))}
             </div>
           </div>
@@ -522,7 +522,7 @@ export function RadEdgePopup() {
 function Stat({ label, value, ok, warn }) {
   return (
     <div style={{ background: '#F5F5F7', borderRadius: 8, padding: '7px 10px' }}>
-      <div style={{ fontSize: 11, color: '#6E6E73' }}>{label}</div>
+      <div style={{ fontSize: 13, color: '#6E6E73' }}>{label}</div>
       <div style={{ fontSize: 13, fontWeight: 600, color: ok === true ? '#34C759' : warn ? '#FF453A' : '#1D1D1F', marginTop: 1 }}>{value}</div>
     </div>
   )

@@ -29,7 +29,7 @@ import forestData from './data/forest.json'
 import buildingsData from './data/buildings.json'
 
 const SERIF = "'Georgia', 'Times New Roman', serif"
-const SANS  = "system-ui, -apple-system, sans-serif"
+const SANS  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
 function LandingOverlay() {
   return (
@@ -56,7 +56,7 @@ function LandingOverlay() {
       }}>
         <div style={{
           fontFamily: SANS,
-          fontSize: 10,
+          fontSize: 13,
           fontWeight: 700,
           color: '#aaa',
           letterSpacing: '0.12em',
@@ -103,7 +103,7 @@ function LandingOverlay() {
           paddingTop: 22,
           borderTop: '1px solid rgba(0,0,0,0.08)',
           fontFamily: SANS,
-          fontSize: 12,
+          fontSize: 13,
           color: '#aaa',
           letterSpacing: '-0.01em',
         }}>
@@ -118,7 +118,7 @@ function UrbanPlaceholder() {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: '#ccc', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 16 }}>In Development</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#ccc', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 16 }}>In Development</div>
         <div style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 400, color: '#ddd', letterSpacing: '-0.02em' }}>Urban Design</div>
         <div style={{ fontFamily: SANS, fontSize: 13, color: '#ccc', marginTop: 12 }}>Coming soon</div>
       </div>
@@ -130,7 +130,7 @@ function SimulationPlaceholder() {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: '#ccc', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 16 }}>In Development</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#ccc', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 16 }}>In Development</div>
         <div style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 400, color: '#ddd', letterSpacing: '-0.02em' }}>Operational Simulation</div>
         <div style={{ fontFamily: SANS, fontSize: 13, color: '#ccc', marginTop: 12 }}>Coming soon</div>
       </div>

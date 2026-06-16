@@ -13,9 +13,9 @@ function Box({ title, detail, color, wide }) {
       width:          wide ? 280 : 220,
       textAlign:     'center',
     }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color, lineHeight: 1.3 }}>{title}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color, lineHeight: 1.3 }}>{title}</div>
       {detail && (
-        <div style={{ fontSize: 11, color: '#6E6E73', marginTop: 4, lineHeight: 1.4 }}>{detail}</div>
+        <div style={{ fontSize: 13, color: '#6E6E73', marginTop: 4, lineHeight: 1.4 }}>{detail}</div>
       )}
     </div>
   )
@@ -60,11 +60,11 @@ function ParallelBranches({ branches, color, mergeLabel }) {
             background: `${color}0A`, border: `1px dashed ${color}30`,
             borderRadius: 10, padding: '10px 12px',
           }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color, marginBottom: 6, textAlign: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color, marginBottom: 6, textAlign: 'center' }}>
               {b.label}
             </div>
             <div style={{
-              fontSize: 10, color: '#6E6E73', textAlign: 'center', lineHeight: 1.4, maxWidth: 100,
+              fontSize: 13, color: '#6E6E73', textAlign: 'center', lineHeight: 1.4, maxWidth: 100,
             }}>{b.detail}</div>
             <div style={{
               marginTop: 8, fontSize: 13, fontWeight: 700,
@@ -263,7 +263,7 @@ export default function AnalysisInfoModal() {
           {/* Left: flowchart */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontSize: 11, fontWeight: 700, color: c.color,
+              fontSize: 13, fontWeight: 700, color: c.color,
               letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14,
             }}>
               Algorithm
@@ -294,7 +294,7 @@ export default function AnalysisInfoModal() {
           {/* Right: formula + notes */}
           <div style={{ width: 240, flexShrink: 0 }}>
             <div style={{
-              fontSize: 11, fontWeight: 700, color: c.color,
+              fontSize: 13, fontWeight: 700, color: c.color,
               letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14,
             }}>
               Formula
@@ -317,12 +317,12 @@ export default function AnalysisInfoModal() {
             {c.sections?.map((s, i) => (
               <div key={i} style={{ marginBottom: 16 }}>
                 <div style={{
-                  fontSize: 11, fontWeight: 700, color: '#1D1D1F',
+                  fontSize: 13, fontWeight: 700, color: '#1D1D1F',
                   letterSpacing: '-0.01em', marginBottom: 5,
                 }}>
                   {s.title}
                 </div>
-                <div style={{ fontSize: 12, color: '#3D3D3F', lineHeight: 1.6 }}>
+                <div style={{ fontSize: 13, color: '#3D3D3F', lineHeight: 1.6 }}>
                   {s.text}
                 </div>
               </div>
@@ -331,7 +331,7 @@ export default function AnalysisInfoModal() {
             <div style={{
               marginTop: 8, padding: '10px 12px',
               background: '#F5F5F7', borderRadius: 10,
-              fontSize: 11, color: '#6E6E73', lineHeight: 1.5,
+              fontSize: 13, color: '#6E6E73', lineHeight: 1.5,
             }}>
               <strong style={{ color: '#3D3D3F' }}>Data:</strong> OpenStreetMap · ODbL<br />
               All scores normalized 0–10 within Wolfsburg's 42 districts.

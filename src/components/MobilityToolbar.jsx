@@ -28,7 +28,6 @@ function Toggle({ label, active, onToggle, color = '#FF4D6D', count, disabled })
         width:        '100%',
         textAlign:    'left',
         fontFamily:   'inherit',
-        transition:   'background 0.15s ease',
         opacity:       disabled ? 0.38 : 1,
       }}
     >
@@ -39,7 +38,6 @@ function Toggle({ label, active, onToggle, color = '#FF4D6D', count, disabled })
         background:    active && !disabled ? color : '#D1D1D6',
         flexShrink:    0,
         position:     'relative',
-        transition:   'background 0.2s ease',
       }}>
         <div style={{
           position:    'absolute',
@@ -50,14 +48,13 @@ function Toggle({ label, active, onToggle, color = '#FF4D6D', count, disabled })
           borderRadius:  7,
           background:   '#FFFFFF',
           boxShadow:    '0 1px 3px rgba(0,0,0,0.25)',
-          transition:   'left 0.2s ease',
         }} />
       </div>
-      <span style={{ fontSize: 12, fontWeight: 500, color: '#1D1D1F', flex: 1, lineHeight: 1.3 }}>
+      <span style={{ fontSize: 13, fontWeight: 500, color: '#1D1D1F', flex: 1, lineHeight: 1.3 }}>
         {label}
       </span>
       {count != null && (
-        <span style={{ fontSize: 10, color: '#AEAEB2', flexShrink: 0 }}>{count}</span>
+        <span style={{ fontSize: 13, color: '#AEAEB2', flexShrink: 0 }}>{count}</span>
       )}
     </button>
   )
@@ -97,8 +94,8 @@ function TimeControls({ color, selectedDay, setSelectedDay, selectedTime, setSel
     }}>
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-          <span style={{ fontSize: 11, color: '#6E6E73' }}>Day</span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#1D1D1F' }}>{selectedDay}</span>
+          <span style={{ fontSize: 13, color: '#6E6E73' }}>Day</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F' }}>{selectedDay}</span>
         </div>
         <input
           type="range" min={0} max={6} step={1}
@@ -118,8 +115,8 @@ function TimeControls({ color, selectedDay, setSelectedDay, selectedTime, setSel
       </div>
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-          <span style={{ fontSize: 11, color: '#6E6E73' }}>Time</span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#1D1D1F' }}>{selectedTime}</span>
+          <span style={{ fontSize: 13, color: '#6E6E73' }}>Time</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1D1D1F' }}>{selectedTime}</span>
         </div>
         <input
           type="range" min={0} max={47} step={1}
@@ -129,7 +126,7 @@ function TimeControls({ color, selectedDay, setSelectedDay, selectedTime, setSel
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
           {['0h', '6h', '12h', '18h', '24h'].map(t => (
-            <span key={t} style={{ fontSize: 9, color: '#AEAEB2' }}>{t}</span>
+            <span key={t} style={{ fontSize: 13, color: '#AEAEB2' }}>{t}</span>
           ))}
         </div>
       </div>
