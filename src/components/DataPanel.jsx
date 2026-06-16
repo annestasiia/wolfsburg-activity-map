@@ -1045,17 +1045,55 @@ const CSS_SLIDES = `
 .dp-slide { animation: dp-in 0.36s cubic-bezier(.4,0,.2,1) both; }
 `
 
-// Wrapper for every slide: eyebrow + title + content
+// Draggable right-side scroll handle
+function SlideHandle({ total, slide, onGo }) {
+  const trackRef = useRef(null)
+  const dragging = useRef(false)
+
+  const getSlideFromY = (clientY) => {
+    const track = trackRef.current
+    if (!track) return slide
+    const { top, height } = track.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (clientY - top) / height))
+    return Math.round(ratio * (total - 1))
+  }
+
+  const startDrag = (e) => {
+    dragging.current = true
+    e.preventDefault()
+    const onMove = (me) => { if (dragging.current) onGo(getSlideFromY(me.clientY)) }
+    const onUp   = () => { dragging.current = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
+  const thumbPct = total > 1 ? (slide / (total - 1)) * 100 : 0
+
+  return (
+    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 28, display: 'flex', justifyContent: 'center', padding: '20px 0', boxSizing: 'border-box', zIndex: 20 }}>
+      <div ref={trackRef} onClick={(e) => onGo(getSlideFromY(e.clientY))}
+        style={{ width: 2, background: C.border, borderRadius: 1, position: 'relative', cursor: 'pointer', flex: 1 }}>
+        <div onMouseDown={startDrag}
+          style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%) translateY(-50%)', top: `${thumbPct}%`,
+            width: 8, height: 32, background: C.text1, borderRadius: 4, cursor: 'grab', transition: 'top 0.25s ease' }} />
+      </div>
+    </div>
+  )
+}
+
+// Wrapper for every slide: centered vertically + horizontally, StrategyPanel-matching typography
 function Slide({ eyebrow, title, sub, children }) {
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '32px 60px 28px', boxSizing: 'border-box', maxWidth: 1080, margin: '0 auto' }}>
-      <div className="dp-a" style={{ marginBottom: 18, flexShrink: 0 }}>
-        {eyebrow && <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 7 }}>{eyebrow}</div>}
-        <h2 style={{ fontFamily: SERIF, fontSize: 30, fontWeight: 400, color: C.text1, margin: 0, lineHeight: 1.1, letterSpacing: '-0.3px' }}>{title}</h2>
-        {sub && <p style={{ fontFamily: SERIF, fontSize: 13, color: C.text2, marginTop: 7, lineHeight: 1.6, maxWidth: 560, marginBottom: 0 }}>{sub}</p>}
-      </div>
-      <div className="dp-a" style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        {children}
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 72px 28px 60px', boxSizing: 'border-box' }}>
+      <div style={{ width: '100%', maxWidth: 900 }}>
+        <div className="dp-a" style={{ marginBottom: 22 }}>
+          {eyebrow && <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>}
+          <h2 style={{ fontFamily: SERIF, fontSize: 40, fontWeight: 400, color: C.text1, margin: 0, lineHeight: 1.1, letterSpacing: '-0.5px' }}>{title}</h2>
+          {sub && <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 14, lineHeight: 1.75, maxWidth: 560, marginBottom: 0 }}>{sub}</p>}
+        </div>
+        <div className="dp-a">
+          {children}
+        </div>
       </div>
     </div>
   )
@@ -1446,10 +1484,13 @@ export default function DataPanel() {
         </div>
       </nav>
 
-      {/* ── Full-screen slide ── */}
-      <div key={slide} ref={slideRef} className="dp-slide"
-        style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'stretch' }}>
-        <SlideComp />
+      {/* ── Full-screen slide + right handle ── */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <div key={slide} ref={slideRef} className="dp-slide"
+          style={{ position: 'absolute', inset: 0, overflow: 'hidden', display: 'flex', alignItems: 'stretch' }}>
+          <SlideComp />
+        </div>
+        <SlideHandle total={ALL_SLIDES.length} slide={slide} onGo={(i) => { busy.current = false; setSlide(i) }} />
       </div>
     </div>
   )
