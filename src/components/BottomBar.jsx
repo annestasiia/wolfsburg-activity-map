@@ -80,6 +80,9 @@ export default function BottomBar() {
     }
   }, [activeBottomPanel, setActiveBottomPanel])
 
+  // Hide entirely for full-screen section panels
+  if (activeSection === 'strategy' || activeSection === 'capacity' ||
+      activeSection === 'urban'    || activeSection === 'simulation') return null
   if (activeMode === 'greenery' || activeMode === 'intermodal' || activeMode === 'data') return null
 
   if (activeSection === 'hub' && activeMode === 'hub-network') {

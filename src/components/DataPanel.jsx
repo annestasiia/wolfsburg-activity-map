@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+﻿import React, { useState, useEffect, useRef } from 'react'
 
 // ─── BASELINE ─────────────────────────────────────────────────────────────────
 const DISTRICT_POP = {
@@ -10,10 +10,10 @@ const WORKERS = 18000, T_RESIDENT = 3.2, T_WORKER = 2.1, T_VISITOR = 1.5
 const VISITOR_SHARE = 0.20, CAR_OCCUPANCY = 1.3
 
 const MODAL = {
-  private_car:    { share: 0.62, label: 'Private car',    color: '#E63946' },
-  public_transit: { share: 0.10, label: 'Public transit', color: '#1D70B8' },
-  walking:        { share: 0.20, label: 'Walking',        color: '#2D6A4F' },
-  cycling:        { share: 0.08, label: 'Cycling',        color: '#FF8C42' },
+  private_car:    { share: 0.62, label: 'Private car',    color: '#111111' },
+  public_transit: { share: 0.10, label: 'Public transit', color: '#555555' },
+  walking:        { share: 0.20, label: 'Walking',        color: '#909090' },
+  cycling:        { share: 0.08, label: 'Cycling',        color: '#BBBBBB' },
 }
 
 const HOUR_RAW = [
@@ -54,11 +54,11 @@ const ZONE_AREA_KM2 = 4.0
 const CARS_REPLACED = 49648
 
 const MODE_META = {
-  e_bike:             { label: 'E-Bike',       color: '#27AE60' },
-  autonomous_shuttle: { label: 'Auto Shuttle', color: '#8E44AD' },
-  autonomous_bus:     { label: 'Auto Bus',     color: '#2C3E50' },
-  autonomous_pod:     { label: 'Auto Pod',     color: '#2980B9' },
-  car_sharing_ev:     { label: 'Car-Share EV', color: '#E67E22' },
+  e_bike:             { label: 'E-Bike',       color: '#0D0D0D' },
+  autonomous_shuttle: { label: 'Auto Shuttle', color: '#404040' },
+  autonomous_bus:     { label: 'Auto Bus',     color: '#6B6B6B' },
+  autonomous_pod:     { label: 'Auto Pod',     color: '#999999' },
+  car_sharing_ev:     { label: 'Car-Share EV', color: '#C4C4C4' },
 }
 
 const FLEET_PARAMS = {
@@ -132,7 +132,7 @@ const hub_l_from_fleet    = ceil((fleet.autonomous_bus.total + fleet.car_sharing
 const hub_l_count         = Math.min(Math.max(hub_l_from_fleet, 3), 6)
 
 const HUB_COUNTS    = { hub_l: hub_l_count, hub_m: hub_m_count, hub_s: hub_s_count }
-const HUB_COLORS_UI = { hub_l: '#1A1A1A', hub_m: '#2D6A4F', hub_s: '#95B8A0' }
+const HUB_COLORS_UI = { hub_l: '#111111', hub_m: '#606060', hub_s: '#AAAAAA' }
 const HUB_LABELS_UI = { hub_l: 'Hub L', hub_m: 'Hub M', hub_s: 'Hub S' }
 const TIERS = ['hub_l', 'hub_m', 'hub_s']
 
@@ -204,7 +204,7 @@ const area_pct_of_zone    = (area_total_all_hubs / hub_zone_m2 * 100).toFixed(2)
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 const SERIF = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
 const SANS  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
-const C = { bg: '#FAFAF9', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
+const C = { bg: '#FFFFFF', card: '#F6F6F6', border: '#E4E4E4', text1: '#0A0A0A', text2: '#3C3C3C', text3: '#909090' }
 const fmt = n => Math.round(n).toLocaleString('de-DE')
 
 const CSS_ANIM = `
@@ -294,7 +294,7 @@ function DistrictChart() {
         <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ fontFamily: SANS, width: 112, fontSize: 12, color: C.text2, flexShrink: 0 }}>{name}</div>
           <div style={{ flex: 1, height: 6, background: C.border, borderRadius: 3, overflow: 'hidden' }}>
-            <div className="dp-bh" style={{ width: `${(pop / maxPop) * 100}%`, height: '100%', background: '#2980B9', borderRadius: 3, transitionDelay: `${i * 35}ms` }} />
+            <div className="dp-bh" style={{ width: `${(pop / maxPop) * 100}%`, height: '100%', background: '#111111', borderRadius: 3, transitionDelay: `${i * 35}ms` }} />
           </div>
           <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, width: 44, textAlign: 'right', flexShrink: 0 }}>{pop.toLocaleString('de-DE')}</div>
         </div>
@@ -312,7 +312,7 @@ function HourlyChart() {
         {HOUR_SHARE.map((s, h) => (
           <div key={h} className="dp-bv" title={`${h}:00 — ${fmt(D_total * s)} trips`} style={{
             flex: 1, height: `${(s / maxS) * 100}%`,
-            background: isPeak(h) ? '#E63946' : '#2980B9',
+            background: isPeak(h) ? '#0A0A0A' : '#C0C0C0',
             borderRadius: '2px 2px 0 0', opacity: 0.82,
             transitionDelay: `${h * 18}ms`,
           }} />
@@ -322,7 +322,7 @@ function HourlyChart() {
         {[0, 4, 8, 12, 16, 20, 23].map(h => <span key={h} style={{ fontFamily: SANS, fontSize: 10, color: C.text3 }}>{h}h</span>)}
       </div>
       <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-        {[['#E63946', 'Peak (7–9h, 16–18h)'], ['#2980B9', 'Off-peak']].map(([c, l]) => (
+        {[['#111111', 'Peak (7–9h, 16–18h)'], ['#5E5E5E', 'Off-peak']].map(([c, l]) => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 10, height: 10, background: c, borderRadius: 2 }} />
             <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{l}</span>
@@ -352,8 +352,8 @@ function BaselineTable() {
 // ─── PART 2 CHARTS ────────────────────────────────────────────────────────────
 function FlowChart() {
   const flows = [
-    { label: 'Inbound',            value: inbound_trips,      color: '#E63946', sub: 'cross-boundary workers & visitors' },
-    { label: 'Internal transport', value: transport_internal, color: '#2980B9', sub: 'requires a vehicle' },
+    { label: 'Inbound',            value: inbound_trips,      color: '#111111', sub: 'cross-boundary workers & visitors' },
+    { label: 'Internal transport', value: transport_internal, color: C.text1, sub: 'requires a vehicle' },
     { label: 'Walking (filtered)', value: walking_filtered,   color: C.border,  sub: '60% of internal — not transported' },
   ]
   const maxVal = D_total
@@ -362,7 +362,7 @@ function FlowChart() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ padding: '14px 18px', background: C.text1, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontFamily: SERIF, fontSize: 15, color: '#fff' }}>D_total</span>
-        <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: '#E63946' }}>{fmt(D_total)} trips/day</span>
+        <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: '#111111' }}>{fmt(D_total)} trips/day</span>
       </div>
       {flows.map(({ label, value, color, sub }) => (
         <div key={label}>
@@ -378,13 +378,13 @@ function FlowChart() {
           </div>
         </div>
       ))}
-      <div style={{ padding: '14px 18px', background: 'rgba(10,126,69,0.05)', border: '1px solid rgba(10,126,69,0.16)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '14px 18px', background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.03)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: '#0A7E45' }}>D_transport (net)</span>
+          <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1 }}>D_transport (net)</span>
           <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginLeft: 8 }}>inbound + internal transport</span>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: SERIF, fontSize: 20, color: '#0A7E45' }}>{fmt(D_transport)}</div>
+          <div style={{ fontFamily: SERIF, fontSize: 20, color: C.text1 }}>{fmt(D_transport)}</div>
           <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>−{reduction_pct}% vs D_total</div>
         </div>
       </div>
@@ -398,8 +398,8 @@ function FlowChart() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
                   <span style={{ fontFamily: SANS, fontSize: 13, color: C.text2 }}>{label}</span>
-                  {f.inbound > 0 && <span style={{ fontFamily: SANS, fontSize: 10, color: '#E63946', background: 'rgba(230,57,70,0.07)', padding: '1px 6px', borderRadius: 4 }}>inbound</span>}
-                  {f.internal > 0 && <span style={{ fontFamily: SANS, fontSize: 10, color: '#2980B9', background: 'rgba(41,128,185,0.07)', padding: '1px 6px', borderRadius: 4 }}>internal</span>}
+                  {f.inbound > 0 && <span style={{ fontFamily: SANS, fontSize: 10, color: C.text3, background: C.card, padding: '1px 6px', borderRadius: 4 }}>inbound</span>}
+                  {f.internal > 0 && <span style={{ fontFamily: SANS, fontSize: 10, color: C.text3, background: C.card, padding: '1px 6px', borderRadius: 4 }}>internal</span>}
                 </div>
                 <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color }}>{fmt(f.trips)}</span>
               </div>
@@ -487,10 +487,10 @@ function ReplacementChart() {
     <div style={{ display: 'flex', gap: 36, alignItems: 'flex-end' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Baseline</div>
-        <div className="dp-bv" style={{ width: BAR_W, height: Math.round((CARS_REPLACED / scaleMax) * 260), background: '#E63946', borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 10 }}>
+        <div className="dp-bv" style={{ width: BAR_W, height: Math.round((CARS_REPLACED / scaleMax) * 260), background: '#111111', borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 10 }}>
           <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: '#fff' }}>{fmt(CARS_REPLACED)}</span>
         </div>
-        <div style={{ fontFamily: SANS, fontSize: 12, color: '#E63946', fontWeight: 600, marginTop: 6 }}>Private cars</div>
+        <div style={{ fontFamily: SANS, fontSize: 12, color: C.text3, fontWeight: 400, marginTop: 6 }}>Private cars</div>
       </div>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Post-Car</div>
@@ -505,9 +505,9 @@ function ReplacementChart() {
         <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{fmt(total_fleet)} units</div>
       </div>
       <div style={{ flex: 1, paddingBottom: 28 }}>
-        <div style={{ padding: '14px 18px', background: 'rgba(10,126,69,0.05)', border: '1px solid rgba(10,126,69,0.14)', borderRadius: 8, marginBottom: 16 }}>
-          <div style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: '#0A7E45', letterSpacing: '-0.02em' }}>1 : {replacement_ratio}</div>
-          <div style={{ fontFamily: SANS, fontSize: 12, color: '#2D6A4F', marginTop: 3 }}>shared vehicle replaces {replacement_ratio} private cars</div>
+        <div style={{ padding: '14px 18px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, marginBottom: 16 }}>
+          <div style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 400, color: C.text1, letterSpacing: '-0.02em' }}>1 : {replacement_ratio}</div>
+          <div style={{ fontFamily: SANS, fontSize: 12, color: C.text2, marginTop: 3 }}>shared vehicle replaces {replacement_ratio} private cars</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
           {segments.map(({ mode, color, label, val }) => (
@@ -524,9 +524,9 @@ function ReplacementChart() {
 }
 
 function DotMatrix() {
-  const UNIT = 10, COLS = 60
-  const carDots  = Math.ceil(CARS_REPLACED / UNIT)
-  const fleetDots= Math.ceil(total_fleet / UNIT)
+  const UNIT = 50, COLS = 55, DOT = 5, GAP = 2
+  const carDots   = Math.ceil(CARS_REPLACED / UNIT)
+  const fleetDots = Math.ceil(total_fleet / UNIT)
   const modeOrder = Object.keys(MODE_META)
   const modeDots  = modeOrder.map(m => Math.ceil(fleet[m].total / UNIT))
   const fleetColorFn = idx => {
@@ -534,39 +534,47 @@ function DotMatrix() {
     for (let i = 0; i < modeOrder.length; i++) { acc += modeDots[i]; if (idx < acc) return MODE_META[modeOrder[i]].color }
     return C.border
   }
-  const renderDots = (count, colorFn) => {
+  const renderGrid = (count, colorFn) => {
     const rows = []
     for (let r = 0; r < Math.ceil(count / COLS); r++) {
       const cells = []
       for (let c = 0; c < COLS; c++) {
         const idx = r * COLS + c
         if (idx >= count) break
-        cells.push(<div key={c} style={{ width: 8, height: 8, borderRadius: '50%', background: colorFn(idx), flexShrink: 0 }} />)
+        cells.push(<div key={c} style={{ width: DOT, height: DOT, borderRadius: 1, background: colorFn(idx), flexShrink: 0 }} />)
       }
-      rows.push(<div key={r} style={{ display: 'flex', gap: 3 }}>{cells}</div>)
+      rows.push(<div key={r} style={{ display: 'flex', gap: GAP }}>{cells}</div>)
     }
     return rows
   }
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-      <div>
-        <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: '#E63946', marginBottom: 8 }}>
-          Private Cars — {fmt(CARS_REPLACED)} <span style={{ fontWeight: 400, color: C.text3 }}>(each dot = {UNIT} vehicles)</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>{renderDots(carDots, () => '#E63946')}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+      {/* Big ratio number */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 }}>
+        <div style={{ fontFamily: SERIF, fontSize: 72, fontWeight: 400, color: C.text1, lineHeight: 1, letterSpacing: '-2px' }}>1 : {replacement_ratio}</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, lineHeight: 1.5, maxWidth: 180 }}>shared vehicle replaces {replacement_ratio} private cars in daily circulation</div>
       </div>
-      <div>
-        <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 600, color: C.text1, marginBottom: 8 }}>
-          Post-Car Fleet — {fmt(total_fleet)} <span style={{ fontWeight: 400, color: C.text3 }}>(each dot = {UNIT} vehicles)</span>
+      {/* Dot grids */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div>
+          <div style={{ fontFamily: SANS, fontSize: 10, letterSpacing: '0.10em', textTransform: 'uppercase', color: C.text3, marginBottom: 6 }}>
+            Private cars today — {fmt(CARS_REPLACED)} <span style={{ letterSpacing: 0 }}>· 1 dot = {UNIT} vehicles</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>{renderGrid(carDots, () => '#0A0A0A')}</div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>{renderDots(fleetDots, fleetColorFn)}</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
-          {modeOrder.map(m => (
-            <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 9, height: 9, borderRadius: '50%', background: MODE_META[m].color }} />
-              <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{MODE_META[m].label}</span>
-            </div>
-          ))}
+        <div>
+          <div style={{ fontFamily: SANS, fontSize: 10, letterSpacing: '0.10em', textTransform: 'uppercase', color: C.text3, marginBottom: 6 }}>
+            Post-car shared fleet — {fmt(total_fleet)}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>{renderGrid(fleetDots, fleetColorFn)}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 10 }}>
+            {modeOrder.map(m => (
+              <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 7, height: 7, borderRadius: 1, background: MODE_META[m].color }} />
+                <span style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{MODE_META[m].label} {fmt(fleet[m].total)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -595,7 +603,7 @@ function ChargingChart() {
       })}
       <div style={{ marginTop: 8, padding: '12px 16px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1 }}>Total charging points</span>
-        <span style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 400, color: '#0A7E45' }}>{fmt(total_charging)}</span>
+        <span style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 400, color: C.text1 }}>{fmt(total_charging)}</span>
       </div>
     </div>
   )
@@ -603,12 +611,12 @@ function ChargingChart() {
 
 function FleetSummaryGrid() {
   const cards = [
-    { label: 'D_transport (net)',  value: fmt(D_transport),                               sub: `−${reduction_pct}% vs D_total`,               color: '#0A7E45' },
-    { label: 'Total fleet',        value: fmt(total_fleet),                                sub: 'all modes · peak hour',                        color: '#2980B9' },
-    { label: 'Cars replaced',      value: fmt(CARS_REPLACED),                             sub: 'baseline private cars/day',                    color: '#E63946' },
-    { label: 'Replacement ratio',  value: `1 : ${replacement_ratio}`,                    sub: 'shared vehicle → private cars',                color: '#8E44AD' },
-    { label: 'Total charging pts', value: fmt(total_charging),                            sub: 'simultaneous',                                 color: '#E67E22' },
-    { label: 'Walking filtered',   value: `${(WALKING_SHARE_INTERNAL * 100).toFixed(0)}%`, sub: 'internal trips not transported',              color: '#2D6A4F' },
+    { label: 'D_transport (net)',  value: fmt(D_transport),                               sub: `−${reduction_pct}% vs D_total`,               color: C.text1 },
+    { label: 'Total fleet',        value: fmt(total_fleet),                                sub: 'all modes · peak hour',                        color: C.text2 },
+    { label: 'Cars replaced',      value: fmt(CARS_REPLACED),                             sub: 'baseline private cars/day',                    color: C.text2 },
+    { label: 'Replacement ratio',  value: `1 : ${replacement_ratio}`,                    sub: 'shared vehicle → private cars',                color: C.text2 },
+    { label: 'Total charging pts', value: fmt(total_charging),                            sub: 'simultaneous',                                 color: C.text2 },
+    { label: 'Walking filtered',   value: `${(WALKING_SHARE_INTERNAL * 100).toFixed(0)}%`, sub: 'internal trips not transported',              color: C.text1 },
   ]
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -651,9 +659,9 @@ function HubSummaryGrid() {
     { label: 'Hub L', value: String(hub_l_count), sub: 'large interchange hubs', color: HUB_COLORS_UI.hub_l },
     { label: 'Hub M', value: String(hub_m_count), sub: 'district mobility hubs', color: HUB_COLORS_UI.hub_m },
     { label: 'Hub S', value: String(hub_s_count), sub: 'neighbourhood micro-hubs', color: HUB_COLORS_UI.hub_s },
-    { label: 'Total Charging', value: fmt(hub_total_charging), sub: 'charging points (all hubs)', color: '#2980B9' },
-    { label: 'Hub Footprint', value: fmt(hub_total_footprint), sub: `m²  (${hub_footprint_pct}% of zone)`, color: '#E67E22' },
-    { label: 'Total Fleet', value: fmt(total_fleet), sub: 'vehicles + bikes', color: '#8E44AD' },
+    { label: 'Total Charging', value: fmt(hub_total_charging), sub: 'charging points (all hubs)', color: C.text2 },
+    { label: 'Hub Footprint', value: fmt(hub_total_footprint), sub: `m²  (${hub_footprint_pct}% of zone)`, color: C.text2 },
+    { label: 'Total Fleet', value: fmt(total_fleet), sub: 'vehicles + bikes', color: C.text2 },
   ]
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -667,9 +675,10 @@ function HubHeatmap() {
   const allVals = TIERS.flatMap(t => modes.map(m => fleet_per_hub[t][m] || 0))
   const maxVal  = Math.max(...allVals)
   const cellColor = val => {
-    if (val === 0) return '#F5F5F3'
+    if (val === 0) return '#F0F0F0'
     const r = val / maxVal
-    return `rgb(${Math.round(255 + (45 - 255) * r)},${Math.round(255 + (106 - 255) * r)},${Math.round(255 + (79 - 255) * r)})`
+    const g = Math.round(240 - 220 * r)
+    return `rgb(${g},${g},${g})`
   }
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -827,7 +836,7 @@ function HubInfraTable() {
               </th>
             ))}
           </tr>
-          <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FAFAF9' }}>
+          <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FFFFFF' }}>
             <th style={{ padding: '5px 10px' }} />
             {TIERS.map(t => [
               <th key={`${t}-total`} style={{ textAlign: 'right', padding: '5px 6px', fontSize: 10, color: C.text3, fontWeight: 600, borderLeft: `1px solid ${C.border}` }}>Tier total</th>,
@@ -850,18 +859,18 @@ function HubInfraTable() {
               ])}
             </tr>
           ))}
-          <tr style={{ borderTop: `2px solid ${C.border}`, background: 'rgba(41,128,185,0.04)' }}>
-            <td style={{ padding: '9px 10px', fontWeight: 600, color: '#2980B9', fontSize: 12 }}>Charging pts / hub</td>
+          <tr style={{ borderTop: `2px solid ${C.border}`, background: 'rgba(0,0,0,0.04)' }}>
+            <td style={{ padding: '9px 10px', fontWeight: 600, color: C.text2, fontSize: 12 }}>Charging pts / hub</td>
             {TIERS.map(t => [
               <td key={`${t}-total`} style={{ padding: '9px 6px', textAlign: 'right', color: C.text3, borderLeft: `1px solid ${C.border}` }}>–</td>,
-              <td key={`${t}-hub`}   style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 700, color: '#2980B9' }}>{hub_charging_per[t]}</td>,
+              <td key={`${t}-hub`}   style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 600, color: C.text2 }}>{hub_charging_per[t]}</td>,
             ])}
           </tr>
           <tr style={{ background: 'rgba(230,126,34,0.04)' }}>
-            <td style={{ padding: '9px 10px', fontWeight: 600, color: '#E67E22', fontSize: 12 }}>Footprint / hub (m²)</td>
+            <td style={{ padding: '9px 10px', fontWeight: 600, color: C.text2, fontSize: 12 }}>Footprint / hub (m²)</td>
             {TIERS.map(t => [
               <td key={`${t}-total`} style={{ padding: '9px 6px', textAlign: 'right', color: C.text3, borderLeft: `1px solid ${C.border}` }}>–</td>,
-              <td key={`${t}-hub`}   style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 700, color: '#E67E22' }}>{fmt(hub_footprint_per[t])}</td>,
+              <td key={`${t}-hub`}   style={{ padding: '9px 6px', textAlign: 'right', fontWeight: 600, color: C.text2 }}>{fmt(hub_footprint_per[t])}</td>,
             ])}
           </tr>
         </tbody>
@@ -871,7 +880,7 @@ function HubInfraTable() {
 }
 
 // ─── PART 4 CHARTS ────────────────────────────────────────────────────────────
-const COMP_COLORS_AREA = { S_fleet_area: '#2D6A4F', S_circ_area: '#52A882', S_charging_area: '#2980B9', S_program_area: '#BDC3C7' }
+const COMP_COLORS_AREA = { S_fleet_area: '#2A2A2A', S_circ_area: '#909090', S_charging_area: '#5E5E5E', S_program_area: '#C8C8C8' }
 const COMP_LABELS_AREA = { S_fleet_area: 'Fleet parking', S_circ_area: 'Circulation', S_charging_area: 'Charging stations', S_program_area: 'Program / shelter' }
 const COMP_KEYS_AREA = ['S_fleet_area', 'S_circ_area', 'S_charging_area', 'S_program_area']
 const AREA_MAPS = { S_fleet_area, S_circ_area, S_charging_area, S_program_area }
@@ -881,9 +890,9 @@ function HubAreaSummaryGrid() {
     { label: 'Hub L area', value: `${Math.round(S_hub_area.hub_l)} m²`, sub: `per hub · ${hub_l_count} hubs`, color: HUB_COLORS_UI.hub_l },
     { label: 'Hub M area', value: `${Math.round(S_hub_area.hub_m)} m²`, sub: `per hub · ${hub_m_count} hubs`, color: HUB_COLORS_UI.hub_m },
     { label: 'Hub S area', value: `${Math.round(S_hub_area.hub_s)} m²`, sub: `per hub · ${hub_s_count} hubs`, color: HUB_COLORS_UI.hub_s },
-    { label: 'Total footprint', value: `${fmt(area_total_all_hubs)} m²`, sub: `${area_pct_of_zone}% of 4 km² zone`, color: '#E67E22' },
-    { label: 'Total hectares', value: `${(area_total_all_hubs / 10000).toFixed(2)} ha`, sub: 'combined hub land use', color: '#7C3AED' },
-    { label: 'Circ. factor', value: `×${CIRCULATION_FACTOR.hub_s}–×${CIRCULATION_FACTOR.hub_l}`, sub: 'fleet area multiplier by tier', color: '#2980B9' },
+    { label: 'Total footprint', value: `${fmt(area_total_all_hubs)} m²`, sub: `${area_pct_of_zone}% of 4 km² zone`, color: C.text2 },
+    { label: 'Total hectares', value: `${(area_total_all_hubs / 10000).toFixed(2)} ha`, sub: 'combined hub land use', color: C.text2 },
+    { label: 'Circ. factor', value: `×${CIRCULATION_FACTOR.hub_s}–×${CIRCULATION_FACTOR.hub_l}`, sub: 'fleet area multiplier by tier', color: C.text2 },
   ]
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -907,7 +916,7 @@ function HubAreaBars() {
               </div>
               <span style={{ fontFamily: SANS, fontSize: 14, fontWeight: 700, color: C.text1 }}>{Math.round(total)} m²</span>
             </div>
-            <div style={{ height: 22, display: 'flex', borderRadius: 6, overflow: 'hidden', background: '#F5F5F3' }}>
+            <div style={{ height: 22, display: 'flex', borderRadius: 6, overflow: 'hidden', background: '#F0F0F0' }}>
               {COMP_KEYS_AREA.map(ck => {
                 const val = AREA_MAPS[ck][tier]
                 const pct = (val / total) * 100
@@ -936,7 +945,7 @@ function HubAreaBars() {
       <div style={{ padding: '14px 18px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1 }}>All hubs combined</span>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: '#E67E22' }}>{fmt(area_total_all_hubs)} m²</div>
+          <div style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: C.text1 }}>{fmt(area_total_all_hubs)} m²</div>
           <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3 }}>{area_pct_of_zone}% of zone · {(area_total_all_hubs / 10000).toFixed(2)} ha</div>
         </div>
       </div>
@@ -1012,13 +1021,13 @@ function HubAreaTable() {
         </thead>
         <tbody>
           {tableRows.map(({ label, key, formula, accent }) => (
-            <tr key={label} style={{ borderTop: accent ? `2px solid ${C.border}` : undefined, borderBottom: `1px solid ${C.border}`, background: accent ? 'rgba(10,126,69,0.04)' : 'transparent' }}>
-              <td style={{ padding: '10px 10px', fontWeight: accent ? 700 : 500, color: accent ? '#0A7E45' : C.text1 }}>{label}</td>
+            <tr key={label} style={{ borderTop: accent ? `2px solid ${C.border}` : undefined, borderBottom: `1px solid ${C.border}`, background: accent ? 'rgba(0,0,0,0.03)' : 'transparent' }}>
+              <td style={{ padding: '10px 10px', fontWeight: accent ? 700 : 500, color: C.text1 }}>{label}</td>
               {TIERS.map(t => <td key={t} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: accent ? 700 : 400, color: accent ? HUB_COLORS_UI[t] : C.text2, fontVariantNumeric: 'tabular-nums' }}>{Math.round(map[key][t])} m²</td>)}
               <td style={{ padding: '10px 10px', color: C.text3, fontSize: 11 }}>{formula}</td>
             </tr>
           ))}
-          <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FAFAF9' }}>
+          <tr style={{ borderBottom: `1px solid ${C.border}`, background: '#FFFFFF' }}>
             <td style={{ padding: '10px 10px', color: C.text3, fontSize: 12 }}>Circ. factor</td>
             {TIERS.map(t => <td key={t} style={{ padding: '10px 10px', textAlign: 'right', color: C.text3, fontSize: 12 }}>×{CIRCULATION_FACTOR[t]}</td>)}
             <td style={{ padding: '10px 10px', color: C.text3, fontSize: 11 }}>driveways + maneuvering</td>
@@ -1084,15 +1093,16 @@ function SlideHandle({ total, slide, onGo }) {
 // Consistent slide frame: header always at same top position, content fills remaining space
 function Slide({ eyebrow, title, sub, children }) {
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '52px 56px 36px 56px', boxSizing: 'border-box', maxWidth: 960, margin: '0 auto' }}>
-      {/* HEADER — fixed top, same level on every slide */}
-      <div className="dp-a" style={{ flexShrink: 0, marginBottom: 28 }}>
-        {eyebrow && <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>}
-        <h2 style={{ fontFamily: SERIF, fontSize: 40, fontWeight: 400, color: C.text1, margin: 0, lineHeight: 1.1, letterSpacing: '-0.5px' }}>{title}</h2>
-        {sub && <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, marginTop: 14, lineHeight: 1.75, maxWidth: 580, marginBottom: 0 }}>{sub}</p>}
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '48px 64px 32px 56px', boxSizing: 'border-box', maxWidth: 960, margin: '0 auto' }}>
+      {/* HEADER */}
+      <div className="dp-a" style={{ flexShrink: 0, marginBottom: 0 }}>
+        {eyebrow && <div style={{ fontFamily: SANS, fontSize: 10, color: C.text3, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 10 }}>{eyebrow}</div>}
+        <h2 style={{ fontFamily: SERIF, fontSize: 36, fontWeight: 400, color: C.text1, margin: 0, lineHeight: 1.1, letterSpacing: '-0.5px' }}>{title}</h2>
+        {sub && <p style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 10, lineHeight: 1.65, maxWidth: 600, marginBottom: 0 }}>{sub}</p>}
       </div>
-      {/* CONTENT — fills all remaining vertical space */}
-      <div className="dp-a" style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ height: 1, background: C.border, flexShrink: 0, margin: '20px 0 0' }} />
+      {/* CONTENT */}
+      <div className="dp-a" style={{ flex: 1, minHeight: 0, overflow: 'hidden', paddingTop: 20 }}>
         {children}
       </div>
     </div>
@@ -1105,10 +1115,10 @@ function S01_Intro() {
     <Slide eyebrow="Part 1 · Baseline" title="Modal Distribution"
       sub={`Nine central districts · ${fmt(total_residents)} residents · ${fmt(WORKERS)} daily workers · ${fmt(visitors)} visitors · ${fmt(D_total)} trips/day (MiD 2017)`}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, alignContent: 'start' }}>
-        <KCard label="Residents"       value={fmt(total_residents)} sub="9 districts · WOKS 2023" color="#2980B9" />
-        <KCard label="Workers in zone" value={fmt(WORKERS)}         sub="WOKS Arbeitsmarkt 2025"  color="#8E44AD" />
-        <KCard label="Daily visitors"  value={fmt(visitors)}        sub="MiD 2017 estimate"       color="#2D6A4F" />
-        <KCard label="Total trips/day" value={fmt(D_total)}         sub="MiD 2017 formula"        color="#E63946" />
+        <KCard label="Residents"       value={fmt(total_residents)} sub="9 districts · WOKS 2023" color="#5E5E5E" />
+        <KCard label="Workers in zone" value={fmt(WORKERS)}         sub="WOKS Arbeitsmarkt 2025"  color="#3A3A3A" />
+        <KCard label="Daily visitors"  value={fmt(visitors)}        sub="MiD 2017 estimate"       color="#2A2A2A" />
+        <KCard label="Total trips/day" value={fmt(D_total)}         sub="MiD 2017 formula"        color="#111111" />
       </div>
     </Slide>
   )
@@ -1120,9 +1130,9 @@ function S02_Demand() {
       sub="D_total = residents × 3.2 + workers × 2.1 + visitors × 1.5  (MiD 2017 trip-generation rates)">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {[
-          { label: 'Residents', val: total_residents, factor: `× ${T_RESIDENT}`, result: total_residents * T_RESIDENT, color: '#2980B9' },
-          { label: 'Workers',   val: WORKERS,         factor: `× ${T_WORKER}`,   result: WORKERS * T_WORKER,          color: '#8E44AD' },
-          { label: 'Visitors',  val: visitors,        factor: `× ${T_VISITOR}`,  result: visitors * T_VISITOR,        color: '#2D6A4F' },
+          { label: 'Residents', val: total_residents, factor: `× ${T_RESIDENT}`, result: total_residents * T_RESIDENT, color: C.text1 },
+          { label: 'Workers',   val: WORKERS,         factor: `× ${T_WORKER}`,   result: WORKERS * T_WORKER,          color: C.text1 },
+          { label: 'Visitors',  val: visitors,        factor: `× ${T_VISITOR}`,  result: visitors * T_VISITOR,        color: C.text1 },
         ].map(({ label, val, factor, result, color }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px', background: C.bg, borderRadius: 8, border: `1px solid ${C.border}` }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
@@ -1134,7 +1144,7 @@ function S02_Demand() {
         ))}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', background: C.text1, borderRadius: 8, marginTop: 4 }}>
           <span style={{ fontFamily: SERIF, fontSize: 15, color: '#fff' }}>D_total</span>
-          <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: '#E63946', fontVariantNumeric: 'tabular-nums' }}>{fmt(D_total)}</span>
+          <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: '#111111', fontVariantNumeric: 'tabular-nums' }}>{fmt(D_total)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', background: C.card, border: `1px dashed ${C.border}`, borderRadius: 8 }}>
           <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>D_internal (65% intra-zone)</span>
@@ -1351,19 +1361,8 @@ function S22_AreaTable() {
 function MethodsOverlay({ onClose }) {
   const scrollRef = React.useRef(null)
 
-  useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('dp-v') }),
-      { threshold: 0.05, root: el }
-    )
-    el.querySelectorAll('.dp-a').forEach(n => obs.observe(n))
-    return () => obs.disconnect()
-  }, [])
-
   const box = (label, formula, note) => (
-    <div key={label} style={{ background: '#F7F7F6', borderRadius: 8, padding: '14px 18px', border: `1px solid ${C.border}` }}>
+    <div key={label} style={{ background: '#F4F4F4', borderRadius: 8, padding: '14px 18px', border: `1px solid ${C.border}` }}>
       <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 7 }}>{label}</div>
       <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
       {note && <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, marginTop: 6 }}>{note}</div>}
@@ -1384,7 +1383,7 @@ function MethodsOverlay({ onClose }) {
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto' }}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '48px 40px 80px' }}>
 
-          <div className="dp-a" style={{ marginBottom: 32 }}>
+          <div style={{ marginBottom: 32 }}>
             <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: 0 }}>
               Each section builds on publicly available data and standard urban transport benchmarks.
               The calculations are deterministic — no simulation or model calibration is required.
@@ -1392,7 +1391,7 @@ function MethodsOverlay({ onClose }) {
           </div>
 
           {/* ── Part 1 ── */}
-          <div className="dp-a" style={{ padding: '40px 0', borderTop: `1px solid ${C.border}` }}>
+          <div style={{ padding: '40px 0', borderTop: `1px solid ${C.border}` }}>
             <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>Part 1 · Baseline</div>
             <h2 style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 400, color: C.text1, margin: '0 0 24px', letterSpacing: '-0.5px' }}>Transport Demand</h2>
             <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
@@ -1415,7 +1414,7 @@ function MethodsOverlay({ onClose }) {
           </div>
 
           {/* ── Part 2 ── */}
-          <div className="dp-a" style={{ padding: '40px 0', borderTop: `1px solid ${C.border}` }}>
+          <div style={{ padding: '40px 0', borderTop: `1px solid ${C.border}` }}>
             <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>Part 2 · Fleet Sizing</div>
             <h2 style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 400, color: C.text1, margin: '0 0 24px', letterSpacing: '-0.5px' }}>From Trips to Vehicles</h2>
             <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
@@ -1451,7 +1450,7 @@ function MethodsOverlay({ onClose }) {
           </div>
 
           {/* ── Part 3 ── */}
-          <div className="dp-a" style={{ padding: '40px 0', borderTop: `1px solid ${C.border}` }}>
+          <div style={{ padding: '40px 0', borderTop: `1px solid ${C.border}` }}>
             <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>Part 3 · Hub Network</div>
             <h2 style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 400, color: C.text1, margin: '0 0 24px', letterSpacing: '-0.5px' }}>Hub Counts from Geometry</h2>
             <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 16px' }}>
@@ -1474,7 +1473,7 @@ function MethodsOverlay({ onClose }) {
                 { tier: 'Hub M', color: HUB_COLORS_UI.hub_m, formula: 'max(geometry r=400m,\nshuttle_fleet ÷ 3)', result: `= ${hub_m_count} hubs`, note: '400 m, shuttle coverage' },
                 { tier: 'Hub L', color: HUB_COLORS_UI.hub_l, formula: 'min(⌈(bus+car-share) ÷ 8⌉, 6)', result: `= ${hub_l_count} hubs`, note: 'capped — existing garages' },
               ].map(({ tier, color, formula, result, note }) => (
-                <div key={tier} style={{ background: '#F7F7F6', borderRadius: 8, padding: '14px 16px', border: `1px solid ${C.border}`, borderTop: `3px solid ${color}` }}>
+                <div key={tier} style={{ background: '#F4F4F4', borderRadius: 8, padding: '14px 16px', border: `1px solid ${C.border}`, borderTop: `3px solid ${color}` }}>
                   <div style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color, marginBottom: 8 }}>{tier}</div>
                   <div style={{ fontFamily: 'monospace', fontSize: 12, color: C.text2, lineHeight: 1.5, whiteSpace: 'pre-line' }}>{formula}</div>
                   <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1, marginTop: 5 }}>{result}</div>
@@ -1491,7 +1490,7 @@ function MethodsOverlay({ onClose }) {
           </div>
 
           {/* ── Part 4 ── */}
-          <div className="dp-a" style={{ padding: '40px 0', borderTop: `1px solid ${C.border}` }}>
+          <div style={{ padding: '40px 0', borderTop: `1px solid ${C.border}` }}>
             <div style={{ fontFamily: SANS, fontSize: 11, color: C.text3, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>Part 4 · Hub Area</div>
             <h2 style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 400, color: C.text1, margin: '0 0 24px', letterSpacing: '-0.5px' }}>Spatial Footprint Formula</h2>
             <p style={{ fontFamily: SERIF, fontSize: 15, color: C.text1, lineHeight: 1.75, margin: '0 0 28px' }}>
@@ -1522,7 +1521,7 @@ function MethodsOverlay({ onClose }) {
           </div>
 
           {/* Sources */}
-          <div className="dp-a" style={{ marginTop: 8, padding: '20px 24px', background: C.card, borderRadius: 8, border: `1px solid ${C.border}` }}>
+          <div style={{ marginTop: 8, padding: '20px 24px', background: C.card, borderRadius: 8, border: `1px solid ${C.border}` }}>
             <p style={{ fontFamily: SANS, fontSize: 11, color: C.text3, margin: 0, lineHeight: 1.9 }}>
               <strong style={{ color: C.text2 }}>Baseline:</strong> MiD 2017 (BMVI) · WOKS Wolfsburg 2023/2025 · KBA 2023<br />
               <strong style={{ color: C.text2 }}>Fleet:</strong> Nextbike operational data · UITP autonomous shuttle &amp; bus benchmarks · MOIA Hamburg · Share Now / Stadtmobil<br />
@@ -1530,7 +1529,7 @@ function MethodsOverlay({ onClose }) {
               <strong style={{ color: C.text2 }}>Hub area:</strong> Footprint/unit + circulation factor + charging stations + 10% program<br />
               <strong style={{ color: C.text2 }}>Scripts:</strong>{' '}
               {['modal_distribution.py', 'fleet_calculation.py', 'hub_calculation.py', 'hub_area.py'].map(s => (
-                <code key={s} style={{ background: '#F0EFED', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace', fontSize: 10, marginRight: 6 }}>{s}</code>
+                <code key={s} style={{ background: '#F0F0F0', padding: '1px 5px', borderRadius: 3, fontFamily: 'monospace', fontSize: 10, marginRight: 6 }}>{s}</code>
               ))}
             </p>
           </div>
@@ -1553,7 +1552,7 @@ function S23_Methods() {
       sub="Deterministic calculations from open statistical data — no simulation or model calibration required">
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         {boxes.map(({ label, formula, result, note }) => (
-          <div key={label} style={{ background: '#F7F7F6', borderRadius: 10, padding: '20px 22px', border: `1px solid ${C.border}` }}>
+          <div key={label} style={{ background: '#F4F4F4', borderRadius: 10, padding: '20px 22px', border: `1px solid ${C.border}` }}>
             <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 700, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>{label}</div>
             <div style={{ fontFamily: 'monospace', fontSize: 13, color: C.text2, lineHeight: 1.5, marginBottom: 10 }}>{formula}</div>
             <div style={{ fontFamily: SERIF, fontSize: 18, color: C.text1, marginBottom: 6 }}>{result}</div>
@@ -1702,11 +1701,11 @@ export default function DataPanel() {
           </button>
         )}
 
-        {/* Methodology overlay */}
-        {showMethods && <MethodsOverlay onClose={() => setShowMethods(false)} />}
-
         <SlideHandle total={ALL_SLIDES.length} slide={slide} onGo={(i) => { busy.current = false; setSlide(i) }} />
       </div>
+
+      {/* Methodology overlay — outside overflow:hidden so it scrolls properly */}
+      {showMethods && <MethodsOverlay onClose={() => setShowMethods(false)} />}
     </div>
   )
 }
