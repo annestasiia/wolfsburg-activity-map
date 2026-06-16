@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 
 const NAV_W   = Math.max(240, Math.min(320, Math.round(window.innerWidth * 0.25)))
-const SERIF = "'Georgia', 'Times New Roman', serif"
 const SANS  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
+const SERIF = SANS
 
 // 'geo' is removed from the main list — it lives inside Hub System submenu
 const SECTIONS = [
