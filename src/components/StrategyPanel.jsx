@@ -71,7 +71,7 @@ export default function StrategyPanel() {
   }, [])
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: C.bg, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 'var(--nav-w)', right: 0, zIndex: 10, background: C.bg, display: 'flex', flexDirection: 'column' }}>
       <style>{CSS_ANIM}</style>
 
       {/* Progress */}

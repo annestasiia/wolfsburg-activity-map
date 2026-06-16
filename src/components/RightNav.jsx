@@ -1,17 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAppStore } from '../store/appStore'
 
-const NAV_W   = Math.max(240, Math.min(320, Math.round(window.innerWidth * 0.25)))
-const SANS  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
-const SERIF = SANS
+const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
-// 'geo' is removed from the main list — it lives inside Hub System submenu
 const SECTIONS = [
-  { id: 'strategy',   label: 'Post-Car Strategy',      num: '01', desc: 'City-wide mobility framework'    },
-  { id: 'capacity',   label: 'Capacity Analysis',      num: '02', desc: 'Demand · Fleet · Peak hours'     },
-  { id: 'hub',        label: 'Hub System',             num: '03', desc: 'Placement algorithm · Networks',  hasSubmenu: true },
-  { id: 'urban',      label: 'Urban Design',           num: '04', desc: 'Streetscape · Public space'      },
-  { id: 'simulation', label: 'Operational Simulation', num: '05', desc: 'Real-time modelling'             },
+  { id: 'strategy',   label: 'Post-Car Strategy',      num: '01' },
+  { id: 'capacity',   label: 'Capacity Analysis',      num: '02' },
+  { id: 'hub',        label: 'Hub System',             num: '03', hasSubmenu: true },
+  { id: 'urban',      label: 'Urban Design',           num: '04' },
+  { id: 'simulation', label: 'Operational Simulation', num: '05' },
 ]
 
 const HUB_SUBMENU = [
@@ -25,6 +22,17 @@ export default function LeftNav() {
   const [hubSubmenuOpen, setHubSubmenuOpen] = useState(false)
 
   const isHubRelated = activeSection === 'geo' || activeSection === 'hub'
+  const isMapSection = activeSection === 'hub' || activeSection === 'geo'
+
+  // Auto-collapse nav for map sections, auto-expand for content sections
+  useEffect(() => {
+    if (isMapSection) {
+      setNavOpen(false)
+      setHubSubmenuOpen(false)
+    } else {
+      setNavOpen(true)
+    }
+  }, [activeSection])
 
   const handleSectionClick = (id, hasSubmenu) => {
     if (hasSubmenu) {
@@ -42,37 +50,29 @@ export default function LeftNav() {
     setHubSubmenuOpen(false)
   }
 
-  const handleCollapse = () => {
-    setNavOpen(false)
-    setHubSubmenuOpen(false)
-  }
-
   return (
     <>
       {/* ── Hub System submenu panel ─────────────────────────────────────── */}
       {hubSubmenuOpen && navOpen && (
         <div style={{
           position: 'fixed',
-          left: NAV_W,
+          left: 'var(--nav-w)',
           top: 0,
           bottom: 0,
-          width: 220,
+          width: 'clamp(200px, 20vw, 260px)',
           zIndex: 399,
           background: '#FFFFFF',
-          backdropFilter: 'none',
-          WebkitBackdropFilter: 'none',
           borderLeft: '1px solid #E8E8E8',
           borderRight: '1px solid #E8E8E8',
-          boxShadow: 'none',
           display: 'flex',
           flexDirection: 'column',
         }}>
           {/* Submenu header */}
           <div style={{ padding: '28px 24px 20px', borderBottom: '1px solid #E8E8E8' }}>
-            <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: '#888888', letterSpacing: '0.04em', marginBottom: 6 }}>
-              Hub System
+            <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+              03 — Hub System
             </div>
-            <div style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 400, color: '#111', lineHeight: 1.3 }}>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 400, color: '#888' }}>
               Select analysis
             </div>
           </div>
@@ -92,10 +92,10 @@ export default function LeftNav() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-start',
-                    gap: 4,
-                    padding: '18px 24px',
+                    gap: 3,
+                    padding: '16px 24px',
                     width: '100%',
-                    background: isHov ? 'rgba(0,0,0,0.025)' : 'transparent',
+                    background: isActive ? '#111111' : isHov ? 'rgba(0,0,0,0.025)' : 'transparent',
                     border: 'none',
                     borderBottom: '1px solid #E8E8E8',
                     cursor: 'pointer',
@@ -103,11 +103,12 @@ export default function LeftNav() {
                   }}
                 >
                   <span style={{
-                    fontFamily: SERIF,
-                    fontSize: 17,
-                    fontWeight: isActive ? 600 : 400,
-                    color: '#111111',
+                    fontFamily: SANS,
+                    fontSize: 13,
+                    fontWeight: isActive ? 700 : 400,
+                    color: isActive ? '#ffffff' : '#111111',
                     lineHeight: 1.3,
+                    letterSpacing: '-0.01em',
                   }}>
                     {label}
                   </span>
@@ -115,8 +116,9 @@ export default function LeftNav() {
                     fontFamily: SANS,
                     fontSize: 11,
                     fontWeight: 400,
-                    color: '#888888',
+                    color: isActive ? 'rgba(255,255,255,0.55)' : '#999',
                     lineHeight: 1.4,
+                    letterSpacing: '0',
                   }}>
                     {desc}
                   </span>
@@ -125,14 +127,14 @@ export default function LeftNav() {
             })}
           </div>
 
-          {/* Close submenu button */}
           <div style={{ padding: '16px 24px', borderTop: '1px solid #E8E8E8' }}>
             <button
               onClick={() => setHubSubmenuOpen(false)}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: SANS, fontSize: 13, color: '#aaa',
-                display: 'flex', alignItems: 'center', gap: 5, padding: 0,
+                fontFamily: SANS, fontSize: 12, color: '#999',
+                display: 'flex', alignItems: 'center', gap: 6, padding: 0,
+                letterSpacing: '0.02em',
               }}
             >
               ← back
@@ -141,18 +143,13 @@ export default function LeftNav() {
         </div>
       )}
 
-      {/* ── Collapsed handle — always visible strip ──────────────────────── */}
+      {/* ── Collapsed handle — thin 1px line ─────────────────────────────── */}
       {!navOpen && (
-        <div style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 1,
-          zIndex: 401,
-          background: '#E8E8E8',
-          cursor: 'pointer',
-        }}
+        <div
+          style={{
+            position: 'fixed', left: 0, top: 0, bottom: 0,
+            width: 1, zIndex: 401, background: '#E8E8E8', cursor: 'pointer',
+          }}
           onClick={() => setNavOpen(true)}
           title="Open navigation"
         >
@@ -160,26 +157,15 @@ export default function LeftNav() {
             onClick={() => setNavOpen(true)}
             title="Open navigation"
             style={{
-              position: 'absolute',
-              top: '50%',
-              left: 0,
+              position: 'absolute', top: '50%', left: 0,
               transform: 'translateY(-50%)',
-              width: 28,
-              padding: '20px 4px',
+              width: 24, padding: '16px 4px',
               background: '#FFFFFF',
-              backdropFilter: 'none',
-              WebkitBackdropFilter: 'none',
-              border: '1px solid #E8E8E8',
-              borderLeft: 'none',
-              borderRadius: '0 4px 4px 0',
-              boxShadow: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#888888',
-              fontSize: 13,
-              fontWeight: 600,
+              border: '1px solid #E8E8E8', borderLeft: 'none',
+              borderRadius: '0 2px 2px 0',
+              boxShadow: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#999', fontSize: 12, fontFamily: SANS,
               zIndex: 402,
             }}
           >
@@ -192,48 +178,36 @@ export default function LeftNav() {
       {navOpen && (
         <div style={{
           position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: NAV_W,
+          left: 0, top: 0, bottom: 0,
+          width: 'var(--nav-w)',
           zIndex: 400,
           background: '#FFFFFF',
-          backdropFilter: 'none',
-          WebkitBackdropFilter: 'none',
           borderRight: '1px solid #E8E8E8',
-          boxShadow: 'none',
           display: 'flex',
           flexDirection: 'column',
         }}>
 
           {/* Header */}
-          <div style={{ padding: '32px 24px 24px', borderBottom: '1px solid #E8E8E8', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontFamily: SANS, fontSize: 11, fontWeight: 400, color: '#888888', letterSpacing: '0.04em', marginBottom: 6 }}>
-                Research · 2026
-              </div>
-              <div style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: '#111111', lineHeight: 1.3, letterSpacing: 0 }}>
-                Post-Car<br />Wolfsburg
-              </div>
+          <div style={{ padding: '28px 24px 24px', borderBottom: '1px solid #E8E8E8' }}>
+            <div style={{
+              fontFamily: SANS, fontSize: 10, fontWeight: 700,
+              color: '#999', letterSpacing: '0.12em',
+              textTransform: 'uppercase', marginBottom: 10,
+            }}>
+              Research · 2026
             </div>
-            {/* Collapse arrow */}
-            <button
-              onClick={handleCollapse}
-              title="Collapse menu"
-              style={{
-                background: 'none', border: '1px solid #E8E8E8', borderRadius: 4,
-                cursor: 'pointer', padding: '4px 7px', color: '#888888', fontSize: 13, letterSpacing: '0.04em',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginTop: 2, flexShrink: 0,
-              }}
-            >
-              ‹
-            </button>
+            <div style={{
+              fontFamily: SANS, fontSize: 15, fontWeight: 700,
+              color: '#111111', letterSpacing: '-0.02em',
+              lineHeight: 1.2, whiteSpace: 'nowrap',
+            }}>
+              Post-Car Wolfsburg
+            </div>
           </div>
 
-          {/* Section buttons */}
+          {/* Section list */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-            {SECTIONS.map(({ id, label, num, desc, hasSubmenu }) => {
+            {SECTIONS.map(({ id, label, num, hasSubmenu }) => {
               const isActive  = hasSubmenu ? isHubRelated : activeSection === id
               const isHov     = hoveredId === id
 
@@ -245,11 +219,10 @@ export default function LeftNav() {
                   onMouseLeave={() => setHoveredId(null)}
                   style={{
                     display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    gap: 4,
-                    padding: '18px 24px',
-                    background: isHov ? 'rgba(0,0,0,0.025)' : 'transparent',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '15px 24px',
+                    background: isActive ? '#111111' : isHov ? 'rgba(0,0,0,0.025)' : 'transparent',
                     border: 'none',
                     borderBottom: '1px solid #E8E8E8',
                     cursor: 'pointer',
@@ -257,18 +230,63 @@ export default function LeftNav() {
                     width: '100%',
                   }}
                 >
+                  {/* Number marker */}
                   <span style={{
-                    fontFamily: SERIF,
-                    fontSize: 17,
-                    fontWeight: isActive ? 600 : 400,
-                    color: '#111111',
+                    fontFamily: SANS,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: isActive ? 'rgba(255,255,255,0.4)' : '#ccc',
+                    letterSpacing: '0.08em',
+                    width: 20,
+                    flexShrink: 0,
+                    lineHeight: 1,
+                  }}>
+                    {num}
+                  </span>
+
+                  {/* Label */}
+                  <span style={{
+                    fontFamily: SANS,
+                    fontSize: 13,
+                    fontWeight: isActive ? 700 : 400,
+                    color: isActive ? '#ffffff' : '#111111',
+                    letterSpacing: '-0.01em',
                     lineHeight: 1.3,
+                    flex: 1,
                   }}>
                     {label}
                   </span>
+
+                  {/* Submenu indicator */}
+                  {hasSubmenu && (
+                    <span style={{
+                      fontFamily: SANS,
+                      fontSize: 11,
+                      color: isActive ? 'rgba(255,255,255,0.4)' : '#ccc',
+                    }}>
+                      ›
+                    </span>
+                  )}
                 </button>
               )
             })}
+          </div>
+
+          {/* Swiss-style footer rule */}
+          <div style={{
+            padding: '14px 24px',
+            borderTop: '1px solid #E8E8E8',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <div style={{ width: 16, height: 1, background: '#111' }} />
+            <span style={{
+              fontFamily: SANS, fontSize: 10, fontWeight: 700,
+              color: '#999', letterSpacing: '0.10em', textTransform: 'uppercase',
+            }}>
+              Wolfsburg · 4 km²
+            </span>
           </div>
 
         </div>

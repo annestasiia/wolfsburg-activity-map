@@ -1100,7 +1100,7 @@ export default function DataPanel() {
   }, [])
 
   return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', background: C.bg, zIndex: 10, overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 'var(--nav-w)', right: 0, display: 'flex', background: C.bg, zIndex: 10, overflow: 'hidden' }}>
       <style>{CSS_ANIM}</style>
 
       {/* Left nav */}

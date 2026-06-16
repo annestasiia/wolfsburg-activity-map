@@ -320,7 +320,7 @@ export default function UrbanDesignPanel() {
   const contentMax = tab === 'typologies' ? 1180 : 800
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: C.bg, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 'var(--nav-w)', right: 0, zIndex: 10, background: C.bg, display: 'flex', flexDirection: 'column' }}>
       {/* Progress bar */}
       <div style={{ height: 3, background: C.border, flexShrink: 0 }}>
         <div style={{ height: '100%', background: TERRA, width: `${progress * 100}%`, transition: 'width 80ms linear' }} />

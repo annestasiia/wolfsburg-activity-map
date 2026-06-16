@@ -35,63 +35,60 @@ function LandingOverlay() {
   return (
     <div style={{
       position: 'absolute',
-      inset: 0,
+      top: 0, bottom: 0, right: 0,
+      left: 'var(--nav-w)',
       zIndex: 10,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       pointerEvents: 'none',
+      background: 'transparent',
     }}>
       <div style={{
-        maxWidth: 540,
-        padding: '52px 60px',
-        background: 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(32px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(32px) saturate(180%)',
-        borderRadius: 20,
-        border: '1px solid rgba(0,0,0,0.05)',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.06)',
-        textAlign: 'center',
+        maxWidth: 480,
+        padding: '48px 56px',
+        background: '#FFFFFF',
+        border: '1px solid #E8E8E8',
+        textAlign: 'left',
         pointerEvents: 'auto',
       }}>
         <div style={{
           fontFamily: SANS,
-          fontSize: 13,
+          fontSize: 10,
           fontWeight: 700,
-          color: '#aaa',
+          color: '#999',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          marginBottom: 18,
+          marginBottom: 20,
         }}>
           Research Pitch · Wolfsburg 2026
         </div>
         <h1 style={{
-          fontFamily: SERIF,
-          fontSize: 28,
-          fontWeight: 400,
+          fontFamily: SANS,
+          fontSize: 26,
+          fontWeight: 700,
           color: '#111',
-          lineHeight: 1.25,
-          letterSpacing: '-0.02em',
-          margin: '0 0 22px',
+          lineHeight: 1.2,
+          letterSpacing: '-0.03em',
+          margin: '0 0 20px',
         }}>
-          The Post-Car Wolfsburg<br />
-          <span style={{ color: '#555' }}>Spatial Strategy for a Car-Free City Centre</span>
+          The Post-Car Wolfsburg
         </h1>
         <p style={{
-          fontFamily: SERIF,
-          fontSize: 16,
+          fontFamily: SANS,
+          fontSize: 14,
           color: '#444',
-          lineHeight: 1.75,
-          margin: '0 0 14px',
+          lineHeight: 1.7,
+          margin: '0 0 12px',
         }}>
           A city where no one owns a private car. All mobility is shared —
           electric, autonomous, and on-demand.
         </p>
         <p style={{
-          fontFamily: SERIF,
-          fontSize: 16,
+          fontFamily: SANS,
+          fontSize: 14,
           color: '#666',
-          lineHeight: 1.75,
+          lineHeight: 1.7,
           margin: 0,
         }}>
           This is not a car-free city in the traditional sense of banning vehicles.
@@ -100,27 +97,15 @@ function LandingOverlay() {
         </p>
         <div style={{
           marginTop: 28,
-          paddingTop: 22,
-          borderTop: '1px solid rgba(0,0,0,0.08)',
+          paddingTop: 20,
+          borderTop: '1px solid #E8E8E8',
           fontFamily: SANS,
-          fontSize: 13,
-          color: '#aaa',
-          letterSpacing: '-0.01em',
+          fontSize: 12,
+          color: '#999',
+          letterSpacing: '0.02em',
         }}>
-          Select a section from the right to begin →
+          Select a section from the left to begin →
         </div>
-      </div>
-    </div>
-  )
-}
-
-function UrbanPlaceholder() {
-  return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#ccc', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 16 }}>In Development</div>
-        <div style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 400, color: '#ddd', letterSpacing: '-0.02em' }}>Urban Design</div>
-        <div style={{ fontFamily: SANS, fontSize: 13, color: '#ccc', marginTop: 12 }}>Coming soon</div>
       </div>
     </div>
   )
@@ -128,11 +113,11 @@ function UrbanPlaceholder() {
 
 function SimulationPlaceholder() {
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: '#FAFAF9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: '#ccc', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 16 }}>In Development</div>
-        <div style={{ fontFamily: SERIF, fontSize: 32, fontWeight: 400, color: '#ddd', letterSpacing: '-0.02em' }}>Operational Simulation</div>
-        <div style={{ fontFamily: SANS, fontSize: 13, color: '#ccc', marginTop: 12 }}>Coming soon</div>
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 'var(--nav-w)', right: 0, zIndex: 10, background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'left', borderLeft: '2px solid #E8E8E8', paddingLeft: 24 }}>
+        <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 700, color: '#ccc', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>05 — In Development</div>
+        <div style={{ fontFamily: SANS, fontSize: 22, fontWeight: 700, color: '#ddd', letterSpacing: '-0.02em' }}>Operational Simulation</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, color: '#ccc', marginTop: 8 }}>Coming soon</div>
       </div>
     </div>
   )
