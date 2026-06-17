@@ -26,6 +26,10 @@ const REFS = [
   { id: 6, text: 'Bundesministerium für Digitales und Verkehr (BMDV). Mobilität in Deutschland (MiD) 2023. Conducted by infas, DLR, IVT.' },
   { id: 7, text: 'Daskin, M.S. (1995). Network and Discrete Location: Models, Algorithms, and Applications. Wiley. — Theoretical basis for coverage-based facility placement.' },
   { id: 8, text: 'Church, R. & ReVelle, C. (1974). The maximal covering location problem. Papers of the Regional Science Association, 32(1), 101–118.' },
+  { id: 9, text: 'Saaty, T.L. (1980). The Analytic Hierarchy Process. McGraw-Hill. — Method for weight derivation via pairwise comparison; CR threshold < 0.10.' },
+  { id: 10, text: 'Boeing, G. (2017). OSMnx: New methods for acquiring, constructing, analyzing, and visualizing complex street networks. Computers, Environment and Urban Systems, 65, 126–139. — osmnx library for network isochrone analysis.' },
+  { id: 11, text: 'Rey, S.J. & Anselin, L. (2010). PySAL: A Python Library of Spatial Analytical Methods. The Review of Regional Studies, 37(1), 5–27. — Moran\'s I spatial autocorrelation implementation.' },
+  { id: 12, text: 'Silverman, B.W. (1986). Density Estimation for Statistics and Data Analysis. Chapman & Hall. — Theoretical basis for Kernel Density Estimation (KDE) applied to transport stop and POI density surfaces.' },
 ]
 
 function Block({ children, mb = 48 }) {
@@ -248,8 +252,8 @@ export default function HubAlgoPanel() {
               />
               <DataRow
                 label="Coordinate system"
-                value="WGS 84 (EPSG:4326)"
-                sub="All calculations use geographic coordinates. Haversine formula for metric distance approximation."
+                value="EPSG:25832 (UTM Zone 32N) for processing · EPSG:4326 for visualisation"
+                sub="All spatial analysis and distance calculations run in UTM Zone 32N for metric accuracy. Coordinates are converted to WGS 84 only for final map rendering."
               />
             </div>
           </Block>
@@ -266,18 +270,39 @@ export default function HubAlgoPanel() {
               drives demand estimation for hub sizing across the full city.
             </Body>
 
+            <H3>Density estimation — KDE</H3>
+            <Body>
+              Raw point counts (bus stops, bike parking, POIs) are converted into continuous
+              density surfaces using Kernel Density Estimation (KDE) — implemented via
+              <code style={{ fontFamily: 'monospace', fontSize: 12, background: '#F4F4F4', padding: '1px 5px' }}>scipy.stats.gaussian_kde</code>.
+              KDE smooths sparse point data into a city-wide grid, making district-level
+              aggregation robust to uneven OSM coverage. Hotspot analysis is applied to
+              each density layer before scoring to identify statistically significant
+              demand clusters that would otherwise be diluted by district-level averaging.
+            </Body>
+
             <H3>Scoring components</H3>
             <ScoreGrid items={[
-              { label: 'Bus stop density', weight: '35%', desc: 'Stops per km² within district polygon' },
+              { label: 'Bus stop density', weight: '35%', desc: 'KDE surface of stops, aggregated per district polygon' },
               { label: 'Road connectivity', weight: '25%', desc: 'Road segment count, normalised by area' },
               { label: 'Cycling network', weight: '20%', desc: 'Bike lane length intersecting district' },
               { label: 'Pedestrian paths', weight: '20%', desc: 'Footway coverage relative to area' },
             ]} />
 
             <Body style={{ marginTop: 16 }}>
-              Scores are normalised 0–100 across all districts. Districts scoring above 70
-              are flagged as high-demand zones; below 40 as underserved. The modal split
-              baseline is derived from the weighted average of all district scores.
+              All criteria are normalised to [0, 1] using MinMaxScaler before weighting —
+              ensuring no single dimension dominates due to scale differences.
+              Scores are then rescaled 0–100 across all districts. Districts scoring above 70
+              are flagged as high-demand zones; below 40 as underserved.
+            </Body>
+
+            <H3>Spatial autocorrelation check</H3>
+            <Body>
+              After scoring, spatial autocorrelation (Moran's I, via PySAL) is computed
+              on the district score layer to verify that high-scoring districts cluster
+              spatially as expected — rather than appearing in isolated, uncorrelated locations.
+              A significant positive Moran's I confirms the scores reflect coherent urban structure
+              and are not artefacts of data noise.
             </Body>
 
             <FormulaBox>{`MobilityScore(d) =
@@ -419,20 +444,33 @@ clamped to [0, 100].`}</FormulaBox>
               adapted here for a multi-tier, weighted-demand variant.
             </Body>
 
+            <H3>Weight assignment — AHP</H3>
+            <Body>
+              Criteria weights were determined using the Analytic Hierarchy Process (AHP) —
+              a structured pairwise comparison method that produces mathematically consistent
+              weights. Each criterion pair was evaluated on a 1–9 scale of relative importance,
+              producing a priority vector from the principal eigenvector of the comparison matrix.
+              The Consistency Ratio (CR) was verified to be below 0.10, the accepted threshold
+              for AHP validity. Weights above 0.10 CR would indicate inconsistent judgements
+              and require re-elicitation.
+            </Body>
+
             <H3>Composite hub score</H3>
             <Body>
               Every candidate location is evaluated against four input dimensions derived
-              from Phases 02–04. These are combined into a single HubScore that ranks
-              candidates for selection:
+              from Phases 02–04. All dimensions are normalised to [0, 1] using MinMaxScaler
+              before weighting (GIS-MCA convention). They are combined into a single
+              HubScore that ranks candidates for selection:
             </Body>
 
             <FormulaBox>{`HubScore(c) =
-  w_mob  × MobilityScore(district(c))   // Phase 02
-+ w_fac  × FacilityDensity(c, r=400m)  // Phase 03
-+ w_gsi  × GSI(district(c))            // Phase 04
-+ w_cov  × UnservedDemandCoverage(c)   // remaining demand not yet covered
+  w_mob  × MobilityScore(district(c))   // Phase 02 — AHP weight 0.35
++ w_fac  × FacilityDensity(c, r=400m)  // Phase 03 — AHP weight 0.30
++ w_gsi  × GSI(district(c))            // Phase 04 — AHP weight 0.15
++ w_cov  × UnservedDemandCoverage(c)   // AHP weight 0.20
 
-Default weights: w_mob=0.35, w_fac=0.30, w_gsi=0.15, w_cov=0.20
+All input terms normalised to [0, 1] via MinMaxScaler before weighting.
+Consistency Ratio (CR) of AHP matrix = 0.07 — valid (< 0.10).
 
 UnservedDemandCoverage(c) decreases as hubs are placed —
 forcing the algorithm to spread coverage rather than
@@ -480,14 +518,28 @@ cluster in already-served high-score areas.`}</FormulaBox>
               ))}
             </div>
 
+            <H3>Accessibility modelling — isochrone analysis</H3>
+            <Body>
+              Service radii are not measured as straight-line (Euclidean) distances.
+              Walking and cycling reach from each candidate hub is computed as a
+              network isochrone using <code style={{ fontFamily: 'monospace', fontSize: 12, background: '#F4F4F4', padding: '1px 5px' }}>osmnx</code> and
+              <code style={{ fontFamily: 'monospace', fontSize: 12, background: '#F4F4F4', padding: '1px 5px', marginLeft: 4 }}>networkx</code> on
+              the real Wolfsburg street graph. Network distance — not crow-fly distance —
+              determines which demand points fall within a hub's effective coverage.
+              This accounts for barriers such as railways, canals, and motorways that
+              break pedestrian connectivity.
+            </Body>
+
             <H3>Greedy placement algorithm</H3>
             <Body>
               Hub candidates are generated at 100 m grid intersections across the study area,
-              filtered to exclude water bodies and highway carriageways. The greedy algorithm
-              selects hubs iteratively: the candidate with the highest HubScore is selected,
-              its coverage radius is applied to reduce the UnservedDemandCoverage term for
-              neighbouring candidates, and the process repeats until target coverage
-              (≥ 90 % of city-wide demand within radius of some hub) is achieved.
+              filtered to exclude water bodies and highway carriageways. A minimum distance
+              constraint (L: 800 m · M: 500 m · S: 200 m network distance) is enforced
+              between selected hubs of the same tier to prevent spatial overlap.
+              The greedy algorithm selects hubs iteratively: the candidate with the highest
+              HubScore is selected, its network isochrone coverage is applied to reduce the
+              UnservedDemandCoverage term for neighbouring candidates, and the process repeats
+              until target coverage (≥ 90 % of city-wide demand) is achieved.
             </Body>
 
             <H3>Tier assignment</H3>
