@@ -12,8 +12,9 @@ const SECTIONS = [
 ]
 
 const HUB_SUBMENU = [
-  { id: 'geo', label: 'Geo Data Analysis',        desc: 'Mobility · Facilities · Greenery' },
-  { id: 'hub', label: 'Hubs Placement Algorithm', desc: 'Hub L · M · S network'            },
+  { id: 'geo',      label: 'Geo Data Analysis',        desc: 'Mobility · Facilities · Greenery' },
+  { id: 'hub',      label: 'Hubs Placement Algorithm', desc: 'Hub L · M · S network'            },
+  { id: 'hub-algo', label: 'Hubs Algorithm Work',      desc: 'OSM · Data analysis · Method'     },
 ]
 
 export default function LeftNav() {
@@ -21,7 +22,7 @@ export default function LeftNav() {
   const [hoveredId, setHoveredId] = useState(null)
   const [hubSubmenuOpen, setHubSubmenuOpen] = useState(false)
 
-  const isHubRelated = activeSection === 'geo' || activeSection === 'hub'
+  const isHubRelated = activeSection === 'geo' || activeSection === 'hub' || activeSection === 'hub-algo'
   const isMapSection = activeSection === 'hub' || activeSection === 'geo'
 
   // Auto-collapse nav for map sections, auto-expand for content sections
@@ -49,6 +50,11 @@ export default function LeftNav() {
     if (id === 'geo') setActiveMode('mobility')
     setHubSubmenuOpen(false)
   }
+
+  // hub-algo is a content page — nav should stay visible
+  useEffect(() => {
+    if (activeSection === 'hub-algo') setNavOpen(true)
+  }, [activeSection])
 
   return (
     <>
@@ -197,9 +203,9 @@ export default function LeftNav() {
               Research · 2026
             </div>
             <div style={{
-              fontFamily: SANS, fontSize: 15, fontWeight: 700,
-              color: '#111111', letterSpacing: '-0.02em',
-              lineHeight: 1.2, whiteSpace: 'nowrap',
+              fontFamily: SANS, fontSize: 22, fontWeight: 700,
+              color: '#111111', letterSpacing: '-0.03em',
+              lineHeight: 1.15, whiteSpace: 'nowrap',
             }}>
               Post-Car Wolfsburg
             </div>

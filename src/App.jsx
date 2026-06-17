@@ -21,6 +21,7 @@ import DataPanel from './components/DataPanel'
 import RightNav from './components/RightNav'
 import StrategyPanel from './components/StrategyPanel'
 import UrbanDesignPanel from './components/UrbanDesignPanel'
+import HubAlgoPanel from './components/HubAlgoPanel'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -215,6 +216,7 @@ export default function App() {
         {activeSection === 'capacity'   && <DataPanel />}
         {activeSection === 'urban'      && <UrbanDesignPanel />}
         {activeSection === 'simulation' && <SimulationPlaceholder />}
+        {activeSection === 'hub-algo'   && <HubAlgoPanel />}
 
         {/* ── Always visible map UI ── */}
         {(inGeo || inHub) && <DistrictStatsPopup />}
