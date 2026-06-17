@@ -30,6 +30,8 @@ const REFS = [
   { id: 10, text: 'Boeing, G. (2017). OSMnx: New methods for acquiring, constructing, analyzing, and visualizing complex street networks. Computers, Environment and Urban Systems, 65, 126–139. — osmnx library for network isochrone analysis.' },
   { id: 11, text: 'Rey, S.J. & Anselin, L. (2010). PySAL: A Python Library of Spatial Analytical Methods. The Review of Regional Studies, 37(1), 5–27. — Moran\'s I spatial autocorrelation implementation.' },
   { id: 12, text: 'Silverman, B.W. (1986). Density Estimation for Statistics and Data Analysis. Chapman & Hall. — Theoretical basis for Kernel Density Estimation (KDE) applied to transport stop and POI density surfaces.' },
+  { id: 13, text: 'Hagberg, A.A., Schult, D.A. & Swart, P.J. (2008). Exploring Network Structure, Dynamics, and Function using NetworkX. Proceedings of the 7th Python in Science Conference (SciPy 2008), 11–15.' },
+  { id: 14, text: 'European Environment Agency (2011). Green Infrastructure and Territorial Cohesion. EEA Technical Report No 18/2011. — Conceptual basis for composite green space and social infrastructure indices used in the Green Social Indicator (GSI).' },
 ]
 
 function Block({ children, mb = 48 }) {
@@ -195,7 +197,7 @@ export default function HubAlgoPanel() {
             <H1>Hubs Algorithm Work</H1>
             <p style={{ fontFamily: FONT, fontSize: 16, color: C.text2, lineHeight: 1.7, margin: '0 0 32px', maxWidth: 560 }}>
               How the hub placement system works — from raw urban data
-              to a three-tier mobility network. Six phases, fully traceable.
+              to a three-tier mobility network.
             </p>
 
             {/* Phase index */}
@@ -273,9 +275,10 @@ export default function HubAlgoPanel() {
             <H3>Density estimation — KDE</H3>
             <Body>
               Raw point counts (bus stops, bike parking, POIs) are converted into continuous
-              density surfaces using Kernel Density Estimation (KDE) — implemented via
-              <code style={{ fontFamily: 'monospace', fontSize: 12, background: '#F4F4F4', padding: '1px 5px' }}>scipy.stats.gaussian_kde</code>.
-              KDE smooths sparse point data into a city-wide grid, making district-level
+              density surfaces using Kernel Density Estimation (KDE)<Ref n={12} /> —
+              a statistical method that places a smooth probability kernel around each data point
+              and sums them into a continuous surface, without assuming a regular grid.
+              This smooths sparse point data into a city-wide density field, making district-level
               aggregation robust to uneven OSM coverage. Hotspot analysis is applied to
               each density layer before scoring to identify statistically significant
               demand clusters that would otherwise be diluted by district-level averaging.
@@ -409,7 +412,7 @@ All terms normalised to [0, 1] before weighting.`}</FormulaBox>
               { label: 'Street greenery', weight: '0.3×', desc: 'Trees, verges, small planted areas' },
             ]} />
 
-            <H3>Green Social Indicator (GSI)</H3>
+            <H3>Green Social Indicator (GSI)<Ref n={14} /></H3>
             <Body>
               The GSI combines green coverage with social facility density (healthcare, childcare,
               community centres, places of worship). A district with high green coverage but
@@ -446,13 +449,13 @@ clamped to [0, 100].`}</FormulaBox>
 
             <H3>Weight assignment — AHP</H3>
             <Body>
-              Criteria weights were determined using the Analytic Hierarchy Process (AHP) —
+              Criteria weights were determined using the Analytic Hierarchy Process (AHP)<Ref n={9} /> —
               a structured pairwise comparison method that produces mathematically consistent
               weights. Each criterion pair was evaluated on a 1–9 scale of relative importance,
               producing a priority vector from the principal eigenvector of the comparison matrix.
-              The Consistency Ratio (CR) was verified to be below 0.10, the accepted threshold
-              for AHP validity. Weights above 0.10 CR would indicate inconsistent judgements
-              and require re-elicitation.
+              The Consistency Ratio (CR)<Ref n={9} /> was verified to be below 0.10, the accepted threshold
+              for AHP validity. A CR above 0.10 indicates inconsistent judgements and requires
+              re-elicitation of the comparison matrix.
             </Body>
 
             <H3>Composite hub score</H3>
@@ -484,50 +487,65 @@ cluster in already-served high-score areas.`}</FormulaBox>
             </Body>
 
             <div style={{ margin: '0 0 24px', maxWidth: 560 }}>
-              {[
-                {
-                  tier: 'L — Large',
-                  capacity: '80–120 vehicles',
-                  radius: '600 m service radius',
-                  desc: 'City-centre anchors and major interchange nodes. Selected from the top 10 % of HubScore candidates. Required criteria: MobilityScore > 70, FacilityDensity > 80th percentile, direct adjacency to public transit stop. Full fleet mix: autonomous pods, e-bikes, shared EVs, on-demand shuttles. 24 h operation. Minimum 2 per study zone.',
-                },
-                {
-                  tier: 'M — Medium',
-                  capacity: '30–50 vehicles',
-                  radius: '400 m service radius',
-                  desc: 'District connectors serving residential and employment zones. Selected from the next 30 % of HubScore candidates. Required criteria: MobilityScore 40–70, mixed-use landuse within 200 m, no existing L-hub within 500 m. Core fleet: pods and e-bikes. Operating hours tied to district demand profile. Minimum 5 per study zone.',
-                },
-                {
-                  tier: 'S — Small',
-                  capacity: '8–15 vehicles',
-                  radius: '250 m service radius',
-                  desc: 'Last-metre nodes targeting gaps in coverage. Selected to cover demand not reachable by L or M hubs. Priority given to districts with GSI below the 25th percentile or MobilityScore below 40. Fleet: e-bikes and micro-pods only. Minimum 8 per study zone.',
-                },
-              ].map(({ tier, capacity, radius, desc }, i) => (
-                <div key={i} style={{ padding: '20px 0', borderTop: `1px solid ${C.border}` }}>
-                  <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
-                    <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: C.text1, width: 120, flexShrink: 0 }}>{tier}</div>
-                    <div>
-                      <span style={{ fontFamily: FONT, fontSize: 12, color: C.text1 }}>{capacity}</span>
-                      <span style={{ fontFamily: FONT, fontSize: 12, color: C.text3, margin: '0 8px' }}>·</span>
-                      <span style={{ fontFamily: FONT, fontSize: 12, color: C.text3 }}>{radius}</span>
-                    </div>
-                  </div>
-                  <div style={{ fontFamily: FONT, fontSize: 13, color: C.text2, lineHeight: 1.65, paddingLeft: 136 }}>{desc}</div>
+
+              {/* L — Large */}
+              <div style={{ padding: '20px 0', borderTop: `1px solid ${C.border}` }}>
+                <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: C.text1, marginBottom: 8 }}>L — Large</div>
+                <div style={{ fontFamily: FONT, fontSize: 13, color: C.text2, lineHeight: 1.7 }}>
+                  City-centre anchors and major interchange nodes. Candidate sites were drawn from
+                  existing above-ground multi-storey car parks — structures with sufficient built
+                  footprint and structural capacity to host a full fleet depot and charging infrastructure.
+                  Hub L locations were excluded from the densest pedestrian cores (Stadtmitte,
+                  Schillerteich), where a large vehicle depot is spatially and logistically incompatible
+                  with street-level conditions. Required placement criteria: MobilityScore {'>'} 70,
+                  FacilityDensity {'>'} 80th percentile, direct adjacency to a public transit stop.
+                  Full fleet mix: autonomous pods, e-bikes, shared EVs, on-demand shuttles. 24 h operation.
                 </div>
-              ))}
+              </div>
+
+              {/* M — Medium */}
+              <div style={{ padding: '20px 0', borderTop: `1px solid ${C.border}` }}>
+                <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: C.text1, marginBottom: 8 }}>M — Medium</div>
+                <div style={{ fontFamily: FONT, fontSize: 13, color: C.text2, lineHeight: 1.7 }}>
+                  Intermodal transfer nodes concentrated in the dense city centre, where demand
+                  intensity is highest and above-ground space is scarce. Candidate sites were selected
+                  exclusively from existing underground car parks — their subsurface location makes
+                  them ideal for embedding mobility infrastructure without displacing street-level activity.
+                  M-hubs are intentionally clustered in central districts: the analysis shows that
+                  the combined floor area of selected underground facilities is sufficient to serve
+                  the city even at a projected population of 250,000. Required criteria:
+                  MobilityScore 40–70, mixed-use landuse within 200 m, no existing L-hub within 500 m.
+                </div>
+              </div>
+
+              {/* S — Small */}
+              <div style={{ padding: '20px 0', borderTop: `1px solid ${C.border}` }}>
+                <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: C.text1, marginBottom: 8 }}>S — Small</div>
+                <div style={{ fontFamily: FONT, fontSize: 13, color: C.text2, lineHeight: 1.7 }}>
+                  Last-metre connection nodes filling coverage gaps left by L and M hubs.
+                  S-hub candidates were identified from two primary sources in the street network:
+                  bus stops and bike parking facilities that fall outside the effective service
+                  radius of any L or M hub (more than 200 m from the nearest placed hub).
+                  Additional weight was given to locations near the top 30 % of venues by visitor
+                  footfall — active facilities that generate consistent pedestrian demand throughout
+                  the day — and to areas in close proximity to parks and green zones, where
+                  mobility demand is driven by leisure and recreation rather than commuting patterns.
+                </div>
+              </div>
+
             </div>
 
             <H3>Accessibility modelling — isochrone analysis</H3>
             <Body>
               Service radii are not measured as straight-line (Euclidean) distances.
-              Walking and cycling reach from each candidate hub is computed as a
-              network isochrone using <code style={{ fontFamily: 'monospace', fontSize: 12, background: '#F4F4F4', padding: '1px 5px' }}>osmnx</code> and
-              <code style={{ fontFamily: 'monospace', fontSize: 12, background: '#F4F4F4', padding: '1px 5px', marginLeft: 4 }}>networkx</code> on
-              the real Wolfsburg street graph. Network distance — not crow-fly distance —
+              Walking and cycling reach from each candidate hub is computed as a network
+              isochrone using OSMnx<Ref n={10} /> — a Python library for downloading and
+              analysing street networks from OpenStreetMap — combined with NetworkX<Ref n={13} />
+              for graph-based shortest-path computation. The result is a reachability polygon
+              on the real Wolfsburg street graph. Network distance — not crow-fly distance —
               determines which demand points fall within a hub's effective coverage.
               This accounts for barriers such as railways, canals, and motorways that
-              break pedestrian connectivity.
+              sever pedestrian connectivity.
             </Body>
 
             <H3>Greedy placement algorithm</H3>
@@ -540,6 +558,10 @@ cluster in already-served high-score areas.`}</FormulaBox>
               HubScore is selected, its network isochrone coverage is applied to reduce the
               UnservedDemandCoverage term for neighbouring candidates, and the process repeats
               until target coverage (≥ 90 % of city-wide demand) is achieved.
+              UnservedDemandCoverage is defined as the sum of weighted demand at all points
+              not yet reachable within the service radius of any selected hub — it decreases
+              monotonically as each hub is added, driving the algorithm to fill gaps rather
+              than reinforce already-served areas.<Ref n={7} /><Ref n={8} />
             </Body>
 
             <H3>Tier assignment</H3>
@@ -615,6 +637,17 @@ cluster in already-served high-score areas.`}</FormulaBox>
             <Body>
               All computation happens client-side. No server, no API key, no external storage.
             </Body>
+
+            <div style={{ padding: '20px 24px', border: `1px solid ${C.border}`, marginTop: 8 }}>
+              <div style={{ fontFamily: FONT, fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Data sources</div>
+              <div style={{ fontFamily: FONT, fontSize: 13, color: C.text2, lineHeight: 1.9 }}>
+                OpenStreetMap contributors · ODbL 1.0<br />
+                City of Wolfsburg Open Data Portal · CC BY 4.0<br />
+                Google Maps Popular Times · pedestrian activity estimation<br />
+                Mobility in Germany (MiD 2023) — BMDV / infas<br />
+                Overpass API · overpass-api.de · Nominatim · openstreetmap.org
+              </div>
+            </div>
           </Block>
 
           {/* ── References ── */}
