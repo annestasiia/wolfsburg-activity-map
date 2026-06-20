@@ -202,7 +202,7 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
       map.addLayer({ id: 'liv-circles', type: 'circle', source: 'liv-grid',
         layout: { visibility: 'none' },
         paint: {
-          'circle-color': '#FFD300', 'circle-opacity': 0.90, 'circle-stroke-width': 0,
+          'circle-color': '#E62020', 'circle-opacity': 0.90, 'circle-stroke-width': 0,
           'circle-radius': ['interpolate', ['exponential', 2], ['zoom'],
             9,  ['*', ['get', 'radius_m'], 0.00536],
             10, ['*', ['get', 'radius_m'], 0.01073],

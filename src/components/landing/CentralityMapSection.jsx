@@ -31,16 +31,6 @@ const MODE_CONFIG = {
   centrality: { key: null, color: '#1D1D1F', label: 'All modes combined'     },
 }
 
-function scoreExpr(key, color) {
-  return ['interpolate', ['linear'], ['get', key],
-    0,   'rgba(255,255,255,0)',
-    20,  hexAlpha(color, 0.25),
-    50,  hexAlpha(color, 0.55),
-    80,  hexAlpha(color, 0.80),
-    100, hexAlpha(color, 1.00),
-  ]
-}
-
 function hexAlpha(hex, a) {
   const r = parseInt(hex.slice(1,3),16)
   const g = parseInt(hex.slice(3,5),16)
@@ -48,17 +38,40 @@ function hexAlpha(hex, a) {
   return `rgba(${r},${g},${b},${a})`
 }
 
-// composite = average of w, b, p (excluding auto which is near-uniform)
-function compositeExpr(color) {
-  // (w + b + p) / 3
-  const avg = ['/', ['+', ['+', ['get','w'], ['get','b']], ['get','p']], 3]
-  return ['interpolate', ['linear'], avg,
+function scoreExpr(key, color) {
+  return ['interpolate', ['linear'], ['get', key],
     0,   'rgba(255,255,255,0)',
-    20,  hexAlpha(color, 0.25),
-    50,  hexAlpha(color, 0.55),
-    80,  hexAlpha(color, 0.80),
+    15,  hexAlpha(color, 0.25),
+    40,  hexAlpha(color, 0.55),
+    70,  hexAlpha(color, 0.80),
     100, hexAlpha(color, 1.00),
   ]
+}
+
+function radiusExpr(scoreVal) {
+  return ['interpolate', ['linear'], scoreVal,
+    0,   0.4,
+    20,  1.4,
+    50,  2.5,
+    80,  3.6,
+    100, 4.8,
+  ]
+}
+
+// composite = average of w, b, p  — tri-color gradient green→yellow→red
+const COMPOSITE_AVG = ['/', ['+', ['+', ['get','w'], ['get','b']], ['get','p']], 3]
+
+function compositeColorExpr() {
+  return ['interpolate', ['linear'], COMPOSITE_AVG,
+    0,   'rgba(255,255,255,0)',
+    1,   '#2FEF10',
+    50,  '#FFF44F',
+    100, '#E62020',
+  ]
+}
+
+function compositeRadiusExpr() {
+  return radiusExpr(COMPOSITE_AVG)
 }
 
 function buildGraticule() {
@@ -131,10 +144,10 @@ export default function CentralityMapSection({ tab = 'centrality', onTabChange }
 
       for (const { id } of CENT_TABS) {
         const cfg   = MODE_CONFIG[id]
-        const color = cfg.color
-        const colorExpr = id === 'centrality'
-          ? compositeExpr(color)
-          : scoreExpr(cfg.key, color)
+        const isComposite = id === 'centrality'
+        const scoreVal = isComposite ? COMPOSITE_AVG : ['get', cfg.key]
+        const colorExpr  = isComposite ? compositeColorExpr()        : scoreExpr(cfg.key, cfg.color)
+        const radiusE    = isComposite ? compositeRadiusExpr()        : radiusExpr(scoreVal)
 
         map.addLayer({
           id:     `cent-${id}`,
@@ -145,7 +158,7 @@ export default function CentralityMapSection({ tab = 'centrality', onTabChange }
             'circle-color':        colorExpr,
             'circle-opacity':      1,
             'circle-stroke-width': 0,
-            'circle-radius':       3.2,
+            'circle-radius':       radiusE,
           },
         })
       }

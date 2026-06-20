@@ -102,6 +102,13 @@ def make_grid():
     return pts
 
 # ─── Score computation (reverse Dijkstra from destinations) ──────────────────
+def to_m(arr):
+    """Convert (lon, lat) array to approximate metres for KDTree."""
+    a = arr.copy()
+    a[:, 0] *= math.cos(math.radians(52.42)) * M_PER_LON
+    a[:, 1] *= M_PER_LAT
+    return a
+
 def compute_scores_reverse(G, grid_pts, dest_pts, cutoff_min, label=""):
     """
     For each destination run Dijkstra on G (undir = symmetric),
@@ -113,11 +120,11 @@ def compute_scores_reverse(G, grid_pts, dest_pts, cutoff_min, label=""):
 
     nodes = list(G.nodes())
     node_arr = np.array(nodes, dtype=np.float64)
-    kd = cKDTree(node_arr)
+    kd = cKDTree(to_m(node_arr))
 
-    # Snap grid points → nearest graph node
+    # Snap grid points → nearest graph node (in metre space)
     g_arr = np.array(grid_pts, dtype=np.float64)
-    _, g_idx = kd.query(g_arr)
+    _, g_idx = kd.query(to_m(g_arr))
     g_nodes = [nodes[i] for i in g_idx]
 
     # Map node → list of grid indices
@@ -127,7 +134,7 @@ def compute_scores_reverse(G, grid_pts, dest_pts, cutoff_min, label=""):
 
     # Snap destinations → nearest graph node (deduplicate)
     d_arr = np.array(dest_pts, dtype=np.float64)
-    _, d_idx = kd.query(d_arr)
+    _, d_idx = kd.query(to_m(d_arr))
     dest_nodes = list({nodes[i] for i in d_idx})
 
     scores = np.zeros(n)
@@ -160,17 +167,17 @@ def compute_pt_scores(bus_graph, grid_pts, dest_pts, stop_pts):
 
     nodes     = list(bus_graph.nodes())
     node_arr  = np.array(nodes, dtype=np.float64)
-    kd        = cKDTree(node_arr)
+    kd        = cKDTree(to_m(node_arr))
     stop_arr  = np.array(stop_pts, dtype=np.float64)
-    stop_kd   = cKDTree(stop_arr)
+    stop_kd   = cKDTree(to_m(stop_arr))
 
     # Snap destinations → graph nodes
     d_arr = np.array(dest_pts, dtype=np.float64)
-    _, d_idx = kd.query(d_arr)
+    _, d_idx = kd.query(to_m(d_arr))
     dest_nodes = set(nodes[i] for i in d_idx)
 
     # Snap bus stops → graph nodes
-    _, s_idx = kd.query(stop_arr)
+    _, s_idx = kd.query(to_m(stop_arr))
     stop_graph_nodes = [nodes[i] for i in s_idx]
 
     # Precompute per-stop reachability: {stop_i: {dest_node: time}}
@@ -192,11 +199,11 @@ def compute_pt_scores(bus_graph, grid_pts, dest_pts, stop_pts):
 
     # Score each grid point
     g_arr = np.array(grid_pts, dtype=np.float64)
+    g_m   = to_m(g_arr)
     scores = np.zeros(n)
 
     for gi, (glo, gla) in enumerate(grid_pts):
-        # Nearest bus stop (Euclidean – good enough for ~km distances)
-        _, si = stop_kd.query([glo, gla])
+        _, si = stop_kd.query(g_m[gi])
         slo, sla = stop_arr[si]
         walk_m    = hav_m(glo, gla, slo, sla)
         walk_t    = walk_m / (WALK_PT * 1000 / 60)
@@ -260,7 +267,7 @@ def main():
     # Only driveable roads; use maxspeed tag
     drive_types = {"motorway","motorway_link","trunk","trunk_link","primary","primary_link",
                    "secondary","secondary_link","tertiary","tertiary_link",
-                   "unclassified","residential","service","living_street"}
+                   "unclassified","residential","service","living_street","track","road"}
     auto_feats = [f for f in roads if f.get("properties", {}).get("highway") in drive_types]
     auto_g = build_graph(auto_feats, AUTO_DEFAULT, speed_prop="maxspeed")
     log(f"Auto graph: {auto_g.number_of_nodes()} nodes, {auto_g.number_of_edges()} edges")
