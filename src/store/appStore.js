@@ -256,14 +256,16 @@ export const useAppStore = create((set) => ({
   localHistoric: null,
   localParksForests: null,
   localCycling: null,
+  localCyclingOfficial: null,
 
-  setLocalBusStops:    (v) => set({ localBusStops: v }),
-  setLocalCarParkings:  (v) => set({ localCarParkings: v }),
-  setLocalBikeParkings: (v) => set({ localBikeParkings: v }),
-  setLocalFacilities:   (v) => set({ localFacilities: v }),
-  setLocalHistoric:     (v) => set({ localHistoric: v }),
-  setLocalParksForests: (v) => set({ localParksForests: v }),
-  setLocalCycling:      (v) => set({ localCycling: v }),
+  setLocalBusStops:        (v) => set({ localBusStops: v }),
+  setLocalCarParkings:     (v) => set({ localCarParkings: v }),
+  setLocalBikeParkings:    (v) => set({ localBikeParkings: v }),
+  setLocalFacilities:      (v) => set({ localFacilities: v }),
+  setLocalHistoric:        (v) => set({ localHistoric: v }),
+  setLocalParksForests:    (v) => set({ localParksForests: v }),
+  setLocalCycling:         (v) => set({ localCycling: v }),
+  setLocalCyclingOfficial: (v) => set({ localCyclingOfficial: v }),
 
   // ── Intermodal density config ─────────────────────────────────────────────────
   densityConfig: { high: 400, medium: 700, low: 1000 },

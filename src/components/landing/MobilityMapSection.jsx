@@ -181,13 +181,19 @@ function parkingToPoints(geoJSON, cityGeo) {
 }
 
 // ── Fetch bus routes from Overpass ────────────────────────────────────────────
+// Use ">;" to recurse into member ways so osmtogeojson produces LineStrings
 async function fetchBusRoutes() {
-  const q = `[out:json][timeout:60];relation["route"="bus"](52.32,10.60,52.56,11.00);out geom;`
+  const q = `[out:json][timeout:60];(relation["route"="bus"](52.32,10.60,52.56,11.00);>;);out geom;`
   const r = await fetch('https://overpass-api.de/api/interpreter', {
     method: 'POST', body: `data=${encodeURIComponent(q)}`,
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
-  return osmtogeojson(await r.json())
+  const raw = osmtogeojson(await r.json())
+  // Keep only line geometries (ways become LineStrings; relations become GeometryCollections — skip those)
+  const features = raw.features.filter(f =>
+    f.geometry?.type === 'LineString' || f.geometry?.type === 'MultiLineString'
+  )
+  return { type: 'FeatureCollection', features }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -201,7 +207,7 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
 
   const {
     roads, districtBoundaries,
-    localCarParkings, localBusStops, localCycling, localBikeParkings,
+    localCarParkings, localBusStops, localCycling, localBikeParkings, localCyclingOfficial,
     selectedDay, selectedTime,
   } = useAppStore()
 
@@ -286,17 +292,34 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
         layout: { visibility: 'none' },
         paint: { 'circle-color': '#C10016', 'circle-radius': 2, 'circle-opacity': 0.95, 'circle-stroke-width': 0 } })
 
-      // Cycling routes (Cycling)
-      map.addSource('cycling-routes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'cycling-line', type: 'line', source: 'cycling-routes',
+      // Cycling routes — official city data (Cycling tab)
+      // Buffer: teal #71BC68, zoom-dependent ~100m each side (200m total line-width)
+      // At 52°N ground res ≈ 23.25 m/px at zoom 12 → 200m ≈ 8.6px, doubles each zoom level
+      map.addSource('cycling-official', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addLayer({ id: 'cycling-official-buffer', type: 'line', source: 'cycling-official',
         layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#00C853', 'line-width': 2, 'line-opacity': 0.8 } })
+        paint: {
+          'line-color': '#71BC68', 'line-opacity': 0.40,
+          'line-width': ['interpolate', ['exponential', 2], ['zoom'],
+            10, 2.15, 11, 4.3, 12, 8.6, 13, 17.2, 14, 34.4, 15, 68.8],
+        } })
+      map.addLayer({ id: 'cycling-official-line', type: 'line', source: 'cycling-official',
+        layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#004225', 'line-width': 1.5, 'line-opacity': 0.9 } })
 
-      // Bike parking (Cycling)
+      // Bike parking halo — #71BC68, zoom-dependent ~200m radius
       map.addSource('bike-parking', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addLayer({ id: 'bike-parking-halo', type: 'circle', source: 'bike-parking',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-color': '#71BC68', 'circle-opacity': 0.30, 'circle-stroke-width': 0,
+          'circle-radius': ['interpolate', ['exponential', 2], ['zoom'],
+            10, 2.15, 11, 4.3, 12, 8.6, 13, 17.2, 14, 34.4, 15, 68.8],
+        } })
+      // Bike parking dot — dark green #004225, same size as car parking dot
       map.addLayer({ id: 'bike-parking-circle', type: 'circle', source: 'bike-parking',
         layout: { visibility: 'none' },
-        paint: { 'circle-radius': 3, 'circle-color': '#00897B', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff', 'circle-opacity': 0.85 } })
+        paint: { 'circle-radius': 2, 'circle-color': '#004225', 'circle-opacity': 0.95, 'circle-stroke-width': 0 } })
 
       // ── WHITE MASK — hides everything above except grid/labels/boundary ──
       map.addSource('city-mask', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -377,10 +400,10 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
   }, [mapReady, districtBoundaries])
 
   // ── Static data sources ────────────────────────────────────────────────────
-  useEffect(() => { if (mapReady && roads)             mapRef.current?.getSource('roads')?.setData(roads) },             [mapReady, roads])
-  useEffect(() => { if (mapReady && localBusStops)     mapRef.current?.getSource('bus-stops')?.setData(localBusStops) }, [mapReady, localBusStops])
-  useEffect(() => { if (mapReady && localCycling)      mapRef.current?.getSource('cycling-routes')?.setData(localCycling) }, [mapReady, localCycling])
-  useEffect(() => { if (mapReady && localBikeParkings) mapRef.current?.getSource('bike-parking')?.setData(localBikeParkings) }, [mapReady, localBikeParkings])
+  useEffect(() => { if (mapReady && roads)                mapRef.current?.getSource('roads')?.setData(roads) },                [mapReady, roads])
+  useEffect(() => { if (mapReady && localBusStops)        mapRef.current?.getSource('bus-stops')?.setData(localBusStops) },    [mapReady, localBusStops])
+  useEffect(() => { if (mapReady && localCyclingOfficial) mapRef.current?.getSource('cycling-official')?.setData(localCyclingOfficial) }, [mapReady, localCyclingOfficial])
+  useEffect(() => { if (mapReady && localBikeParkings)    mapRef.current?.getSource('bike-parking')?.setData(localBikeParkings) }, [mapReady, localBikeParkings])
 
   // ── Parking (ALL, centroid Points, clipped to city) ────────────────────────
   useEffect(() => {
@@ -408,8 +431,10 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
     setVis('bus-stops-halo',      isPublic)
     setVis('bus-stops-circle',    isPublic)
     // Cycling layers
-    setVis('cycling-line',        isCycling)
-    setVis('bike-parking-circle', isCycling)
+    setVis('cycling-official-buffer', isCycling)
+    setVis('cycling-official-line',   isCycling)
+    setVis('bike-parking-halo',       isCycling)
+    setVis('bike-parking-circle',     isCycling)
     // District fill: yellow only in Public (not in Auto — user requested outline only)
     setVis('district-fill', isPublic)
 

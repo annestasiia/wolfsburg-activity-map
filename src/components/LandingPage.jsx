@@ -213,8 +213,18 @@ function MobilityLeftPanel({ tab }) {
         <>
           <div style={{ marginBottom: 20 }}>
             <div style={LB}>Cycling Infrastructure</div>
-            <SymbolRow label="Cycling route"><LineIcon color="#00C853" /></SymbolRow>
-            <SymbolRow label="Bicycle parking"><DotIcon color="#00897B" /></SymbolRow>
+            <SymbolRow label="Cycling route">
+              <svg width="28" height="14">
+                <rect x="0" y="3" width="28" height="8" rx="4" fill="#71BC68" opacity="0.4" />
+                <line x1="0" y1="7" x2="28" y2="7" stroke="#004225" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </SymbolRow>
+            <SymbolRow label="Bicycle parking">
+              <svg width="20" height="20">
+                <circle cx="10" cy="10" r="8" fill="#71BC68" opacity="0.35" />
+                <circle cx="10" cy="10" r="3" fill="#004225" />
+              </svg>
+            </SymbolRow>
           </div>
           <DayTimeControls />
         </>
