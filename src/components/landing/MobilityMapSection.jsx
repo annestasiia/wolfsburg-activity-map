@@ -279,16 +279,14 @@ async function fetchBusRoutes() {
 export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
   const mapDivRef = useRef(null)
   const mapRef    = useRef(null)
-  const busRoutesFetchedRef = useRef(false)
   const [mapReady, setMapReady] = useState(false)
   const [cityGeoJSON, setCityGeoJSON] = useState(null)
 
   const {
     roads, districtBoundaries,
-    localCarParkings, localBusStops, localCycling, localBikeParkings, localCyclingOfficial,
+    localCarParkings, localBusStops, localCycling, localBikeParkings, localCyclingOfficial, localBusRoutes,
     selectedDay, selectedTime,
     landingCityGeoJSON, setLandingCityGeoJSON,
-    landingBusRoutes, setLandingBusRoutes,
   } = useAppStore()
 
   const districtScores = useMemo(
@@ -510,23 +508,11 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
     return () => { cancelled = true }
   }, [mapReady, landingCityGeoJSON])
 
-  // ── Bus routes: use store cache, fetch only once per session ─────────────
+  // ── Bus routes: local bundled file (no Overpass fetch needed) ────────────
   useEffect(() => {
-    if (!mapReady || tab !== 'public') return
-    if (landingBusRoutes) {
-      // Already fetched — apply from cache immediately
-      mapRef.current?.getSource('bus-routes')?.setData(landingBusRoutes)
-      return
-    }
-    if (busRoutesFetchedRef.current) return
-    busRoutesFetchedRef.current = true
-    fetchBusRoutes()
-      .then(gj => {
-        setLandingBusRoutes(gj)  // cache in store
-        mapRef.current?.getSource('bus-routes')?.setData(gj)
-      })
-      .catch(() => { busRoutesFetchedRef.current = false })  // allow retry on error
-  }, [mapReady, tab, landingBusRoutes])
+    if (mapReady && localBusRoutes)
+      mapRef.current?.getSource('bus-routes')?.setData(localBusRoutes)
+  }, [mapReady, localBusRoutes])
 
   // ── District polygons + centroids ──────────────────────────────────────────
   useEffect(() => {

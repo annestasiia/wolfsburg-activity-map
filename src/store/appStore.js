@@ -257,6 +257,7 @@ export const useAppStore = create((set) => ({
   localParksForests: null,
   localCycling: null,
   localCyclingOfficial: null,
+  localBusRoutes: null,
 
   // ── Landing page API cache (persists across remounts within session) ──────────
   landingCityGeoJSON: null,
@@ -272,6 +273,7 @@ export const useAppStore = create((set) => ({
   setLocalParksForests:    (v) => set({ localParksForests: v }),
   setLocalCycling:         (v) => set({ localCycling: v }),
   setLocalCyclingOfficial: (v) => set({ localCyclingOfficial: v }),
+  setLocalBusRoutes:       (v) => set({ localBusRoutes: v }),
 
   // ── Intermodal density config ─────────────────────────────────────────────────
   densityConfig: { high: 400, medium: 700, low: 1000 },
