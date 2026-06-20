@@ -48,13 +48,33 @@ function scoreExpr(key, color) {
   ]
 }
 
+// Auto: yellow→red, no transparency — shows full coverage starting visible
+function autoColorExpr() {
+  return ['interpolate', ['linear'], ['get', 'a'],
+    0,   '#FFF44F',
+    50,  '#FF7A00',
+    100, '#E62020',
+  ]
+}
+
 function radiusExpr(scoreVal) {
   return ['interpolate', ['linear'], scoreVal,
     0,   0.4,
-    20,  1.4,
-    50,  2.5,
-    80,  3.6,
-    100, 4.8,
+    20,  1.8,
+    50,  3.5,
+    80,  5.5,
+    100, 7.5,
+  ]
+}
+
+// Auto radius: more contrast, starts smaller
+function autoRadiusExpr() {
+  return ['interpolate', ['linear'], ['get', 'a'],
+    0,   0.3,
+    20,  1.2,
+    50,  3.0,
+    80,  5.5,
+    100, 8.0,
   ]
 }
 
@@ -145,9 +165,14 @@ export default function CentralityMapSection({ tab = 'centrality', onTabChange }
       for (const { id } of CENT_TABS) {
         const cfg   = MODE_CONFIG[id]
         const isComposite = id === 'centrality'
-        const scoreVal = isComposite ? COMPOSITE_AVG : ['get', cfg.key]
-        const colorExpr  = isComposite ? compositeColorExpr()        : scoreExpr(cfg.key, cfg.color)
-        const radiusE    = isComposite ? compositeRadiusExpr()        : radiusExpr(scoreVal)
+        const isAuto      = id === 'auto'
+        const scoreVal    = isComposite ? COMPOSITE_AVG : ['get', cfg.key]
+        const colorExpr   = isComposite ? compositeColorExpr()
+                          : isAuto      ? autoColorExpr()
+                          : scoreExpr(cfg.key, cfg.color)
+        const radiusE     = isComposite ? compositeRadiusExpr()
+                          : isAuto      ? autoRadiusExpr()
+                          : radiusExpr(scoreVal)
 
         map.addLayer({
           id:     `cent-${id}`,

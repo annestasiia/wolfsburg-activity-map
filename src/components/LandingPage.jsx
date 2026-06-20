@@ -244,7 +244,7 @@ function MobilityLeftPanel({ tab }) {
             {[{ r: 4, label: 'Low' }, { r: 8, label: 'Mid' }, { r: 14, label: 'High' }].map(({ r, label }) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                 <svg width={r * 2 + 4} height={r * 2 + 4}>
-                  <circle cx={r + 2} cy={r + 2} r={r} fill="#E62020" />
+                  <circle cx={r + 2} cy={r + 2} r={r} fill="#FFD300" />
                 </svg>
                 <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
               </div>
@@ -417,6 +417,8 @@ function CentralityLeftPanel({ tab }) {
         <div style={{ height:8, borderRadius:4, marginBottom:6, border:'1px solid #eee',
           background: tab === 'centrality'
             ? 'linear-gradient(to right, #ffffff, #2FEF10, #FFF44F, #E62020)'
+            : tab === 'auto'
+            ? 'linear-gradient(to right, #FFF44F, #FF7A00, #E62020)'
             : `linear-gradient(to right, #ffffff, ${cfg.color})` }} />
         <div style={{ display:'flex', justifyContent:'space-between' }}>
           <span style={{ fontFamily:F, fontSize:10, color:'#aaa' }}>0 — no access</span>

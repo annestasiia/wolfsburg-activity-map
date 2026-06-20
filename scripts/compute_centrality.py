@@ -267,7 +267,8 @@ def main():
     # Only driveable roads; use maxspeed tag
     drive_types = {"motorway","motorway_link","trunk","trunk_link","primary","primary_link",
                    "secondary","secondary_link","tertiary","tertiary_link",
-                   "unclassified","residential","service","living_street","track","road"}
+                   "unclassified","residential","service","services","living_street",
+                   "track","road"}
     auto_feats = [f for f in roads if f.get("properties", {}).get("highway") in drive_types]
     auto_g = build_graph(auto_feats, AUTO_DEFAULT, speed_prop="maxspeed")
     log(f"Auto graph: {auto_g.number_of_nodes()} nodes, {auto_g.number_of_edges()} edges")
