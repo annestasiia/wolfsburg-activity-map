@@ -144,16 +144,16 @@ function MobilityLeftPanel({ tab }) {
             <div style={LB}>Car Parking</div>
             <SymbolRow label="Parking location">
               <svg width="20" height="20">
-                <circle cx="10" cy="10" r="8" fill="#FF99CC" opacity="0.35" />
-                <circle cx="10" cy="10" r="3" fill="#5539CC" />
+                <circle cx="10" cy="10" r="9" fill="#FF99CC" opacity="0.35" />
+                <circle cx="10" cy="10" r="2" fill="#5539CC" />
               </svg>
             </SymbolRow>
-            <SymbolRow label="Halo size = capacity">
-              <svg width="28" height="16">
-                {[[4, 4, 0.35], [9, 9, 0.35], [14, 14, 0.35]].map(([cx, r, op], i) => (
+            <SymbolRow label="Halo size = capacity (S → L)">
+              <svg width="30" height="20">
+                {[[5, 5, 0.35], [11, 10, 0.35], [19, 16, 0.35]].map(([cx, r, op], i) => (
                   <g key={i}>
-                    <circle cx={cx} cy="8" r={r} fill="#FF99CC" opacity={op} />
-                    <circle cx={cx} cy="8" r="2" fill="#5539CC" />
+                    <circle cx={cx} cy="10" r={r} fill="#FF99CC" opacity={op} />
+                    <circle cx={cx} cy="10" r="2" fill="#5539CC" />
                   </g>
                 ))}
               </svg>
@@ -167,14 +167,42 @@ function MobilityLeftPanel({ tab }) {
       {tab === 'public' && (
         <>
           <div style={{ marginBottom: 20 }}>
-            <div style={LB}>Road Activity</div>
-            <GradBar gradient="#3F012C, #7A1A3A, #990F4B" labelLeft="Motorway" labelRight="Local road" />
+            <div style={LB}>Bus Routes</div>
+            <SymbolRow label="Route line">
+              <svg width="28" height="14">
+                <line x1="0" y1="7" x2="28" y2="7" stroke="#ff6464" strokeWidth="9" strokeLinecap="round" opacity="0.55" />
+                <line x1="0" y1="7" x2="28" y2="7" stroke="#C10016" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </SymbolRow>
+
+            <div style={LB}>Traffic Activity (day/time)</div>
+            <SymbolRow label="Low ↔ High — glow width varies">
+              <svg width="28" height="14">
+                <line x1="0" y1="7" x2="28" y2="7" stroke="#ff6464" strokeWidth="12" strokeLinecap="round" opacity="0.55" />
+                <line x1="0" y1="7" x2="28" y2="7" stroke="#C10016" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </SymbolRow>
+
+            <div style={LB}>Bus Stops</div>
+            <SymbolRow label="Stop location">
+              <svg width="20" height="20">
+                <circle cx="10" cy="10" r="8" fill="#ff6464" opacity="0.30" />
+                <circle cx="10" cy="10" r="2" fill="#C10016" />
+              </svg>
+            </SymbolRow>
+            <SymbolRow label="Halo = load by time/day">
+              <svg width="30" height="20">
+                {[[5, 4], [14, 9], [24, 14]].map(([cx, r], i) => (
+                  <g key={i}>
+                    <circle cx={cx} cy="10" r={r} fill="#ff6464" opacity="0.30" />
+                    <circle cx={cx} cy="10" r="2" fill="#C10016" />
+                  </g>
+                ))}
+              </svg>
+            </SymbolRow>
 
             <div style={LB}>District Activity</div>
             <GradBar gradient="#FFFCB5, #FFF300" labelLeft="Low" labelRight="High" />
-
-            <div style={LB}>Bus Stops</div>
-            <SymbolRow label="Bus stop"><DotIcon color="#0077FF" /></SymbolRow>
           </div>
           <DayTimeControls />
         </>
