@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { DAYS } from '../constants'
-import MobilityMapSection  from './landing/MobilityMapSection'
-import FacilitiesMapSection from './landing/FacilitiesMapSection'
-import GreeneryMapSection  from './landing/GreeneryMapSection'
-import HubMapSection       from './landing/HubMapSection'
+import MobilityMapSection    from './landing/MobilityMapSection'
+import LivabilityMapSection, { TABS as LIV_TABS, LANDUSE_COLORS } from './landing/LivabilityMapSection'
+import FacilitiesMapSection  from './landing/FacilitiesMapSection'
+import GreeneryMapSection    from './landing/GreeneryMapSection'
+import HubMapSection         from './landing/HubMapSection'
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
@@ -259,6 +260,84 @@ function MobilityLeftPanel({ tab }) {
   )
 }
 
+// ── Livability left panel ─────────────────────────────────────────────────────
+
+function LivabilityLeftPanel({ tab }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '40px 36px' }}>
+      <div style={{ marginBottom: 26 }}>
+        <div style={EY}>02 — Livability Analysis · OSM + Open Data</div>
+        <h2 style={{ fontFamily: F, fontSize: 'clamp(20px, 1.8vw, 28px)', fontWeight: 700, color: '#111', letterSpacing: '-0.03em', lineHeight: 1.1, margin: '0 0 14px' }}>
+          Livability &amp; Facilities
+        </h2>
+        <p style={{ ...BD, fontSize: 12 }}>
+          Commercial activity density, land use structure, and point-of-interest
+          distribution across all Wolfsburg districts.
+        </p>
+      </div>
+
+      {tab === 'livability' && (
+        <div>
+          <div style={LB}>Facility Density</div>
+          <p style={{ ...BD, fontSize: 12, marginBottom: 16 }}>
+            Proportional symbol grid (250 m cells). Circle size encodes concentration
+            of commercial venues, facilities and historic sites.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 16 }}>
+            {[{ r: 4, label: 'Low' }, { r: 8, label: 'Mid' }, { r: 14, label: 'High' }].map(({ r, label }) => (
+              <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <svg width={r * 2 + 4} height={r * 2 + 4}>
+                  <circle cx={r + 2} cy={r + 2} r={r} fill="#FFD300" />
+                </svg>
+                <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontFamily: F, fontSize: 11, color: '#bbb', lineHeight: 1.6 }}>
+            Sources: venues registry · OSM facilities · historic sites
+          </div>
+        </div>
+      )}
+
+      {tab === 'landuse' && (
+        <div>
+          <div style={LB}>Land Use</div>
+          {Object.entries(LANDUSE_COLORS).filter(([k]) => k !== 'forest').map(([cat, color]) => (
+            <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 7 }}>
+              <div style={{ width: 14, height: 14, borderRadius: 2, background: color, flexShrink: 0 }} />
+              <span style={{ fontFamily: F, fontSize: 12, color: '#444', textTransform: 'capitalize' }}>
+                {cat === 'park' ? 'Park / Forest' : cat}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'centrality' && (
+        <div>
+          <div style={LB}>Centrality</div>
+          <p style={{ ...BD, fontSize: 12, color: '#bbb', fontStyle: 'italic' }}>
+            Network centrality analysis — coming soon.
+          </p>
+        </div>
+      )}
+
+      {tab === 'facility' && (
+        <div>
+          <div style={LB}>Facilities</div>
+          <p style={{ ...BD, fontSize: 12, marginBottom: 12 }}>
+            Registered venues and points of interest from the Wolfsburg venue registry.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#E8305A" /></svg>
+            <span style={{ fontFamily: F, fontSize: 12, color: '#444' }}>Venue / facility</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Standard text content for non-mobility sections ─────────────────────────
 
 function DefaultLeftContent({ sec }) {
@@ -296,16 +375,6 @@ function DefaultLeftContent({ sec }) {
 
 const OTHER_SECTIONS = [
   {
-    id: 'livability',
-    number: '02',
-    eyebrow: 'Facility Analysis · OSM + Wolfsburg Open Data',
-    title: 'Livability & Facilities',
-    what: 'Point-of-interest density, venue categories, and temporal activity patterns across all districts. Seven categories mapped against pedestrian data to identify where people go — and when.',
-    resources: 'OpenStreetMap amenity, shop, tourism tags. City of Wolfsburg venue registry. Google Maps Popular Times for pedestrian activity estimation per street segment.',
-    findings: 'Food & beverage and commercial retail concentrate in the inner centre. Evening and weekend activity peaks around a small number of cultural and dining hotspots — demand a shared fleet must absorb.',
-    MapSection: FacilitiesMapSection,
-  },
-  {
     id: 'potential',
     number: '03',
     eyebrow: 'Greenery Analysis · OSM Polygon Data',
@@ -340,6 +409,7 @@ const FURTHER = [
 export default function LandingPage() {
   const { setActiveSection, setActiveMode, setShowLanding, setNavOpen, setLandingSectionMode } = useAppStore()
   const [mobilityTab, setMobilityTab] = useState('activity')
+  const [livabilityTab, setLivabilityTab] = useState('livability')
 
   React.useEffect(() => {
     setNavOpen(false)
@@ -431,7 +501,17 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Livability, Potential, Hub — 40/60 standard */}
+        {/* Livability — 40/60 with tabs */}
+        <section style={{ display: 'flex', height: '100vh', border: '1px solid #E8E8E8', overflow: 'hidden' }}>
+          <div style={{ width: '40%', flexShrink: 0, borderRight: '1px solid #E8E8E8', overflow: 'hidden' }}>
+            <LivabilityLeftPanel tab={livabilityTab} />
+          </div>
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+            <LivabilityMapSection tab={livabilityTab} onTabChange={setLivabilityTab} />
+          </div>
+        </section>
+
+        {/* Potential, Hub — 40/60 standard */}
         {OTHER_SECTIONS.map(sec => (
           <section
             key={sec.id}
