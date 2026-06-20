@@ -258,6 +258,12 @@ export const useAppStore = create((set) => ({
   localCycling: null,
   localCyclingOfficial: null,
 
+  // ── Landing page API cache (persists across remounts within session) ──────────
+  landingCityGeoJSON: null,
+  setLandingCityGeoJSON: (v) => set({ landingCityGeoJSON: v }),
+  landingBusRoutes: null,
+  setLandingBusRoutes: (v) => set({ landingBusRoutes: v }),
+
   setLocalBusStops:        (v) => set({ localBusStops: v }),
   setLocalCarParkings:     (v) => set({ localCarParkings: v }),
   setLocalBikeParkings:    (v) => set({ localBikeParkings: v }),
