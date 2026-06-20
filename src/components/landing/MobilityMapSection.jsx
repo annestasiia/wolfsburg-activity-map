@@ -180,6 +180,82 @@ function parkingToPoints(geoJSON, cityGeo) {
   return { type: 'FeatureCollection', features }
 }
 
+// ── Activity heat grid ─────────────────────────────────────────────────────────
+// 500m × 500m invisible grid, proportional circles (50–240m radius) per cell.
+// At 52.42°N: 500m ≈ 0.004524° lat, 500m ≈ 0.007382° lon
+const ACT_LAT = 0.004524, ACT_LON = 0.007382
+const ACT_MIN_R = 50, ACT_MAX_R = 240  // meters — max 240 leaves ~20m gap at full size
+
+function buildActivityGrid(roads, busStops, carParkings, bikeParkings, cycling, cityGeo) {
+  if (!cityGeo?.features?.length) return { type: 'FeatureCollection', features: [] }
+  const [minLon, maxLon, minLat, maxLat] = [10.55, 10.95, 52.35, 52.60]
+  const rowOf = lat => Math.round((lat - minLat) / ACT_LAT)
+  const colOf = lon => Math.round((lon - minLon) / ACT_LON)
+  const key   = (r, c) => `${r}|${c}`
+
+  // Pre-populate all cells inside city
+  const grid = new Map()
+  const rows = Math.ceil((maxLat - minLat) / ACT_LAT)
+  const cols = Math.ceil((maxLon - minLon) / ACT_LON)
+  for (let r = 0; r <= rows; r++) {
+    for (let c = 0; c <= cols; c++) {
+      const lat = minLat + r * ACT_LAT, lon = minLon + c * ACT_LON
+      if (isInsideCity(lon, lat, cityGeo)) grid.set(key(r, c), { lat, lon, score: 0 })
+    }
+  }
+
+  // Spread score from a feature point into adjacent cells (distance-weighted)
+  const addScore = (lon, lat, w) => {
+    const rc = rowOf(lat), cc = colOf(lon)
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const cell = grid.get(key(rc + dr, cc + dc))
+      if (cell) cell.score += w / (1 + (dr * dr + dc * dc) * 0.5)
+    }
+  }
+
+  const RW = { motorway: 5, trunk: 4.5, primary: 3.5, secondary: 2.5, tertiary: 1.5, residential: 1, cycleway: 1.5 }
+  for (const f of roads?.features || []) {
+    const w = RW[f.properties?.highway] || 0.8
+    const coords = f.geometry?.coordinates || []
+    for (let i = 0; i < coords.length; i += 2) addScore(coords[i][0], coords[i][1], w)
+  }
+  for (const f of busStops?.features || []) {
+    const [lon, lat] = f.geometry?.coordinates || []; if (lat) addScore(lon, lat, 20)
+  }
+  for (const f of carParkings?.features || []) {
+    if (f.geometry?.type === 'Point') {
+      addScore(f.geometry.coordinates[0], f.geometry.coordinates[1], 8)
+    } else {
+      const ring = f.geometry?.coordinates?.[0]
+      if (ring?.length) addScore(ring.reduce((s, c) => s + c[0], 0) / ring.length, ring.reduce((s, c) => s + c[1], 0) / ring.length, 8)
+    }
+  }
+  for (const f of bikeParkings?.features || []) {
+    const [lon, lat] = f.geometry?.coordinates || []; if (lat) addScore(lon, lat, 4)
+  }
+  for (const f of cycling?.features || []) {
+    const lines = f.geometry?.type === 'MultiLineString' ? f.geometry.coordinates
+      : f.geometry?.type === 'LineString' ? [f.geometry.coordinates] : []
+    for (const line of lines) for (let i = 0; i < line.length; i += 4) addScore(line[i][0], line[i][1], 2)
+  }
+
+  const cells = [...grid.values()]
+  const sorted = cells.map(c => c.score).sort((a, b) => a - b)
+  const p95 = sorted[Math.floor(sorted.length * 0.95)] || 1  // cap outliers
+
+  return {
+    type: 'FeatureCollection',
+    features: cells.map(({ lat, lon, score }) => {
+      const t = Math.sqrt(Math.min(score, p95) / p95)  // sqrt → perceptual uniformity
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [lon, lat] },
+        properties: { radius_m: Math.round(ACT_MIN_R + t * (ACT_MAX_R - ACT_MIN_R)) },
+      }
+    }),
+  }
+}
+
 // ── Fetch bus routes from Overpass ────────────────────────────────────────────
 // "way(r)" gets only the way members of each relation with their geometry —
 // much lighter than ">;" which also pulls all constituent nodes.
@@ -218,6 +294,12 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
     [roads, districtBoundaries],
   )
 
+  // Proportional symbol grid — recomputes once all transport data + city boundary are loaded
+  const activityGrid = useMemo(
+    () => buildActivityGrid(roads, localBusStops, localCarParkings, localBikeParkings, localCyclingOfficial, cityGeoJSON),
+    [roads, localBusStops, localCarParkings, localBikeParkings, localCyclingOfficial, cityGeoJSON],
+  )
+
   // ── Init map ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapDivRef.current) return
@@ -241,6 +323,30 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
       // District outline (always visible in all tabs)
       map.addLayer({ id: 'district-outline', type: 'line', source: 'districts',
         paint: { 'line-color': '#1D1D1F', 'line-width': 0.5, 'line-opacity': 0.7 } })
+
+      // Activity Map: proportional symbol circles (Activity tab)
+      // radius_m property (50–240m) → zoom-dependent pixel size
+      // Scale: at 52.42°N, 1m ≈ 1/23.25 px at zoom 12, doubles each zoom level
+      map.addSource('activity-grid', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addLayer({ id: 'activity-circles', type: 'circle', source: 'activity-grid',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-color': '#1D1D1F',
+          'circle-opacity': 0.10,
+          'circle-stroke-color': '#1D1D1F',
+          'circle-stroke-width': 0.8,
+          'circle-stroke-opacity': 0.55,
+          'circle-radius': ['interpolate', ['exponential', 2], ['zoom'],
+            9,  ['*', ['get', 'radius_m'], 0.00536],
+            10, ['*', ['get', 'radius_m'], 0.01073],
+            11, ['*', ['get', 'radius_m'], 0.02146],
+            12, ['*', ['get', 'radius_m'], 0.04301],
+            13, ['*', ['get', 'radius_m'], 0.08602],
+            14, ['*', ['get', 'radius_m'], 0.17204],
+            15, ['*', ['get', 'radius_m'], 0.34408],
+          ],
+        },
+      })
 
       // Parking halo (Auto — capacity-scaled pink circle, behind dot)
       map.addSource('parking', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -447,6 +553,12 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
     mapRef.current?.getSource('bike-parking')?.setData({ type: 'FeatureCollection', features })
   }, [mapReady, localBikeParkings, cityGeoJSON])
 
+  // ── Activity grid → map source ────────────────────────────────────────────
+  useEffect(() => {
+    if (!mapReady || !activityGrid) return
+    mapRef.current?.getSource('activity-grid')?.setData(activityGrid)
+  }, [mapReady, activityGrid])
+
   // ── Parking (ALL, centroid Points, clipped to city) ────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current || !localCarParkings) return
@@ -462,6 +574,8 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
     const isCycling = tab === 'cycling'
 
     const setVis = (id, on) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none')
+    // Activity tab
+    setVis('activity-circles', tab === 'activity')
     // Auto layers
     setVis('roads-glow',          isAuto)
     setVis('roads-line',          isAuto)

@@ -230,12 +230,31 @@ function MobilityLeftPanel({ tab }) {
         </>
       )}
 
-      {/* ── Activity Map placeholder ── */}
+      {/* ── Activity Map ── */}
       {tab === 'activity' && (
-        <div style={{ paddingTop: 18, borderTop: '1px solid #E8E8E8' }}>
-          <p style={{ fontFamily: F, fontSize: 12, color: '#bbb', fontStyle: 'italic', margin: 0 }}>
-            Activity Map — analysis coming soon.
+        <div>
+          <div style={LB}>Transport Activity</div>
+          <p style={{ ...BD, fontSize: 12, marginBottom: 16 }}>
+            Proportional symbol grid (500 m cells). Circle size encodes combined transport
+            intensity — roads, bus stops, parkings, cycling infrastructure.
           </p>
+          {/* Size legend */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 16 }}>
+            {[{ r: 4, label: 'Low' }, { r: 8, label: 'Mid' }, { r: 14, label: 'High' }].map(({ r, label }) => (
+              <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <svg width={r * 2 + 4} height={r * 2 + 4}>
+                  <circle cx={r + 2} cy={r + 2} r={r}
+                    fill="#1D1D1F" fillOpacity="0.10"
+                    stroke="#1D1D1F" strokeOpacity="0.55" strokeWidth="0.8" />
+                </svg>
+                <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontFamily: F, fontSize: 11, color: '#bbb', lineHeight: 1.6 }}>
+            Sources: OSM road network · bus stops ·<br />
+            car &amp; bike parkings · official cycling routes
+          </div>
         </div>
       )}
     </div>
