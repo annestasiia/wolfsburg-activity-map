@@ -119,20 +119,42 @@ function MobilityLeftPanel({ tab }) {
       {tab === 'auto' && (
         <>
           <div style={{ marginBottom: 20 }}>
-            <div style={LB}>Road Activity</div>
-            <GradBar gradient="#3F012C, #7A1A3A, #990F4B" labelLeft="Motorway" labelRight="Local road" />
+            <div style={LB}>Road Network</div>
+            <SymbolRow label="Motorway / trunk">
+              <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#0000FF" strokeWidth="5" strokeLinecap="round" /></svg>
+            </SymbolRow>
+            <SymbolRow label="Primary / secondary">
+              <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#0000FF" strokeWidth="2.5" strokeLinecap="round" /></svg>
+            </SymbolRow>
+            <SymbolRow label="Local roads">
+              <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#0000FF" strokeWidth="1" strokeLinecap="round" /></svg>
+            </SymbolRow>
+
+            <div style={LB}>Traffic Activity (day/time)</div>
+            <SymbolRow label="Low ↔ High — glow width varies">
+              <svg width="28" height="14">
+                <line x1="0" y1="7" x2="28" y2="7" stroke="#FF1493" strokeWidth="12" strokeLinecap="round" opacity="0.5" />
+                <line x1="0" y1="7" x2="28" y2="7" stroke="#0000FF" strokeWidth="4" strokeLinecap="round" />
+              </svg>
+            </SymbolRow>
 
             <div style={LB}>District Activity</div>
             <GradBar gradient="#FFFCB5, #FFF300" labelLeft="Low" labelRight="High" />
 
             <div style={LB}>Car Parking</div>
-            <SymbolRow label="Surface car park"><ParkingIcon stroke="#1D1D1F" /></SymbolRow>
-            <SymbolRow label="Multi-storey car park"><ParkingIcon stroke="#5C5C5C" /></SymbolRow>
-            <SymbolRow label="Underground parking"><ParkingIcon stroke="#808080" /></SymbolRow>
-            <SymbolRow label="Parking capacity (S → L)">
+            <SymbolRow label="Parking location">
+              <svg width="20" height="20">
+                <circle cx="10" cy="10" r="8" fill="#FF99CC" opacity="0.35" />
+                <circle cx="10" cy="10" r="3" fill="#5539CC" />
+              </svg>
+            </SymbolRow>
+            <SymbolRow label="Halo size = capacity">
               <svg width="28" height="16">
-                {[[4, 0.20], [6, 0.35], [9, 0.50]].map(([r, op], i) => (
-                  <circle key={i} cx={4 + i * 10} cy="8" r={r} fill="#FFB300" opacity={op} />
+                {[[4, 4, 0.35], [9, 9, 0.35], [14, 14, 0.35]].map(([cx, r, op], i) => (
+                  <g key={i}>
+                    <circle cx={cx} cy="8" r={r} fill="#FF99CC" opacity={op} />
+                    <circle cx={cx} cy="8" r="2" fill="#5539CC" />
+                  </g>
                 ))}
               </svg>
             </SymbolRow>
