@@ -143,57 +143,60 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Analysis sections — 50/50 ─────────────────────────────────────── */}
-      {SECTIONS.map(sec => (
-        <section
-          key={sec.id}
-          style={{
-            display: 'flex',
-            height: '100vh',
-            borderBottom: '1px solid #E8E8E8',
-          }}
-        >
-          {/* Left: text */}
-          <div style={{
-            width: '50%',
-            overflowY: 'auto',
-            padding: '64px 56px',
-            borderRight: '1px solid #E8E8E8',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          }}>
-            <div style={EY}>{sec.number} — {sec.eyebrow}</div>
-            <h2 style={{
-              fontFamily: F, fontSize: 'clamp(28px, 2.8vw, 40px)',
-              fontWeight: 700, color: '#111',
-              letterSpacing: '-0.03em', lineHeight: 1.1,
-              margin: '0 0 40px',
+      {/* ── Analysis sections — 30/70, with vertical gap between ───────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 0 24px' }}>
+        {SECTIONS.map(sec => (
+          <section
+            key={sec.id}
+            style={{
+              display: 'flex',
+              height: '100vh',
+              border: '1px solid #E8E8E8',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Left: text — 30% */}
+            <div style={{
+              width: '30%',
+              flexShrink: 0,
+              overflowY: 'auto',
+              padding: '48px 40px',
+              borderRight: '1px solid #E8E8E8',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center',
             }}>
-              {sec.title}
-            </h2>
+              <div style={EY}>{sec.number} — {sec.eyebrow}</div>
+              <h2 style={{
+                fontFamily: F, fontSize: 'clamp(22px, 2vw, 32px)',
+                fontWeight: 700, color: '#111',
+                letterSpacing: '-0.03em', lineHeight: 1.1,
+                margin: '0 0 32px',
+              }}>
+                {sec.title}
+              </h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, marginBottom: 32 }}>
-              <div>
+              <div style={{ marginBottom: 28 }}>
                 <div style={LB}>What we analysed</div>
                 <p style={BD}>{sec.what}</p>
               </div>
-              <div>
+
+              <div style={{ marginBottom: 28 }}>
                 <div style={LB}>Data resources</div>
                 <p style={BD}>{sec.resources}</p>
               </div>
+
+              <div style={{ paddingTop: 20, borderTop: '1px solid #E8E8E8' }}>
+                <div style={LB}>{sec.id === 'hub' ? 'Results' : 'Findings'}</div>
+                <p style={BD}>{sec.findings}</p>
+              </div>
             </div>
 
-            <div style={{ paddingTop: 24, borderTop: '1px solid #E8E8E8' }}>
-              <div style={LB}>{sec.id === 'hub' ? 'Results' : 'Findings'}</div>
-              <p style={BD}>{sec.findings}</p>
+            {/* Right: interactive map — 70% */}
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <sec.MapSection />
             </div>
-          </div>
-
-          {/* Right: interactive map with all tools */}
-          <div style={{ width: '50%', position: 'relative', overflow: 'hidden' }}>
-            <sec.MapSection />
-          </div>
-        </section>
-      ))}
+          </section>
+        ))}
+      </div>
 
       {/* ── Further Information — full width ──────────────────────────────── */}
       <section style={{ padding: '72px 72px 96px', borderTop: '2px solid #111' }}>
