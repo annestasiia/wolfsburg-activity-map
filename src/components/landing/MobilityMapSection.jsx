@@ -183,9 +183,9 @@ function parkingToPoints(geoJSON, cityGeo) {
 // ── Activity heat grid ─────────────────────────────────────────────────────────
 // 500m × 500m invisible grid, proportional circles (50–240m radius) per cell.
 // At 52.42°N: 500m ≈ 0.004524° lat, 500m ≈ 0.007382° lon
-// 250m grid: half of the 500m steps; max radius 110m → diameter 220m < 250m (no touch)
+// 250m grid; radii 50–240m (diameter up to 480m, ~10m gap at max)
 const ACT_LAT = 0.002262, ACT_LON = 0.003691
-const ACT_MIN_R = 20, ACT_MAX_R = 110
+const ACT_MIN_R = 50, ACT_MAX_R = 240
 
 function buildActivityGrid(roads, busStops, carParkings, bikeParkings, cycling, cityGeo) {
   if (!cityGeo?.features?.length) return { type: 'FeatureCollection', features: [] }
