@@ -23,11 +23,14 @@ export const TABS = [
 
 // ── Land use colours ──────────────────────────────────────────────────────────
 export const LANDUSE_COLORS = {
+  forest:         '#2D6A4F',
+  meadow:         '#95D5B2',
+  farmland:       '#DDB892',
+  water:          '#48CAE4',
+  park:           '#52B788',
   residential:    '#F4A429',
   commercial:     '#E8305A',
   industrial:     '#5B4FCF',
-  park:           '#29C17E',
-  forest:         '#29C17E',
   education:      '#2496E8',
   administrative: '#F26B3A',
   institutional:  '#D43FB8',
@@ -216,17 +219,17 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
       // ── Land use polygons ────────────────────────────────────────────────
       map.addSource('landuse', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       const luColor = ['match', ['get', 'category'],
-        'residential', '#F4A429', 'commercial', '#E8305A', 'industrial', '#5B4FCF',
-        'park', '#29C17E', 'forest', '#29C17E', 'education', '#2496E8',
-        'administrative', '#F26B3A', 'institutional', '#D43FB8',
+        'forest', '#2D6A4F', 'meadow', '#95D5B2', 'farmland', '#DDB892', 'water', '#48CAE4',
+        'park', '#52B788', 'residential', '#F4A429', 'commercial', '#E8305A', 'industrial', '#5B4FCF',
+        'education', '#2496E8', 'administrative', '#F26B3A', 'institutional', '#D43FB8',
         'parking', '#14C4C4', 'railway', '#8FC73E', '#cccccc',
       ]
       map.addLayer({ id: 'landuse-fill', type: 'fill', source: 'landuse',
         layout: { visibility: 'none' },
-        paint: { 'fill-color': luColor, 'fill-opacity': 0.65 } })
+        paint: { 'fill-color': luColor, 'fill-opacity': 1 } })
       map.addLayer({ id: 'landuse-line', type: 'line', source: 'landuse',
         layout: { visibility: 'none' },
-        paint: { 'line-color': luColor, 'line-width': 0.4, 'line-opacity': 0.8 } })
+        paint: { 'line-color': '#ffffff', 'line-width': 0.3, 'line-opacity': 0.4 } })
 
       // ── Facility venues ──────────────────────────────────────────────────
       map.addSource('venues', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })

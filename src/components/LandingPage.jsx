@@ -302,14 +302,21 @@ function LivabilityLeftPanel({ tab }) {
       {tab === 'landuse' && (
         <div>
           <div style={LB}>Land Use</div>
-          {Object.entries(LANDUSE_COLORS).filter(([k]) => k !== 'forest').map(([cat, color]) => (
-            <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 7 }}>
-              <div style={{ width: 14, height: 14, borderRadius: 2, background: color, flexShrink: 0 }} />
-              <span style={{ fontFamily: F, fontSize: 12, color: '#444', textTransform: 'capitalize' }}>
-                {cat === 'park' ? 'Park / Forest' : cat}
-              </span>
-            </div>
-          ))}
+          {Object.entries(LANDUSE_COLORS).map(([cat, color]) => {
+            const labels = {
+              forest: 'Forest / Wood', meadow: 'Meadow / Grassland', farmland: 'Farmland / Fields',
+              water: 'Water', park: 'Park / Garden', residential: 'Residential',
+              commercial: 'Commercial / Retail', industrial: 'Industrial',
+              education: 'Education', administrative: 'Administrative',
+              institutional: 'Hospital / Cemetery', parking: 'Parking', railway: 'Railway',
+            }
+            return (
+              <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 14, height: 14, borderRadius: 2, background: color, flexShrink: 0 }} />
+                <span style={{ fontFamily: F, fontSize: 11, color: '#444' }}>{labels[cat] || cat}</span>
+              </div>
+            )
+          })}
         </div>
       )}
 
