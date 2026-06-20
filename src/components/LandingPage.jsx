@@ -243,9 +243,7 @@ function MobilityLeftPanel({ tab }) {
             {[{ r: 4, label: 'Low' }, { r: 8, label: 'Mid' }, { r: 14, label: 'High' }].map(({ r, label }) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                 <svg width={r * 2 + 4} height={r * 2 + 4}>
-                  <circle cx={r + 2} cy={r + 2} r={r}
-                    fill="#1D1D1F" fillOpacity="0.10"
-                    stroke="#1D1D1F" strokeOpacity="0.55" strokeWidth="0.8" />
+                  <circle cx={r + 2} cy={r + 2} r={r} fill="#FFD300" />
                 </svg>
                 <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
               </div>
@@ -341,7 +339,7 @@ const FURTHER = [
 
 export default function LandingPage() {
   const { setActiveSection, setActiveMode, setShowLanding, setNavOpen, setLandingSectionMode } = useAppStore()
-  const [mobilityTab, setMobilityTab] = useState('auto')
+  const [mobilityTab, setMobilityTab] = useState('activity')
 
   React.useEffect(() => {
     setNavOpen(false)

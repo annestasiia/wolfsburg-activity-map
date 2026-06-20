@@ -183,12 +183,14 @@ function parkingToPoints(geoJSON, cityGeo) {
 // ── Activity heat grid ─────────────────────────────────────────────────────────
 // 500m × 500m invisible grid, proportional circles (50–240m radius) per cell.
 // At 52.42°N: 500m ≈ 0.004524° lat, 500m ≈ 0.007382° lon
-const ACT_LAT = 0.004524, ACT_LON = 0.007382
-const ACT_MIN_R = 50, ACT_MAX_R = 240  // meters — max 240 leaves ~20m gap at full size
+// 250m grid: half of the 500m steps; max radius 110m → diameter 220m < 250m (no touch)
+const ACT_LAT = 0.002262, ACT_LON = 0.003691
+const ACT_MIN_R = 20, ACT_MAX_R = 110
 
 function buildActivityGrid(roads, busStops, carParkings, bikeParkings, cycling, cityGeo) {
   if (!cityGeo?.features?.length) return { type: 'FeatureCollection', features: [] }
-  const [minLon, maxLon, minLat, maxLat] = [10.55, 10.95, 52.35, 52.60]
+  // Extended south to 52.28 to cover Almke / Niendorf area
+  const [minLon, maxLon, minLat, maxLat] = [10.55, 10.95, 52.28, 52.60]
   const rowOf = lat => Math.round((lat - minLat) / ACT_LAT)
   const colOf = lon => Math.round((lon - minLon) / ACT_LON)
   const key   = (r, c) => `${r}|${c}`
@@ -331,11 +333,9 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
       map.addLayer({ id: 'activity-circles', type: 'circle', source: 'activity-grid',
         layout: { visibility: 'none' },
         paint: {
-          'circle-color': '#1D1D1F',
-          'circle-opacity': 0.10,
-          'circle-stroke-color': '#1D1D1F',
-          'circle-stroke-width': 0.8,
-          'circle-stroke-opacity': 0.55,
+          'circle-color': '#FFD300',
+          'circle-opacity': 0.90,
+          'circle-stroke-width': 0,
           'circle-radius': ['interpolate', ['exponential', 2], ['zoom'],
             9,  ['*', ['get', 'radius_m'], 0.00536],
             10, ['*', ['get', 'radius_m'], 0.01073],
