@@ -359,16 +359,34 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
     return () => { map.remove(); mapRef.current = null }
   }, [])
 
-  // ── City boundary: use store cache, fetch only once per session ───────────
+  // ── City boundary: localStorage → store cache → Overpass (in that order) ──
+  // localStorage persists across page reloads so Overpass is only hit once ever.
   useEffect(() => {
     if (!mapReady) return
+
+    function applyCity(gj) {
+      setCityGeoJSON(gj)
+      setLandingCityGeoJSON(gj)
+      mapRef.current?.getSource('city-boundary')?.setData(gj)
+      mapRef.current?.getSource('city-mask')?.setData(buildCityMask(gj))
+    }
+
+    // 1. In-session store cache (component remount within same page load)
     if (landingCityGeoJSON) {
-      // Already fetched in a previous mount — apply immediately from cache
-      setCityGeoJSON(landingCityGeoJSON)
-      mapRef.current?.getSource('city-boundary')?.setData(landingCityGeoJSON)
-      mapRef.current?.getSource('city-mask')?.setData(buildCityMask(landingCityGeoJSON))
+      applyCity(landingCityGeoJSON)
       return
     }
+
+    // 2. localStorage cache (persists across page reloads)
+    try {
+      const raw = localStorage.getItem('wolfsburg_city_boundary_v1')
+      if (raw) {
+        applyCity(JSON.parse(raw))
+        return
+      }
+    } catch (_) {}
+
+    // 3. Fetch from Overpass (first ever load)
     let cancelled = false
     const q = `[out:json][timeout:30];relation["boundary"="administrative"]["name"="Wolfsburg"]["admin_level"="6"];out geom;`
     fetch('https://overpass-api.de/api/interpreter', {
@@ -379,10 +397,8 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
       .then(data => {
         if (cancelled) return
         const gj = osmtogeojson(data)
-        setLandingCityGeoJSON(gj)  // cache in store for future mounts
-        setCityGeoJSON(gj)
-        mapRef.current?.getSource('city-boundary')?.setData(gj)
-        mapRef.current?.getSource('city-mask')?.setData(buildCityMask(gj))
+        try { localStorage.setItem('wolfsburg_city_boundary_v1', JSON.stringify(gj)) } catch (_) {}
+        applyCity(gj)
       })
       .catch(() => {})
     return () => { cancelled = true }
