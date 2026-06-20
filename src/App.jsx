@@ -49,7 +49,7 @@ export default function App() {
     setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways,
     activeSection, activeMode, setSelectedFacilityVenueId,
     setLocalBusStops, setLocalCarParkings, setLocalBikeParkings,
-    setLocalFacilities, setLocalHistoric, setLocalParksForests, setLocalCycling, setLocalCyclingOfficial, setLocalBusRoutes, setLocalLandUse,
+    setLocalFacilities, setLocalHistoric, setLocalParksForests, setLocalCycling, setLocalCyclingOfficial, setLocalBusRoutes, setLocalLandUse, setLocalCentrality,
     showLanding,
   } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
@@ -80,6 +80,7 @@ export default function App() {
       ['wolfsburg_cycling_official.geojson', setLocalCyclingOfficial],
       ['wolfsburg_bus_routes.geojson',       setLocalBusRoutes],
       ['wolfsburg_landuse.geojson',          setLocalLandUse],
+      ['wolfsburg_centrality.geojson',       setLocalCentrality],
     ]
     for (const [filename, setter] of localFiles) {
       fetch(`${import.meta.env.BASE_URL}${filename}`)
@@ -88,7 +89,7 @@ export default function App() {
         .catch(() => {})
     }
   }, [setVenues, setDistrictBoundaries, setParks, setWater, setForest, setBuildings, setRoads, setFootways,
-      setLocalBusStops, setLocalCarParkings, setLocalBikeParkings, setLocalFacilities, setLocalHistoric, setLocalParksForests, setLocalCycling, setLocalCyclingOfficial, setLocalBusRoutes, setLocalLandUse])
+      setLocalBusStops, setLocalCarParkings, setLocalBikeParkings, setLocalFacilities, setLocalHistoric, setLocalParksForests, setLocalCycling, setLocalCyclingOfficial, setLocalBusRoutes, setLocalLandUse, setLocalCentrality])
 
   const handleVenueClick = useCallback((props) => {
     if (activeSection !== 'geo') return

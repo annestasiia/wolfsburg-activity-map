@@ -2,9 +2,9 @@ import React, { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { DAYS } from '../constants'
 import MobilityMapSection    from './landing/MobilityMapSection'
-import LivabilityMapSection, { TABS as LIV_TABS, LANDUSE_COLORS } from './landing/LivabilityMapSection'
+import LivabilityMapSection, { LANDUSE_COLORS } from './landing/LivabilityMapSection'
+import CentralityMapSection, { CENT_TABS } from './landing/CentralityMapSection'
 import FacilitiesMapSection  from './landing/FacilitiesMapSection'
-import GreeneryMapSection    from './landing/GreeneryMapSection'
 import HubMapSection         from './landing/HubMapSection'
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif"
@@ -378,19 +378,69 @@ function DefaultLeftContent({ sec }) {
   )
 }
 
+// ── Centrality left panel ─────────────────────────────────────────────────────
+
+const CENT_MODE_INFO = {
+  centrality: { color:'#1D1D1F', label:'Combined score',    sub:'Walk + Bike + Public averaged' },
+  walk:       { color:'#16A34A', label:'Walk accessibility', sub:'4.5 km/h · 15 min budget'     },
+  bike:       { color:'#059669', label:'Bike accessibility', sub:'15 km/h · official cycle routes + roads' },
+  public:     { color:'#CA8A04', label:'Public transit',     sub:'Walk to stop + 20 km/h bus · 15 min' },
+  auto:       { color:'#DC2626', label:'Auto accessibility', sub:'50 km/h (maxspeed tag) · 15 min' },
+}
+
+function CentralityLeftPanel({ tab }) {
+  const cfg = CENT_MODE_INFO[tab] || CENT_MODE_INFO.centrality
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%', overflowY:'auto', padding:'40px 36px' }}>
+      <div style={{ marginBottom: 26 }}>
+        <div style={EY}>03 — Accessibility · Network Analysis</div>
+        <h2 style={{ fontFamily:F, fontSize:'clamp(20px,1.8vw,28px)', fontWeight:700, color:'#111', letterSpacing:'-0.03em', lineHeight:1.1, margin:'0 0 14px' }}>
+          Centralities
+        </h2>
+        <p style={{ ...BD, fontSize:12 }}>
+          Proximity to services and facilities by different mobility mode. 100 m grid — each point shows
+          how many amenities are reachable in 15 minutes. Includes VW Werk as destination.
+        </p>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <div style={LB}>Active mode</div>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+          <div style={{ width:14, height:14, borderRadius:'50%', background:cfg.color }} />
+          <span style={{ fontFamily:F, fontSize:13, fontWeight:600, color:'#111' }}>{cfg.label}</span>
+        </div>
+        <p style={{ fontFamily:F, fontSize:11, color:'#999', margin:0 }}>{cfg.sub}</p>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <div style={LB}>Score gradient</div>
+        <div style={{ height:8, borderRadius:4, background:`linear-gradient(to right, #ffffff, ${cfg.color})`, marginBottom:6, border:'1px solid #eee' }} />
+        <div style={{ display:'flex', justifyContent:'space-between' }}>
+          <span style={{ fontFamily:F, fontSize:10, color:'#aaa' }}>0 — no access</span>
+          <span style={{ fontFamily:F, fontSize:10, color:'#aaa' }}>100 — best</span>
+        </div>
+      </div>
+
+      <div style={{ paddingTop:20, borderTop:'1px solid #E8E8E8' }}>
+        <div style={LB}>Destinations</div>
+        <p style={{ fontFamily:F, fontSize:12, color:'#555', lineHeight:1.7, margin:0 }}>
+          1 170 OSM amenities: schools, supermarkets, pharmacies, doctors, bakeries, banks, community centres + VW Werk gates (5 access points).
+        </p>
+      </div>
+
+      <div style={{ marginTop:22 }}>
+        <div style={LB}>Method</div>
+        <p style={{ fontFamily:F, fontSize:12, color:'#555', lineHeight:1.7, margin:0 }}>
+          Reverse Dijkstra from each destination on mode-specific graph. Count reachable destinations per grid node. Normalised 0–100 within each mode.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // ── Non-mobility section data ────────────────────────────────────────────────
 
 const OTHER_SECTIONS = [
-  {
-    id: 'potential',
-    number: '03',
-    eyebrow: 'Greenery Analysis · OSM Polygon Data',
-    title: 'Green Space & Social Potential',
-    what: 'Green space coverage (parks, forests, water bodies) and social facility density per district, combined into a Green Social Indicator (GSI) identifying areas with low environmental and social quality.',
-    resources: 'OpenStreetMap polygon geometries: parks (leisure=park), forests (landuse=forest), water (natural=water). Social facilities: hospital, school, community_centre, place_of_worship.',
-    findings: 'Green coverage concentrates in northern and outer districts. Central districts have the lowest GSI scores — dense built fabric with minimal green infrastructure. Priority weighting in hub placement.',
-    MapSection: GreeneryMapSection,
-  },
   {
     id: 'hub',
     number: '04',
@@ -417,6 +467,7 @@ export default function LandingPage() {
   const { setActiveSection, setActiveMode, setShowLanding, setNavOpen, setLandingSectionMode } = useAppStore()
   const [mobilityTab, setMobilityTab] = useState('activity')
   const [livabilityTab, setLivabilityTab] = useState('livability')
+  const [centralityTab, setCentralityTab] = useState('centrality')
 
   React.useEffect(() => {
     setNavOpen(false)
@@ -518,7 +569,17 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Potential, Hub — 40/60 standard */}
+        {/* Centralities — 40/60 with tabs */}
+        <section style={{ display:'flex', height:'100vh', border:'1px solid #E8E8E8', overflow:'hidden' }}>
+          <div style={{ width:'40%', flexShrink:0, borderRight:'1px solid #E8E8E8', overflow:'hidden' }}>
+            <CentralityLeftPanel tab={centralityTab} />
+          </div>
+          <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+            <CentralityMapSection tab={centralityTab} onTabChange={setCentralityTab} />
+          </div>
+        </section>
+
+        {/* Hub — 40/60 standard */}
         {OTHER_SECTIONS.map(sec => (
           <section
             key={sec.id}

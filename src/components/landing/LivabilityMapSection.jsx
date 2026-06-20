@@ -17,7 +17,6 @@ const BLANK_STYLE = {
 export const TABS = [
   { label: 'Livability', id: 'livability' },
   { label: 'Land Use',   id: 'landuse'    },
-  { label: 'Centrality', id: 'centrality' },
   { label: 'Facility',   id: 'facility'   },
 ]
 
