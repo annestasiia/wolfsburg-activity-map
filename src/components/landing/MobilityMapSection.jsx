@@ -6,8 +6,6 @@ import { useAppStore } from '../../store/appStore'
 
 const CENTER = [10.7865, 52.4227]
 const ZOOM = 12
-const CENTER_LAT = 52.42
-const BBOX = [10.50, 52.26, 11.10, 52.62]
 
 const BLANK_STYLE = {
   version: 8,
@@ -22,31 +20,29 @@ export const TABS = [
   { label: 'Cycling',      id: 'cycling'  },
 ]
 
-// ── Original automobile road colors ──────────────────────────────────────────
+// ── Road colors: dark plum (#3F012C) → berry (#990F4B) ───────────────────────
 const ROAD_COLOR_EXPR = ['match', ['get', 'highway'],
-  'motorway',      '#FF2D55',  'motorway_link', '#FF2D55',
-  'trunk',         '#FF6B00',  'trunk_link',    '#FF6B00',
-  'primary',       '#FF9500',  'primary_link',  '#FF9500',
-  'secondary',     '#FFCC00',  'secondary_link','#FFCC00',
-  '#AAAAAA',
+  'motorway',      '#3F012C',  'motorway_link', '#3F012C',
+  'trunk',         '#591B30',  'trunk_link',    '#591B30',
+  'primary',       '#7A1A3A',  'primary_link',  '#7A1A3A',
+  'secondary',     '#8A1241',  'secondary_link','#8A1241',
+  'tertiary',      '#940E45',  'tertiary_link', '#940E45',
+  '#990F4B',
 ]
 const ROAD_WIDTH_EXPR = ['match', ['get', 'highway'],
   'motorway', 3.5, 'motorway_link', 2.5,
   'trunk', 3,      'trunk_link',    2,
   'primary', 2.5,  'primary_link',  1.5,
   'secondary', 2,  'secondary_link',1.5,
-  1.2,
+  'tertiary', 1.5, 'tertiary_link', 1,
+  1,
 ]
 
-// ── District fill: original red gradient ──────────────────────────────────────
-function scoreToFill(n) {
-  const s = n * 10
-  if (s <= 0)  return '#F5F5F5'
-  if (s <= 2)  return '#FDE8EC'
-  if (s <= 4)  return '#F7B8C4'
-  if (s <= 6)  return '#F07090'
-  if (s <= 8)  return '#E03060'
-  return '#C01040'
+// ── District fill: yellow gradient ────────────────────────────────────────────
+function scoreToYellow(n) {
+  const g = Math.round(243 + 9   * (1 - n))
+  const b = Math.round(181 * (1 - n))
+  return `rgb(255,${g},${b})`
 }
 
 // ── Road density → district score ─────────────────────────────────────────────
@@ -79,41 +75,65 @@ function computeDistrictRoadScores(roads, districtBoundaries) {
   return result
 }
 
-// ── Zoom-adaptive SQUARE graticule ───────────────────────────────────────────
-// lonStep/latStep chosen so cells are visually square in Mercator at 52°N
-// cos(52.4°) ≈ 0.609, so latStep ≈ lonStep × 0.609
-const GRID_PRESETS = [
-  // [minZoom, lonStep, latStep]
-  [14, 0.005, 0.003],
-  [13, 0.01,  0.006],
-  [12, 0.025, 0.015],
-  [11, 0.05,  0.03 ],
-  [10, 0.1,   0.06 ],
-  [9,  0.2,   0.12 ],
-  [8,  0.5,   0.3  ],
-  [0,  1.0,   0.6  ],
-]
-
-function getGridSteps(zoom) {
-  for (const [minZ, lonStep, latStep] of GRID_PRESETS) {
-    if (zoom >= minZ) return { lonStep, latStep }
-  }
-  return { lonStep: 1.0, latStep: 0.6 }
-}
-
-function buildGraticule(lonStep, latStep) {
-  const [minLon, minLat, maxLon, maxLat] = BBOX
+// ── Static dashed graticule — same parameters as pre-today version ─────────────
+function buildGraticule() {
   const features = []
-  for (let lat = Math.ceil(minLat / latStep) * latStep; lat <= maxLat; lat = parseFloat((lat + latStep).toFixed(8))) {
+  const latStep = 0.02, lonStep = 0.025
+  const [minLon, maxLon, minLat, maxLat] = [10.60, 11.00, 52.32, 52.56]
+  for (let lat = Math.ceil(minLat / latStep) * latStep; lat <= maxLat; lat = parseFloat((lat + latStep).toFixed(6))) {
     features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[minLon, lat], [maxLon, lat]] }, properties: {} })
   }
-  for (let lon = Math.ceil(minLon / lonStep) * lonStep; lon <= maxLon; lon = parseFloat((lon + lonStep).toFixed(8))) {
+  for (let lon = Math.ceil(minLon / lonStep) * lonStep; lon <= maxLon; lon = parseFloat((lon + lonStep).toFixed(6))) {
     features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[lon, minLat], [lon, maxLat]] }, properties: {} })
   }
   return { type: 'FeatureCollection', features }
 }
 
-// ── Car parking SVG markers (× cross + orange glow) ──────────────────────────
+// ── City mask: inverted polygon — world bbox with city as hole ─────────────────
+// World ring is CCW (GeoJSON exterior); city ring reversed to CW (hole)
+function buildCityMask(cityGeoJSON) {
+  const world = [[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]] // CCW
+  const holes = []
+  for (const f of (cityGeoJSON?.features || [])) {
+    const g = f.geometry
+    if (!g) continue
+    if (g.type === 'Polygon')
+      holes.push([...g.coordinates[0]].reverse())
+    else if (g.type === 'MultiPolygon')
+      g.coordinates.forEach(poly => holes.push([...poly[0]].reverse()))
+  }
+  if (!holes.length) return { type: 'FeatureCollection', features: [] }
+  return {
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [world, ...holes] }, properties: {} }],
+  }
+}
+
+// ── Point-in-polygon: filter DOM markers to city extent ───────────────────────
+function pointInRing([px, py], ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j]
+    if (((yi > py) !== (yj > py)) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi)
+      inside = !inside
+  }
+  return inside
+}
+function isInsideCity(lng, lat, cityGeo) {
+  if (!cityGeo?.features?.length) return true
+  for (const f of cityGeo.features) {
+    const g = f.geometry
+    if (!g) continue
+    if (g.type === 'Polygon' && pointInRing([lng, lat], g.coordinates[0])) return true
+    if (g.type === 'MultiPolygon') {
+      for (const poly of g.coordinates)
+        if (pointInRing([lng, lat], poly[0])) return true
+    }
+  }
+  return false
+}
+
+// ── Car parking SVG markers ───────────────────────────────────────────────────
 function parkingStroke(type) {
   if (type === 'multi-storey') return '#5C5C5C'
   if (type === 'underground')  return '#808080'
@@ -147,6 +167,7 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
   const mapRef     = useRef(null)
   const markersRef = useRef([])
   const [mapReady, setMapReady] = useState(false)
+  const [cityGeoJSON, setCityGeoJSON] = useState(null)
 
   const { roads, districtBoundaries, localCarParkings, localBusStops, localCycling, localBikeParkings } = useAppStore()
 
@@ -169,63 +190,61 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
     mapRef.current = map
 
     map.on('load', () => {
-      // Adaptive square dashed graticule
-      const { lonStep, latStep } = getGridSteps(ZOOM)
-      map.addSource('grid', { type: 'geojson', data: buildGraticule(lonStep, latStep) })
+      // Static dashed graticule
+      map.addSource('grid', { type: 'geojson', data: buildGraticule() })
       map.addLayer({
         id: 'grid-line', type: 'line', source: 'grid',
         paint: { 'line-color': '#CECECE', 'line-width': 0.6, 'line-opacity': 0.75, 'line-dasharray': [5, 5] },
       })
 
-      // District fill + black thin outline
+      // District fill + thin black outline
       map.addSource('districts', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'district-fill', type: 'fill', source: 'districts', paint: { 'fill-color': '#F5F5F5', 'fill-opacity': 1 } })
-      map.addLayer({ id: 'district-outline', type: 'line', source: 'districts', paint: { 'line-color': '#1D1D1F', 'line-width': 0.4, 'line-opacity': 0.6 } })
-
-      // City boundary (thicker black)
-      map.addSource('city-boundary', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'city-boundary-line', type: 'line', source: 'city-boundary', paint: { 'line-color': '#1D1D1F', 'line-width': 2.5, 'line-opacity': 0.95 } })
+      map.addLayer({ id: 'district-fill', type: 'fill', source: 'districts',
+        paint: { 'fill-color': '#FFFCB5', 'fill-opacity': 1 } })
+      map.addLayer({ id: 'district-outline', type: 'line', source: 'districts',
+        paint: { 'line-color': '#1D1D1F', 'line-width': 0.4, 'line-opacity': 0.6 } })
 
       // Roads (Auto + Public)
       map.addSource('roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'roads-line', type: 'line', source: 'roads', layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+      map.addLayer({ id: 'roads-line', type: 'line', source: 'roads',
+        layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': ROAD_COLOR_EXPR, 'line-width': ROAD_WIDTH_EXPR, 'line-opacity': 0.85 } })
 
       // Bus stops (Public)
       map.addSource('bus-stops', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'bus-stops-circle', type: 'circle', source: 'bus-stops', layout: { visibility: 'none' },
+      map.addLayer({ id: 'bus-stops-circle', type: 'circle', source: 'bus-stops',
+        layout: { visibility: 'none' },
         paint: { 'circle-radius': 4, 'circle-color': '#0077FF', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-opacity': 0.9 } })
 
       // Cycling routes (Cycling)
       map.addSource('cycling-routes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'cycling-line', type: 'line', source: 'cycling-routes', layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+      map.addLayer({ id: 'cycling-line', type: 'line', source: 'cycling-routes',
+        layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': '#00C853', 'line-width': 2, 'line-opacity': 0.8 } })
 
       // Bike parking (Cycling)
       map.addSource('bike-parking', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'bike-parking-circle', type: 'circle', source: 'bike-parking', layout: { visibility: 'none' },
+      map.addLayer({ id: 'bike-parking-circle', type: 'circle', source: 'bike-parking',
+        layout: { visibility: 'none' },
         paint: { 'circle-radius': 4, 'circle-color': '#00897B', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-opacity': 0.85 } })
 
-      setMapReady(true)
-    })
+      // White mask covering everything OUTSIDE the city (above all data layers)
+      map.addSource('city-mask', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addLayer({ id: 'city-mask-fill', type: 'fill', source: 'city-mask',
+        paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } })
 
-    // Update graticule on zoom (throttled to one RAF per zoom event burst)
-    let gridPending = false
-    map.on('zoom', () => {
-      if (gridPending) return
-      gridPending = true
-      requestAnimationFrame(() => {
-        gridPending = false
-        if (!map.getSource('grid')) return
-        const { lonStep, latStep } = getGridSteps(map.getZoom())
-        map.getSource('grid').setData(buildGraticule(lonStep, latStep))
-      })
+      // City boundary line (topmost)
+      map.addSource('city-boundary', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addLayer({ id: 'city-boundary-line', type: 'line', source: 'city-boundary',
+        paint: { 'line-color': '#1D1D1F', 'line-width': 2.5, 'line-opacity': 0.95 } })
+
+      setMapReady(true)
     })
 
     return () => { markersRef.current.forEach(m => m.remove()); map.remove(); mapRef.current = null }
   }, [])
 
-  // ── Fetch city boundary from Overpass ─────────────────────────────────────
+  // ── Fetch city boundary → build mask ──────────────────────────────────────
   useEffect(() => {
     if (!mapReady) return
     let cancelled = false
@@ -235,12 +254,18 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     })
       .then(r => r.json())
-      .then(data => { if (!cancelled) mapRef.current?.getSource('city-boundary')?.setData(osmtogeojson(data)) })
+      .then(data => {
+        if (cancelled) return
+        const gj = osmtogeojson(data)
+        setCityGeoJSON(gj)
+        mapRef.current?.getSource('city-boundary')?.setData(gj)
+        mapRef.current?.getSource('city-mask')?.setData(buildCityMask(gj))
+      })
       .catch(() => {})
     return () => { cancelled = true }
   }, [mapReady])
 
-  // ── Populate district polygons ─────────────────────────────────────────────
+  // ── District polygons ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current || !Object.keys(districtBoundaries).length) return
     const features = []
@@ -251,35 +276,35 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
     mapRef.current.getSource('districts')?.setData({ type: 'FeatureCollection', features })
   }, [mapReady, districtBoundaries])
 
-  // ── Load static GeoJSON into map sources ──────────────────────────────────
-  useEffect(() => { if (mapReady && roads) mapRef.current?.getSource('roads')?.setData(roads) }, [mapReady, roads])
-  useEffect(() => { if (mapReady && localBusStops) mapRef.current?.getSource('bus-stops')?.setData(localBusStops) }, [mapReady, localBusStops])
-  useEffect(() => { if (mapReady && localCycling) mapRef.current?.getSource('cycling-routes')?.setData(localCycling) }, [mapReady, localCycling])
+  // ── Static data sources ────────────────────────────────────────────────────
+  useEffect(() => { if (mapReady && roads)             mapRef.current?.getSource('roads')?.setData(roads) },             [mapReady, roads])
+  useEffect(() => { if (mapReady && localBusStops)     mapRef.current?.getSource('bus-stops')?.setData(localBusStops) }, [mapReady, localBusStops])
+  useEffect(() => { if (mapReady && localCycling)      mapRef.current?.getSource('cycling-routes')?.setData(localCycling) }, [mapReady, localCycling])
   useEffect(() => { if (mapReady && localBikeParkings) mapRef.current?.getSource('bike-parking')?.setData(localBikeParkings) }, [mapReady, localBikeParkings])
 
   // ── Tab → layer visibility + choropleth ───────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
-    const isAuto   = tab === 'auto'
-    const isPublic = tab === 'public'
+    const isAuto    = tab === 'auto'
+    const isPublic  = tab === 'public'
     const isCycling = tab === 'cycling'
 
     const setVis = (id, on) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none')
-    setVis('roads-line',        isAuto || isPublic)
-    setVis('bus-stops-circle',  isPublic)
-    setVis('cycling-line',      isCycling)
+    setVis('roads-line',          isAuto || isPublic)
+    setVis('bus-stops-circle',    isPublic)
+    setVis('cycling-line',        isCycling)
     setVis('bike-parking-circle', isCycling)
-    setVis('district-fill',     !isCycling)
 
     if (map.getLayer('district-fill')) {
-      if ((isAuto || isPublic) && Object.keys(districtScores).length) {
+      const hasScores = (isAuto || isPublic) && Object.keys(districtScores).length > 0
+      if (hasScores) {
         map.setPaintProperty('district-fill', 'fill-color', [
           'match', ['get', 'districtName'],
-          ...Object.entries(districtScores).flatMap(([n, s]) => [n, scoreToFill(s)]),
-          '#F5F5F5',
+          ...Object.entries(districtScores).flatMap(([n, s]) => [n, scoreToYellow(s)]),
+          '#FFFCB5',
         ])
-        map.setPaintProperty('district-fill', 'fill-opacity', 0.80)
+        map.setPaintProperty('district-fill', 'fill-opacity', 0.9)
       } else {
         map.setPaintProperty('district-fill', 'fill-color', '#F5F5F5')
         map.setPaintProperty('district-fill', 'fill-opacity', 1)
@@ -287,7 +312,7 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
     }
   }, [mapReady, tab, districtScores])
 
-  // ── Car parking markers — Auto tab only ───────────────────────────────────
+  // ── Parking markers — Auto only, clipped to city boundary ─────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     markersRef.current.forEach(m => m.remove())
@@ -303,18 +328,18 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
       if (!coords) continue
       const [lng, lat] = Array.isArray(coords[0]) ? [coords[0][0], coords[0][1]] : coords
       if (!lng || !lat) continue
+      if (!isInsideCity(lng, lat, cityGeoJSON)) continue
       markersRef.current.push(
         new maplibregl.Marker({ element: makeParkingEl(p.parking, p.capacity), anchor: 'center' })
           .setLngLat([lng, lat]).addTo(map)
       )
     }
-  }, [mapReady, tab, localCarParkings])
+  }, [mapReady, tab, localCarParkings, cityGeoJSON])
 
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
       <div ref={mapDivRef} style={{ position: 'absolute', inset: 0 }} />
 
-      {/* ── Tab toolbar ─────────────────────────────────────────────────── */}
       {mapReady && (
         <div style={{
           position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',

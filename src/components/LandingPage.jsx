@@ -120,10 +120,10 @@ function MobilityLeftPanel({ tab }) {
         <>
           <div style={{ marginBottom: 20 }}>
             <div style={LB}>Road Activity</div>
-            <GradBar gradient="#FF2D55, #FF6B00, #FF9500, #FFCC00, #AAAAAA" labelLeft="Motorway" labelRight="Local road" />
+            <GradBar gradient="#3F012C, #7A1A3A, #990F4B" labelLeft="Motorway" labelRight="Local road" />
 
             <div style={LB}>District Activity</div>
-            <GradBar gradient="#FDE8EC, #F7B8C4, #F07090, #E03060, #C01040" labelLeft="Low" labelRight="High" />
+            <GradBar gradient="#FFFCB5, #FFF300" labelLeft="Low" labelRight="High" />
 
             <div style={LB}>Car Parking</div>
             <SymbolRow label="Surface car park"><ParkingIcon stroke="#1D1D1F" /></SymbolRow>
@@ -146,10 +146,10 @@ function MobilityLeftPanel({ tab }) {
         <>
           <div style={{ marginBottom: 20 }}>
             <div style={LB}>Road Activity</div>
-            <GradBar gradient="#FF2D55, #FF6B00, #FF9500, #FFCC00, #AAAAAA" labelLeft="Motorway" labelRight="Local road" />
+            <GradBar gradient="#3F012C, #7A1A3A, #990F4B" labelLeft="Motorway" labelRight="Local road" />
 
             <div style={LB}>District Activity</div>
-            <GradBar gradient="#FDE8EC, #F7B8C4, #F07090, #E03060, #C01040" labelLeft="Low" labelRight="High" />
+            <GradBar gradient="#FFFCB5, #FFF300" labelLeft="Low" labelRight="High" />
 
             <div style={LB}>Bus Stops</div>
             <SymbolRow label="Bus stop"><DotIcon color="#0077FF" /></SymbolRow>
