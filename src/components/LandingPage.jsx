@@ -25,14 +25,12 @@ function timeToSlot(t) {
 
 // ── Mobility left panel (special case) ─────────────────────────────────────
 
-function GradBar({ from, to, labelLeft, labelRight }) {
+// ── Legend atoms ─────────────────────────────────────────────────────────────
+
+function GradBar({ gradient, labelLeft, labelRight }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{
-        height: 6, borderRadius: 3,
-        background: `linear-gradient(to right, ${from}, ${to})`,
-        marginBottom: 6,
-      }} />
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ height: 6, borderRadius: 3, background: `linear-gradient(to right, ${gradient})`, marginBottom: 6 }} />
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{labelLeft}</span>
         <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{labelRight}</span>
@@ -41,43 +39,74 @@ function GradBar({ from, to, labelLeft, labelRight }) {
   )
 }
 
-function ParkingSymbol({ stroke, label }) {
-  const cross = 4.5, r = 7, size = 20, half = 10
+function SymbolRow({ children, label }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-      <svg width={size} height={size} style={{ flexShrink: 0 }}>
-        <circle cx={half} cy={half} r={r} fill="white" stroke={stroke} strokeWidth="1.5" />
-        <line x1={half - cross} y1={half - cross} x2={half + cross} y2={half + cross} stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
-        <line x1={half + cross} y1={half - cross} x2={half - cross} y2={half + cross} stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
+      <div style={{ flexShrink: 0, width: 28, display: 'flex', justifyContent: 'center' }}>{children}</div>
       <span style={{ fontFamily: F, fontSize: 12, color: '#555' }}>{label}</span>
     </div>
   )
 }
 
-function OrangeGlowExample() {
+function ParkingIcon({ stroke }) {
+  const c = 4.5, r = 7, s = 20, h = 10
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-      <svg width={50} height={20} style={{ flexShrink: 0 }}>
-        {[6, 9, 13].map((r, i) => (
-          <circle key={i} cx={6 + i * 18} cy={10} r={r} fill="#FFB300" opacity={0.18 + i * 0.13} />
+    <svg width={s} height={s}>
+      <circle cx={h} cy={h} r={r} fill="white" stroke={stroke} strokeWidth="1.5" />
+      <line x1={h-c} y1={h-c} x2={h+c} y2={h+c} stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
+      <line x1={h+c} y1={h-c} x2={h-c} y2={h+c} stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function DotIcon({ color }) {
+  return <svg width="16" height="16"><circle cx="8" cy="8" r="6" fill={color} stroke="white" strokeWidth="1.5" /></svg>
+}
+
+function LineIcon({ color }) {
+  return <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke={color} strokeWidth="2.5" strokeLinecap="round" /></svg>
+}
+
+// ── Day / Time controls (shared across tabs) ─────────────────────────────────
+
+function DayTimeControls() {
+  const { selectedDay, selectedTime, setSelectedDay, setSelectedTime } = useAppStore()
+  const slot = timeToSlot(selectedTime)
+  return (
+    <div style={{ paddingTop: 18, borderTop: '1px solid #E8E8E8' }}>
+      <div style={LB}>Day of week</div>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 18 }}>
+        {DAYS.map(d => (
+          <button key={d} onClick={() => setSelectedDay(d)} style={{
+            padding: '4px 8px', borderRadius: 5, border: '1px solid',
+            borderColor: selectedDay === d ? '#1D1D1F' : '#E0E0E0',
+            background: selectedDay === d ? '#1D1D1F' : 'transparent',
+            color: selectedDay === d ? '#fff' : '#555',
+            fontFamily: F, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+          }}>{d}</button>
         ))}
-      </svg>
-      <span style={{ fontFamily: F, fontSize: 12, color: '#555' }}>Orange glow — parking size (S → L)</span>
+      </div>
+      <div style={LB}>Time — {selectedTime || '08:00'}</div>
+      <input type="range" min={0} max={47} value={slot}
+        onChange={e => setSelectedTime(slotToTime(parseInt(e.target.value)))}
+        style={{ width: '100%', accentColor: '#1D1D1F', marginBottom: 6 }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ fontFamily: F, fontSize: 10, color: '#ccc' }}>00:00</span>
+        <span style={{ fontFamily: F, fontSize: 10, color: '#ccc' }}>12:00</span>
+        <span style={{ fontFamily: F, fontSize: 10, color: '#ccc' }}>23:30</span>
+      </div>
     </div>
   )
 }
 
-function MobilityLeftPanel({ tab }) {
-  const { selectedDay, selectedTime, setSelectedDay, setSelectedTime } = useAppStore()
-  const slot = timeToSlot(selectedTime)
+// ── Mobility left panel ───────────────────────────────────────────────────────
 
+function MobilityLeftPanel({ tab }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '40px 36px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 26 }}>
         <div style={EY}>01 — Transport Analysis · OpenStreetMap</div>
-        <h2 style={{ fontFamily: F, fontSize: 'clamp(20px, 1.8vw, 28px)', fontWeight: 700, color: '#111', letterSpacing: '-0.03em', lineHeight: 1.1, margin: '0 0 16px' }}>
+        <h2 style={{ fontFamily: F, fontSize: 'clamp(20px, 1.8vw, 28px)', fontWeight: 700, color: '#111', letterSpacing: '-0.03em', lineHeight: 1.1, margin: '0 0 14px' }}>
           Mobility Infrastructure
         </h2>
         <p style={{ ...BD, fontSize: 12 }}>
@@ -86,74 +115,67 @@ function MobilityLeftPanel({ tab }) {
         </p>
       </div>
 
+      {/* ── Auto ── */}
       {tab === 'auto' && (
         <>
-          {/* ── Legend ── */}
-          <div style={{ marginBottom: 28 }}>
+          <div style={{ marginBottom: 20 }}>
             <div style={LB}>Road Activity</div>
-            <GradBar from="#3F012C" to="#990F4B" labelLeft="Highest activity" labelRight="Lowest" />
+            <GradBar gradient="#FF2D55, #FF6B00, #FF9500, #FFCC00, #AAAAAA" labelLeft="Motorway" labelRight="Local road" />
 
             <div style={LB}>District Activity</div>
-            <GradBar from="#FFFCB5" to="#FFF300" labelLeft="Low" labelRight="High activity" />
+            <GradBar gradient="#FDE8EC, #F7B8C4, #F07090, #E03060, #C01040" labelLeft="Low" labelRight="High" />
 
             <div style={LB}>Car Parking</div>
-            <ParkingSymbol stroke="#1D1D1F" label="Surface parking" />
-            <ParkingSymbol stroke="#5C5C5C" label="Multi-storey car park" />
-            <ParkingSymbol stroke="#808080" label="Underground parking" />
-            <OrangeGlowExample />
+            <SymbolRow label="Surface car park"><ParkingIcon stroke="#1D1D1F" /></SymbolRow>
+            <SymbolRow label="Multi-storey car park"><ParkingIcon stroke="#5C5C5C" /></SymbolRow>
+            <SymbolRow label="Underground parking"><ParkingIcon stroke="#808080" /></SymbolRow>
+            <SymbolRow label="Parking capacity (S → L)">
+              <svg width="28" height="16">
+                {[[4, 0.20], [6, 0.35], [9, 0.50]].map(([r, op], i) => (
+                  <circle key={i} cx={4 + i * 10} cy="8" r={r} fill="#FFB300" opacity={op} />
+                ))}
+              </svg>
+            </SymbolRow>
           </div>
-
-          {/* ── Day / Time toolbar ── */}
-          <div style={{ paddingTop: 20, borderTop: '1px solid #E8E8E8' }}>
-            <div style={LB}>Day of week</div>
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 20 }}>
-              {DAYS.map(d => (
-                <button
-                  key={d}
-                  onClick={() => setSelectedDay(d)}
-                  style={{
-                    padding: '4px 9px',
-                    borderRadius: 5,
-                    border: '1px solid',
-                    borderColor: selectedDay === d ? '#1D1D1F' : '#E0E0E0',
-                    background: selectedDay === d ? '#1D1D1F' : 'transparent',
-                    color: selectedDay === d ? '#fff' : '#555',
-                    fontFamily: F, fontSize: 11, fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
-
-            <div style={LB}>Time — {selectedTime || '08:00'}</div>
-            <input
-              type="range"
-              min={0}
-              max={47}
-              value={slot}
-              onChange={e => setSelectedTime(slotToTime(parseInt(e.target.value)))}
-              style={{ width: '100%', accentColor: '#1D1D1F', marginBottom: 6 }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: F, fontSize: 10, color: '#ccc' }}>00:00</span>
-              <span style={{ fontFamily: F, fontSize: 10, color: '#ccc' }}>12:00</span>
-              <span style={{ fontFamily: F, fontSize: 10, color: '#ccc' }}>23:30</span>
-            </div>
-          </div>
+          <DayTimeControls />
         </>
       )}
 
-      {tab !== 'auto' && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{ paddingTop: 20, borderTop: '1px solid #E8E8E8' }}>
-            <div style={{ fontFamily: F, fontSize: 12, color: '#bbb', fontStyle: 'italic' }}>
-              {tab === 'activity' && 'Activity Map — analysis coming soon.'}
-              {tab === 'public'   && 'Public Transport — analysis coming soon.'}
-              {tab === 'cycling'  && 'Cycling Network — analysis coming soon.'}
-            </div>
+      {/* ── Public ── */}
+      {tab === 'public' && (
+        <>
+          <div style={{ marginBottom: 20 }}>
+            <div style={LB}>Road Activity</div>
+            <GradBar gradient="#FF2D55, #FF6B00, #FF9500, #FFCC00, #AAAAAA" labelLeft="Motorway" labelRight="Local road" />
+
+            <div style={LB}>District Activity</div>
+            <GradBar gradient="#FDE8EC, #F7B8C4, #F07090, #E03060, #C01040" labelLeft="Low" labelRight="High" />
+
+            <div style={LB}>Bus Stops</div>
+            <SymbolRow label="Bus stop"><DotIcon color="#0077FF" /></SymbolRow>
           </div>
+          <DayTimeControls />
+        </>
+      )}
+
+      {/* ── Cycling ── */}
+      {tab === 'cycling' && (
+        <>
+          <div style={{ marginBottom: 20 }}>
+            <div style={LB}>Cycling Infrastructure</div>
+            <SymbolRow label="Cycling route"><LineIcon color="#00C853" /></SymbolRow>
+            <SymbolRow label="Bicycle parking"><DotIcon color="#00897B" /></SymbolRow>
+          </div>
+          <DayTimeControls />
+        </>
+      )}
+
+      {/* ── Activity Map placeholder ── */}
+      {tab === 'activity' && (
+        <div style={{ paddingTop: 18, borderTop: '1px solid #E8E8E8' }}>
+          <p style={{ fontFamily: F, fontSize: 12, color: '#bbb', fontStyle: 'italic', margin: 0 }}>
+            Activity Map — analysis coming soon.
+          </p>
         </div>
       )}
     </div>
