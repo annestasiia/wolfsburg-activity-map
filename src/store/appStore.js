@@ -25,6 +25,12 @@ export const useAppStore = create((set) => ({
   activeModes: new Set(['infrastructure']),
   activeBottomPanel: null,
 
+  // ── Landing page ─────────────────────────────────────────────────────────
+  showLanding: true,
+  setShowLanding: (v) => set({ showLanding: v }),
+  // Lightweight mode setter for landing scroll — no state resets
+  setLandingSectionMode: (section, mode) => set({ activeSection: section, activeMode: mode }),
+
   // ── Navigation sidebar ───────────────────────────────────────────────────
   navOpen: true,
   setNavOpen: (v) => set({ navOpen: v }),

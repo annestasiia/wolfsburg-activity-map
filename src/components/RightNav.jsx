@@ -18,7 +18,7 @@ const HUB_SUBMENU = [
 ]
 
 export default function LeftNav() {
-  const { activeSection, setActiveSection, setActiveMode, navOpen, setNavOpen } = useAppStore()
+  const { activeSection, setActiveSection, setActiveMode, navOpen, setNavOpen, setShowLanding, setLandingSectionMode } = useAppStore()
   const [hoveredId, setHoveredId] = useState(null)
   const [hubSubmenuOpen, setHubSubmenuOpen] = useState(false)
 
@@ -193,23 +193,35 @@ export default function LeftNav() {
           flexDirection: 'column',
         }}>
 
-          {/* Header */}
-          <div style={{ padding: '28px 24px 24px', borderBottom: '1px solid #E8E8E8' }}>
+          {/* Header — click to return to landing */}
+          <button
+            onClick={() => {
+              setLandingSectionMode('geo', 'mobility')
+              setShowLanding(true)
+              setNavOpen(false)
+            }}
+            style={{
+              display: 'block', width: '100%', textAlign: 'left',
+              padding: '28px 24px 24px', borderBottom: '1px solid #E8E8E8',
+              background: 'none', border: 'none',
+              cursor: 'pointer',
+            }}
+          >
             <div style={{
               fontFamily: SANS, fontSize: 10, fontWeight: 700,
               color: '#999', letterSpacing: '0.12em',
               textTransform: 'uppercase', marginBottom: 10,
             }}>
-              Research · 2026
+              ← Home · 2026
             </div>
             <div style={{
               fontFamily: SANS, fontSize: 22, fontWeight: 700,
               color: '#111111', letterSpacing: '-0.03em',
               lineHeight: 1.15, whiteSpace: 'nowrap',
             }}>
-              Post-Car Wolfsburg
+              Auto-Stadt
             </div>
-          </div>
+          </button>
 
           {/* Section list */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>

@@ -22,6 +22,7 @@ import RightNav from './components/RightNav'
 import StrategyPanel from './components/StrategyPanel'
 import UrbanDesignPanel from './components/UrbanDesignPanel'
 import HubAlgoPanel from './components/HubAlgoPanel'
+import LandingPage from './components/LandingPage'
 import venuesData from './data/venues.json'
 import districtBoundariesData from './data/districtBoundaries.json'
 import parksData from './data/parks.json'
@@ -29,88 +30,7 @@ import waterData from './data/water.json'
 import forestData from './data/forest.json'
 import buildingsData from './data/buildings.json'
 
-const SERIF = "'Georgia', 'Times New Roman', serif"
-const SANS  = "'Helvetica Neue', Helvetica, Arial, sans-serif"
-
-function LandingOverlay() {
-  return (
-    <div style={{
-      position: 'absolute',
-      top: 0, bottom: 0, right: 0,
-      left: 'var(--nav-w)',
-      zIndex: 10,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      pointerEvents: 'none',
-      background: 'transparent',
-    }}>
-      <div style={{
-        maxWidth: 480,
-        padding: '48px 56px',
-        background: '#FFFFFF',
-        border: '1px solid #E8E8E8',
-        textAlign: 'left',
-        pointerEvents: 'auto',
-      }}>
-        <div style={{
-          fontFamily: SANS,
-          fontSize: 10,
-          fontWeight: 700,
-          color: '#999',
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          marginBottom: 20,
-        }}>
-          Research Pitch · Wolfsburg 2026
-        </div>
-        <h1 style={{
-          fontFamily: SANS,
-          fontSize: 26,
-          fontWeight: 700,
-          color: '#111',
-          lineHeight: 1.2,
-          letterSpacing: '-0.03em',
-          margin: '0 0 20px',
-        }}>
-          The Post-Car Wolfsburg
-        </h1>
-        <p style={{
-          fontFamily: SANS,
-          fontSize: 14,
-          color: '#444',
-          lineHeight: 1.7,
-          margin: '0 0 12px',
-        }}>
-          A city where no one owns a private car. All mobility is shared —
-          electric, autonomous, and on-demand.
-        </p>
-        <p style={{
-          fontFamily: SANS,
-          fontSize: 14,
-          color: '#666',
-          lineHeight: 1.7,
-          margin: 0,
-        }}>
-          This is not a car-free city in the traditional sense of banning vehicles.
-          It is a city where car ownership itself becomes obsolete — replaced by a system
-          that is more convenient, more equitable, and more efficient than private ownership ever was.
-        </p>
-        <div style={{
-          marginTop: 28,
-          paddingTop: 20,
-          borderTop: '1px solid #E8E8E8',
-          fontFamily: SANS,
-          fontSize: 12,
-          color: '#999',
-          letterSpacing: '0.02em',
-        }}>
-          Select a section from the left to begin →
-        </div>
-      </div>
-    </div>
-  )
-}
+const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
 function SimulationPlaceholder() {
   return (
@@ -130,6 +50,7 @@ export default function App() {
     activeSection, activeMode, setSelectedFacilityVenueId,
     setLocalBusStops, setLocalCarParkings, setLocalBikeParkings,
     setLocalFacilities, setLocalHistoric, setLocalParksForests, setLocalCycling,
+    showLanding,
   } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
 
@@ -180,50 +101,66 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <TopBar />
-      <main className="map-area">
+      {/* TopBar/BottomBar hidden in landing mode */}
+      {!showLanding && <TopBar />}
+
+      {/* Map container — repositions to right half in landing mode */}
+      <main
+        className="map-area"
+        style={showLanding ? {
+          position: 'fixed',
+          left: '50vw', top: 0, right: 0, bottom: 0,
+          zIndex: 1,
+        } : {}}
+      >
         {/* Map always rendered as base layer */}
         <MapView onVenueClick={handleVenueClick} />
 
-        {/* ── Landing ── */}
-        {activeSection === null && <LandingOverlay />}
+        {/* All interactive tools hidden during landing (map shows layers only) */}
+        {!showLanding && (
+          <>
+            {/* ── Geo-Data Analysis tools ── */}
+            {inGeo && activeMode === 'mobility'   && <MobilityLeftBar />}
+            {inGeo && activeMode === 'mobility'   && <MobilityToolbar />}
+            {inGeo && activeMode === 'facilities' && <LeftSidebar />}
+            {inGeo && activeMode === 'greenery'   && <GreenerySidebar />}
+            {inGeo && activeMode === 'greenery'   && <TransportPoolPanel />}
+            {inGeo && activeMode === 'facilities' && <TransportPoolPanel />}
+            {inGeo && selectedVenue && activeMode !== 'facilities' && (
+              <VenuePopup venue={selectedVenue} onClose={() => setSelectedVenue(null)} />
+            )}
 
-        {/* ── Geo-Data Analysis tools ── */}
-        {inGeo && activeMode === 'mobility'   && <MobilityLeftBar />}
-        {inGeo && activeMode === 'mobility'   && <MobilityToolbar />}
-        {inGeo && activeMode === 'facilities' && <LeftSidebar />}
-        {inGeo && activeMode === 'greenery'   && <GreenerySidebar />}
-        {inGeo && activeMode === 'greenery'   && <TransportPoolPanel />}
-        {inGeo && activeMode === 'facilities' && <TransportPoolPanel />}
-        {inGeo && selectedVenue && activeMode !== 'facilities' && (
-          <VenuePopup venue={selectedVenue} onClose={() => setSelectedVenue(null)} />
+            {/* ── Hub System tools ── */}
+            {inHub && activeMode === 'intermodal'  && <IntermodalSidebar />}
+            {inHub && activeMode === 'intermodal'  && <IntermodalDataPanel />}
+            {inHub && activeMode === 'intermodal'  && <IntermodalHubPopup />}
+            {inHub && activeMode === 'rad'         && <RadSidebar />}
+            {inHub && activeMode === 'rad'         && <RadDataPanel />}
+            {inHub && activeMode === 'rad'         && <RadNodePopup />}
+            {inHub && activeMode === 'rad'         && <RadEdgePopup />}
+            {inHub && activeMode === 'hub-network' && <CapacitySidebar />}
+            {inHub && activeMode === 'hub-network' && <HubLMDataPanel />}
+            {inHub && activeMode === 'hub-network' && <HubLMHubPopup />}
+
+            {/* ── Section panels ── */}
+            {activeSection === 'strategy'   && <StrategyPanel />}
+            {activeSection === 'capacity'   && <DataPanel />}
+            {activeSection === 'urban'      && <UrbanDesignPanel />}
+            {activeSection === 'simulation' && <SimulationPlaceholder />}
+            {activeSection === 'hub-algo'   && <HubAlgoPanel />}
+
+            {/* ── Always visible map UI ── */}
+            {(inGeo || inHub) && <DistrictStatsPopup />}
+            {(inGeo || inHub) && <AnalysisInfoModal />}
+          </>
         )}
-
-        {/* ── Hub System tools ── */}
-        {inHub && activeMode === 'intermodal'  && <IntermodalSidebar />}
-        {inHub && activeMode === 'intermodal'  && <IntermodalDataPanel />}
-        {inHub && activeMode === 'intermodal'  && <IntermodalHubPopup />}
-        {inHub && activeMode === 'rad'         && <RadSidebar />}
-        {inHub && activeMode === 'rad'         && <RadDataPanel />}
-        {inHub && activeMode === 'rad'         && <RadNodePopup />}
-        {inHub && activeMode === 'rad'         && <RadEdgePopup />}
-        {inHub && activeMode === 'hub-network' && <CapacitySidebar />}
-        {inHub && activeMode === 'hub-network' && <HubLMDataPanel />}
-        {inHub && activeMode === 'hub-network' && <HubLMHubPopup />}
-
-        {/* ── Section panels ── */}
-        {activeSection === 'strategy'   && <StrategyPanel />}
-        {activeSection === 'capacity'   && <DataPanel />}
-        {activeSection === 'urban'      && <UrbanDesignPanel />}
-        {activeSection === 'simulation' && <SimulationPlaceholder />}
-        {activeSection === 'hub-algo'   && <HubAlgoPanel />}
-
-        {/* ── Always visible map UI ── */}
-        {(inGeo || inHub) && <DistrictStatsPopup />}
-        {(inGeo || inHub) && <AnalysisInfoModal />}
       </main>
-      <BottomBar />
-      <RightNav />
+
+      {!showLanding && <BottomBar />}
+      {!showLanding && <RightNav />}
+
+      {/* Landing page — left half, fixed */}
+      {showLanding && <LandingPage />}
     </div>
   )
 }
