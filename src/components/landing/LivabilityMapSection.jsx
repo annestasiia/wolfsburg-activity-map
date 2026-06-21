@@ -17,7 +17,7 @@ const BLANK_STYLE = {
 export const TABS = [
   { label: 'Livability', id: 'livability' },
   { label: 'Land Use',   id: 'landuse'    },
-  { label: 'Facility',   id: 'facility'   },
+  { label: 'Activity',   id: 'activity'   },
 ]
 
 // ── Land use colours ──────────────────────────────────────────────────────────
@@ -153,11 +153,77 @@ function buildLivabilityGrid(venues, localFacilities, localHistoric, cityGeo) {
   }
 }
 
-// ── Venue/facility → GeoJSON points (for Facility tab) ────────────────────────
-function venuesToGeoJSON(venues) {
+// ── Activity tab: rings algorithm ─────────────────────────────────────────────
+const ACT_DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function parseLevel(str) {
+  if (!str || str === '—') return 0
+  const s = str.toLowerCase()
+  if (s === 'low') return 1
+  if (s === 'med' || s === 'medium') return 2
+  if (s === 'high') return 3
+  return 0
+}
+
+function dayQualApplies(qualifier, dayLabel) {
+  const q = qualifier.toLowerCase().replace(/\s+/g, '')
+  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+  const isWeekday = weekdays.includes(dayLabel)
+  const isWeekend = dayLabel === 'Sat' || dayLabel === 'Sun'
+  if (q.includes('wkday') || q.includes('weekday') || q === 'mon–fri' || q === 'mon-fri') return isWeekday
+  if (q.includes('wkend') || q.includes('weekend')) return isWeekend
+  if (q === 'fri–sat' || q === 'fri-sat') return dayLabel === 'Fri' || dayLabel === 'Sat'
+  if (q === 'sat–sun' || q === 'sat-sun') return dayLabel === 'Sat' || dayLabel === 'Sun'
+  if (q === 'fri–sun' || q === 'fri-sun') return dayLabel === 'Fri' || isWeekend
+  if (q === 'thu–fri' || q === 'thu-fri') return dayLabel === 'Thu' || dayLabel === 'Fri'
+  // single day match
+  return q.startsWith(dayLabel.toLowerCase())
+}
+
+function peakLevelAt(peakTimes, dayLabel, hour) {
+  if (!peakTimes) return 0
+  let max = 0
+  for (const seg of peakTimes.split('·').map(s => s.trim())) {
+    // optional day qualifier at start (word not starting with digit)
+    const dayM = seg.match(/^([A-Za-z][A-Za-z0-9–\-]+)\s+/)
+    let rest = seg
+    if (dayM && !/^\d/.test(dayM[1]) && !dayM[1].toLowerCase().startsWith('show') && !dayM[1].toLowerCase().startsWith('concert')) {
+      if (!dayQualApplies(dayM[1], dayLabel)) continue
+      rest = seg.slice(dayM[0].length)
+    }
+    // time range: "HH:MM–HH:MM (level)"
+    const tm = rest.match(/(\d{1,2}):(\d{2})[–\-](\d{1,2}):(\d{2})\s*\((\w+)\)/i)
+    if (!tm) {
+      // no time range → applies all day if in-scope
+      const lm = rest.match(/\((\w+)\)/i)
+      if (lm) max = Math.max(max, parseLevel(lm[1]))
+      continue
+    }
+    const start = parseInt(tm[1]) + parseInt(tm[2]) / 60
+    const end   = parseInt(tm[3]) + parseInt(tm[4]) / 60
+    if (hour >= start && hour < end) max = Math.max(max, parseLevel(tm[5]))
+  }
+  return max
+}
+
+function computeRings(venue, dayLabel, hour) {
+  const dayLevel  = parseLevel(venue.days?.[dayLabel])
+  const peakLevel = peakLevelAt(venue.peakTimes, dayLabel, hour)
+  const effective = Math.max(dayLevel, peakLevel)
+  // base mapping: 0→1, 1→2, 2→3, 3→4; peak boost +1 when peak > base day
+  const base  = effective === 0 ? 1 : effective === 1 ? 2 : effective === 2 ? 3 : 4
+  const boost = peakLevel > 0 && peakLevel > dayLevel ? 1 : 0
+  return Math.min(5, base + boost)
+}
+
+function buildActivityGeoJSON(venues, dayLabel, hour) {
   const features = (venues || [])
     .filter(v => v.lat && v.lng)
-    .map(v => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [v.lng, v.lat] }, properties: { name: v.name, category: v.category } }))
+    .map(v => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
+      properties: { name: v.name, category: v.category, rings: computeRings(v, dayLabel, hour) },
+    }))
   return { type: 'FeatureCollection', features }
 }
 
@@ -168,6 +234,13 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
   const mapRef    = useRef(null)
   const [mapReady, setMapReady] = useState(false)
   const [cityGeoJSON, setCityGeoJSON] = useState(null)
+
+  // Activity tab state — initialised to current real-world day/hour
+  const [actDay, setActDay] = useState(() => {
+    const now = new Date()
+    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()]
+  })
+  const [actHour, setActHour] = useState(() => new Date().getHours())
 
   const {
     venues, districtBoundaries,
@@ -180,7 +253,10 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
     [venues, localFacilities, localHistoric, cityGeoJSON],
   )
 
-  const venueGeoJSON = useMemo(() => venuesToGeoJSON(venues), [venues])
+  const activityGeoJSON = useMemo(
+    () => buildActivityGeoJSON(venues, actDay, actHour),
+    [venues, actDay, actHour],
+  )
 
   // ── Init map ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -237,11 +313,26 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
         layout: { visibility: 'none' },
         paint: { 'line-color': '#ffffff', 'line-width': 0.3, 'line-opacity': 0.4 } })
 
-      // ── Facility venues ──────────────────────────────────────────────────
-      map.addSource('venues', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'venue-circle', type: 'circle', source: 'venues',
+      // ── Activity rings (5 ring layers outer→inner, then dot) ────────────
+      map.addSource('activity', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      // Outer rings first so inner rings paint on top
+      const ringRadii = [30, 22, 16, 11, 7]  // ring-5 → ring-1 radii in px
+      for (let n = 5; n >= 1; n--) {
+        map.addLayer({ id: `act-ring-${n}`, type: 'circle', source: 'activity',
+          layout: { visibility: 'none' },
+          filter: ['>=', ['get', 'rings'], n],
+          paint: {
+            'circle-color': 'rgba(255,153,204,0.06)',
+            'circle-stroke-color': '#FF99CC',
+            'circle-stroke-width': 1.5,
+            'circle-radius': ringRadii[5 - n],
+            'circle-opacity': 1,
+          },
+        })
+      }
+      map.addLayer({ id: 'act-dot', type: 'circle', source: 'activity',
         layout: { visibility: 'none' },
-        paint: { 'circle-color': '#E8305A', 'circle-radius': 3, 'circle-opacity': 0.75, 'circle-stroke-width': 0 } })
+        paint: { 'circle-color': '#10069F', 'circle-radius': 3.5, 'circle-opacity': 1, 'circle-stroke-width': 0 } })
 
       // ── WHITE MASK (above all data layers) ──────────────────────────────
       map.addSource('city-mask', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -304,23 +395,30 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
 
   // ── Data sources ──────────────────────────────────────────────────────────
   useEffect(() => { if (mapReady && localLandUse) mapRef.current?.getSource('landuse')?.setData(localLandUse) }, [mapReady, localLandUse])
-  useEffect(() => { if (mapReady && venueGeoJSON) mapRef.current?.getSource('venues')?.setData(venueGeoJSON) }, [mapReady, venueGeoJSON])
 
   useEffect(() => {
     if (!mapReady || !livabilityGrid) return
     mapRef.current?.getSource('liv-grid')?.setData(livabilityGrid)
   }, [mapReady, livabilityGrid])
 
+  useEffect(() => {
+    if (!mapReady) return
+    mapRef.current?.getSource('activity')?.setData(activityGeoJSON)
+  }, [mapReady, activityGeoJSON])
+
   // ── Tab → layer visibility ────────────────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const map = mapRef.current
     const setVis = (id, on) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none')
-    setVis('liv-circles',   tab === 'livability')
-    setVis('landuse-fill',  tab === 'landuse')
-    setVis('landuse-line',  tab === 'landuse')
-    setVis('venue-circle',  tab === 'facility')
+    setVis('liv-circles',  tab === 'livability')
+    setVis('landuse-fill', tab === 'landuse')
+    setVis('landuse-line', tab === 'landuse')
+    for (let n = 1; n <= 5; n++) setVis(`act-ring-${n}`, tab === 'activity')
+    setVis('act-dot',      tab === 'activity')
   }, [mapReady, tab])
+
+  const F = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
@@ -336,8 +434,7 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
           {TABS.map(({ label, id }) => (
             <button key={id} onClick={() => onTabChange?.(id)} style={{
               padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
-              fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-              fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em',
+              fontFamily: F, fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em',
               background: tab === id ? '#1D1D1F' : 'transparent',
               color:      tab === id ? '#fff'    : '#666',
               transition: 'background 0.15s, color 0.15s',
@@ -345,6 +442,42 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
               {label}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* ── Activity time slider ── */}
+      {mapReady && tab === 'activity' && (
+        <div style={{
+          position: 'absolute', bottom: 36, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(255,255,255,0.97)', border: '1px solid #E0E0E0',
+          borderRadius: 12, padding: '12px 18px',
+          boxShadow: '0 2px 14px rgba(0,0,0,0.12)',
+          zIndex: 10, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 340,
+        }}>
+          {/* Day buttons */}
+          <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+            {ACT_DAY_ORDER.map(d => (
+              <button key={d} onClick={() => setActDay(d)} style={{
+                padding: '3px 9px', borderRadius: 5, border: 'none', cursor: 'pointer',
+                fontFamily: F, fontSize: 11, fontWeight: 600,
+                background: actDay === d ? '#10069F' : '#F2F2F7',
+                color: actDay === d ? '#fff' : '#555',
+                transition: 'background 0.12s, color 0.12s',
+              }}>{d}</button>
+            ))}
+          </div>
+          {/* Hour slider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: '#10069F', minWidth: 38 }}>
+              {String(actHour).padStart(2, '0')}:00
+            </span>
+            <input
+              type="range" min={0} max={23} step={1} value={actHour}
+              onChange={e => setActHour(+e.target.value)}
+              style={{ flex: 1, accentColor: '#10069F', cursor: 'pointer' }}
+            />
+            <span style={{ fontFamily: F, fontSize: 10, color: '#999', minWidth: 28 }}>23:00</span>
+          </div>
         </div>
       )}
     </div>

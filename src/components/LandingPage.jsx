@@ -331,15 +331,32 @@ function LivabilityLeftPanel({ tab }) {
         </div>
       )}
 
-      {tab === 'facility' && (
+      {tab === 'activity' && (
         <div>
-          <div style={LB}>Facilities</div>
-          <p style={{ ...BD, fontSize: 12, marginBottom: 12 }}>
-            Registered venues and points of interest from the Wolfsburg venue registry.
+          <div style={LB}>Activity Pulse</div>
+          <p style={{ ...BD, fontSize: 12, marginBottom: 14 }}>
+            96 registered venues. Ring count (1–5) encodes real-time activity intensity
+            based on day-of-week schedule and peak hours from the venue registry.
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="#E8305A" /></svg>
-            <span style={{ fontFamily: F, fontSize: 12, color: '#444' }}>Venue / facility</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+            {[1,2,3,4,5].map(n => (
+              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <svg width={34} height={34}>
+                  {Array.from({ length: n }).map((_, i) => {
+                    const radii = [7, 11, 16, 22, 30]
+                    const r = radii[i] ?? 30
+                    return <circle key={i} cx={17} cy={17} r={r} fill="rgba(255,153,204,0.06)" stroke="#FF99CC" strokeWidth={1.5} />
+                  })}
+                  <circle cx={17} cy={17} r={3.5} fill="#10069F" />
+                </svg>
+                <span style={{ fontFamily: F, fontSize: 11, color: '#444' }}>
+                  {n === 1 ? 'Closed / very low' : n === 2 ? 'Low activity' : n === 3 ? 'Moderate' : n === 4 ? 'High' : 'Peak / Rush hour'}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontFamily: F, fontSize: 11, color: '#bbb', lineHeight: 1.6 }}>
+            Use the day + time slider on the map<br />to explore how activity shifts across<br />the week.
           </div>
         </div>
       )}
