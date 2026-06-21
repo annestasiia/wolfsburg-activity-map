@@ -8,11 +8,14 @@ import { computeFleetPerHub } from '../../utils/fleetCalc'
 
 const CENTER = [10.7865, 52.4227]
 const ZOOM   = 11.5
-const BBOX = { minLon: 10.55, maxLon: 10.95, minLat: 52.28, maxLat: 52.60 }
+const BBOX   = { minLon: 10.55, maxLon: 10.95, minLat: 52.28, maxLat: 52.60 }
 const inCity = (lon, lat) =>
   lon >= BBOX.minLon && lon <= BBOX.maxLon && lat >= BBOX.minLat && lat <= BBOX.maxLat
 
 const TC = { l: '#111111', m: '#01796F', s: '#3EA055' }
+
+// Coverage radii used for hub-network AND facility-network connections
+const COV = { l: 6000, m: 4000, s: 3000 }
 
 export const HUB_TABS = [
   { id: 'placement', label: 'Hub Placement' },
@@ -21,9 +24,9 @@ export const HUB_TABS = [
 ]
 
 const NET_TABS = [
-  { id: 'hub-net',   label: 'Network Hubs'    },
-  { id: 'fac-net',   label: 'Facility Network' },
-  { id: 'ext-flow',  label: 'External Flows'   },
+  { id: 'hub-net',  label: 'Network Hubs'    },
+  { id: 'fac-net',  label: 'Facility Network' },
+  { id: 'ext-flow', label: 'External Flows'   },
 ]
 
 const BLANK_STYLE = {
@@ -33,7 +36,6 @@ const BLANK_STYLE = {
   layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#ffffff' } }],
 }
 
-// External commuter cities (Pendleratlas BA 2022 estimates)
 const COMMUTER_CITIES = [
   { name: 'Gifhorn',      lon: 10.5477, lat: 52.4894, count: 15000 },
   { name: 'Helmstedt',    lon: 11.0086, lat: 52.2282, count: 12000 },
@@ -45,15 +47,23 @@ const COMMUTER_CITIES = [
   { name: 'Magdeburg',    lon: 11.6276, lat: 52.1205, count:  2000 },
 ]
 
-// Facility categories to exclude (non-trip-generating land uses)
-const EXCLUDED_CATS = new Set(['parking', 'forest', 'meadow', 'farmland', 'water', 'natural'])
+// OSM properties that indicate non-trip-generating land use
+const EXCL_AMENITY  = new Set(['parking', 'parking_space', 'parking_entrance', 'fuel'])
+const EXCL_LANDUSE  = new Set(['forest', 'meadow', 'farmland', 'cemetery', 'military', 'reservoir'])
+const EXCL_NATURAL  = new Set(['water', 'wetland', 'wood'])
 
 // ── Geo helpers ───────────────────────────────────────────────────────────────
 function hav(lat1, lon1, lat2, lon2) {
-  const R = 6371000, toR = Math.PI / 180
-  const dLat = (lat2 - lat1) * toR, dLon = (lon2 - lon1) * toR
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*toR)*Math.cos(lat2*toR)*Math.sin(dLon/2)**2
+  const R = 6371000, r = Math.PI / 180
+  const a = Math.sin((lat2 - lat1) * r / 2) ** 2
+    + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin((lon2 - lon1) * r / 2) ** 2
   return R * 2 * Math.asin(Math.sqrt(Math.min(1, a)))
+}
+
+function ringCentroid(ring) {
+  let lon = 0, lat = 0
+  for (const [lo, la] of ring) { lon += lo; lat += la }
+  return [lon / ring.length, lat / ring.length]
 }
 
 function circleGeo(lon, lat, radiusM, steps = 64) {
@@ -73,8 +83,7 @@ function makeCirclesFC(hubs, radiusM, lk = 'lon', lak = 'lat') {
 }
 
 function buildGraticule() {
-  const f = [], ls = 0.015, as = 0.009
-  const [a, b, c, d] = [8.0, 15.0, 49.0, 56.0]
+  const f = [], ls = 0.015, as = 0.009, [a, b, c, d] = [8.0, 15.0, 49.0, 56.0]
   for (let lat = Math.ceil(c / as) * as; lat <= d; lat = parseFloat((lat + as).toFixed(6)))
     f.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[a, lat], [b, lat]] }, properties: {} })
   for (let lon = Math.ceil(a / ls) * ls; lon <= b; lon = parseFloat((lon + ls).toFixed(6)))
@@ -112,13 +121,11 @@ function buildCentroids(db) {
 
 // ── Fleet bar marker ──────────────────────────────────────────────────────────
 function fleetTotal(fp, tier) {
-  const data = fp?.[`hub_${tier}`] || {}
-  return Object.values(data).reduce((s, v) => s + v, 0)
+  return Object.values(fp?.[`hub_${tier}`] || {}).reduce((s, v) => s + v, 0)
 }
 
 function makeBarEl(tier, total, maxTotal) {
-  const color = TC[tier] || '#111'
-  const w = tier === 'l' ? 10 : tier === 'm' ? 7 : 5
+  const color = TC[tier] || '#111', w = tier === 'l' ? 10 : tier === 'm' ? 7 : 5
   const h = Math.max(5, Math.round((total / Math.max(1, maxTotal)) * 72))
   const el = document.createElement('div')
   el.style.cssText = 'display:flex;flex-direction:column;align-items:center;pointer-events:none;'
@@ -127,82 +134,80 @@ function makeBarEl(tier, total, maxTotal) {
 }
 
 // ── Line GeoJSON builder ──────────────────────────────────────────────────────
-function lines(pairs) {
+function linesFC(pairs) {
   return { type: 'FeatureCollection', features: pairs.map(([c1, c2]) =>
     ({ type: 'Feature', geometry: { type: 'LineString', coordinates: [c1, c2] }, properties: {} })) }
 }
 
-// ── Hub Network algorithms ────────────────────────────────────────────────────
+// ── Hub Network: coverage-radius based ───────────────────────────────────────
+// Two hubs connect if the distance ≤ the larger of the two coverage radii
+// (i.e. either hub's zone reaches the other). Color = lower tier.
 function buildHubNetwork(lHubs, mHubs, sHubs) {
-  const blackPairs = []  // L-L: autonomous bus
-  const tealPairs  = []  // L-M (≤1500m) + M-M (≤1000m): shuttle + pod
-  const greenPairs = []  // M-S (≤600m) + S-S (≤400m): pod + e-bike
-
-  // L-L: full mesh, no distance limit
-  for (let i = 0; i < lHubs.length; i++)
-    for (let j = i + 1; j < lHubs.length; j++)
-      blackPairs.push([[lHubs[i].lon ?? lHubs[i].lng, lHubs[i].lat],
-                       [lHubs[j].lon ?? lHubs[j].lng, lHubs[j].lat]])
-
-  // L-M: ≤1500m
-  for (const l of lHubs) {
-    const lLon = l.lon ?? l.lng
-    for (const m of mHubs) {
-      const mLon = m.lon ?? m.lng
-      if (hav(l.lat, lLon, m.lat, mLon) <= 1500)
-        tealPairs.push([[lLon, l.lat], [mLon, m.lat]])
+  const hubList = [
+    ...lHubs.map(h => ({ tier: 'l', lat: h.lat, lon: h.lon ?? h.lng, cov: COV.l })),
+    ...mHubs.map(h => ({ tier: 'm', lat: h.lat, lon: h.lon ?? h.lng, cov: COV.m })),
+    ...sHubs.map(h => ({ tier: 's', lat: h.lat, lon: h.lng,           cov: COV.s })),
+  ]
+  const black = [], teal = [], green = []
+  for (let i = 0; i < hubList.length; i++) {
+    const a = hubList[i]
+    for (let j = i + 1; j < hubList.length; j++) {
+      const b = hubList[j]
+      const d = hav(a.lat, a.lon, b.lat, b.lon)
+      if (d > Math.max(a.cov, b.cov)) continue  // neither covers the other
+      const pair = [[a.lon, a.lat], [b.lon, b.lat]]
+      const tiers = [a.tier, b.tier]
+      if (tiers.includes('s'))      green.push(pair)
+      else if (tiers.includes('m')) teal.push(pair)
+      else                          black.push(pair)
     }
   }
-
-  // M-M: ≤1000m
-  for (let i = 0; i < mHubs.length; i++)
-    for (let j = i + 1; j < mHubs.length; j++) {
-      const mLon1 = mHubs[i].lon ?? mHubs[i].lng, mLon2 = mHubs[j].lon ?? mHubs[j].lng
-      if (hav(mHubs[i].lat, mLon1, mHubs[j].lat, mLon2) <= 1000)
-        tealPairs.push([[mLon1, mHubs[i].lat], [mLon2, mHubs[j].lat]])
-    }
-
-  // M-S: ≤600m
-  for (const m of mHubs) {
-    const mLon = m.lon ?? m.lng
-    for (const s of sHubs)
-      if (hav(m.lat, mLon, s.lat, s.lng) <= 600)
-        greenPairs.push([[mLon, m.lat], [s.lng, s.lat]])
-  }
-
-  // S-S: ≤400m
-  for (let i = 0; i < sHubs.length; i++)
-    for (let j = i + 1; j < sHubs.length; j++)
-      if (hav(sHubs[i].lat, sHubs[i].lng, sHubs[j].lat, sHubs[j].lng) <= 400)
-        greenPairs.push([[sHubs[i].lng, sHubs[i].lat], [sHubs[j].lng, sHubs[j].lat]])
-
-  return { black: lines(blackPairs), teal: lines(tealPairs), green: lines(greenPairs) }
+  return { black: linesFC(black), teal: linesFC(teal), green: linesFC(green) }
 }
 
-// ── Facility Network algorithm ────────────────────────────────────────────────
-function buildFacilityNetwork(lHubs, mHubs, sHubs, venues) {
-  const allHubs = [
-    ...lHubs.map(h => ({ tier: 'l', lat: h.lat, lon: h.lon ?? h.lng })),
-    ...mHubs.map(h => ({ tier: 'm', lat: h.lat, lon: h.lon ?? h.lng })),
-    ...sHubs.map(h => ({ tier: 's', lat: h.lat, lon: h.lng })),
-  ]
-  const lPairs = [], mPairs = [], sPairs = []
-  for (const v of (venues || [])) {
-    if (!v.lat || !v.lng) continue
-    const cat = (v.category || v.type || '').toLowerCase()
-    if (EXCLUDED_CATS.has(cat)) continue
-    let best = null, bestD = Infinity
-    for (const h of allHubs) {
-      const d = hav(v.lat, v.lng, h.lat, h.lon)
-      if (d < bestD) { bestD = d; best = h }
-    }
-    if (!best || bestD > 800) continue
-    const pair = [[best.lon, best.lat], [v.lng, v.lat]]
-    if (best.tier === 'l') lPairs.push(pair)
-    else if (best.tier === 'm') mPairs.push(pair)
-    else sPairs.push(pair)
+// ── Facility Network: each hub → all facilities within coverage radius ────────
+function extractFacilityPoints(venues, localFacilities) {
+  const pts = []
+  // Curated venue list (already geocoded)
+  for (const v of (venues || []))
+    if (v.lat && v.lng && inCity(v.lng, v.lat)) pts.push([v.lng, v.lat])
+
+  // OSM facilities (Points + Polygon centroids)
+  for (const f of (localFacilities?.features || [])) {
+    const g = f.geometry, p = f.properties || {}
+    if (!g) continue
+    // Skip non-destinations
+    if (EXCL_AMENITY.has(p.amenity)) continue
+    if (EXCL_LANDUSE.has(p.landuse)) continue
+    if (EXCL_NATURAL.has(p.natural)) continue
+    let coord = null
+    if (g.type === 'Point') coord = g.coordinates
+    else if (g.type === 'Polygon') coord = ringCentroid(g.coordinates[0])
+    else if (g.type === 'MultiPolygon') coord = ringCentroid(g.coordinates[0][0])
+    if (coord && inCity(coord[0], coord[1])) pts.push(coord)
   }
-  return { black: lines(lPairs), teal: lines(mPairs), green: lines(sPairs) }
+  return pts
+}
+
+function buildFacilityNetwork(lHubs, mHubs, sHubs, venues, localFacilities) {
+  const pts = extractFacilityPoints(venues, localFacilities)
+  const black = [], teal = [], green = []
+
+  for (const hub of lHubs) {
+    const lon = hub.lon ?? hub.lng
+    for (const [fLon, fLat] of pts)
+      if (hav(hub.lat, lon, fLat, fLon) <= COV.l) black.push([[lon, hub.lat], [fLon, fLat]])
+  }
+  for (const hub of mHubs) {
+    const lon = hub.lon ?? hub.lng
+    for (const [fLon, fLat] of pts)
+      if (hav(hub.lat, lon, fLat, fLon) <= COV.m) teal.push([[lon, hub.lat], [fLon, fLat]])
+  }
+  for (const hub of sHubs)
+    for (const [fLon, fLat] of pts)
+      if (hav(hub.lat, hub.lng, fLat, fLon) <= COV.s) green.push([[hub.lng, hub.lat], [fLon, fLat]])
+
+  return { black: linesFC(black), teal: linesFC(teal), green: linesFC(green), pts }
 }
 
 // ── External Commuter Flows ───────────────────────────────────────────────────
@@ -217,15 +222,7 @@ function buildExternalFlows(lHubs) {
     }
     pairs.push([[city.lon, city.lat], [best.lon ?? best.lng, best.lat]])
   }
-  return lines(pairs)
-}
-
-function buildCityCircles() {
-  const maxCount = COMMUTER_CITIES[0].count
-  return { type: 'FeatureCollection', features: COMMUTER_CITIES.map(c => ({
-    ...circleGeo(c.lon, c.lat, 6000 + (c.count / maxCount) * 6000),
-    properties: {},
-  })) }
+  return linesFC(pairs)
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -246,26 +243,24 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
     districtBoundaries,
     localCarParkings, localBusStops,
     landingCityGeoJSON, setLandingCityGeoJSON,
-    venues,
+    venues, localFacilities,
   } = store
 
   // ── Init map ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapDivRef.current) return
     const map = new maplibregl.Map({
-      container: mapDivRef.current,
-      style: BLANK_STYLE, center: CENTER, zoom: ZOOM, attributionControl: false,
+      container: mapDivRef.current, style: BLANK_STYLE, center: CENTER, zoom: ZOOM, attributionControl: false,
     })
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-left')
     mapRef.current = map
 
     map.on('load', () => {
-      // Districts (always visible)
       map.addSource('districts', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'district-outline', type: 'line', source: 'districts',
         paint: { 'line-color': '#CCCCCC', 'line-width': 0.5, 'line-opacity': 0.8 } })
 
-      // Fleet yellow circles (below mask)
+      // Fleet coverage circles (below mask)
       for (const id of ['fleet-cov-l', 'fleet-cov-m', 'fleet-cov-s']) {
         map.addSource(id, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
         map.addLayer({ id: `${id}-fill`, type: 'fill', source: id, layout: { visibility: 'none' },
@@ -274,22 +269,18 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
           paint: { 'line-color': '#FFD200', 'line-width': 1.5, 'line-opacity': 0.75 } })
       }
 
-      // ── Network line sources (all below mask) ─────────────────────────────
-      // Hub network: 3 color groups
-      for (const [id, color] of [['hn-black', TC.l], ['hn-teal', TC.m], ['hn-green', TC.s]]) {
-        map.addSource(id, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-        map.addLayer({ id: `${id}-layer`, type: 'line', source: id, layout: { visibility: 'none' },
-          paint: { 'line-color': color, 'line-width': 1, 'line-opacity': 0.6 } })
+      // Network lines — all 3 colors for hub-net and fac-net
+      for (const prefix of ['hn', 'fn']) {
+        for (const [suffix, color] of [['black', TC.l], ['teal', TC.m], ['green', TC.s]]) {
+          const id = `${prefix}-${suffix}`
+          map.addSource(id, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+          map.addLayer({ id: `${id}-layer`, type: 'line', source: id, layout: { visibility: 'none' },
+            paint: { 'line-color': color, 'line-width': 1, 'line-opacity': 0.6 } })
+        }
       }
-
-      // Facility network: 3 color groups
-      for (const [id, color] of [['fn-black', TC.l], ['fn-teal', TC.m], ['fn-green', TC.s]]) {
-        map.addSource(id, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-        map.addLayer({ id: `${id}-layer`, type: 'line', source: id, layout: { visibility: 'none' },
-          paint: { 'line-color': color, 'line-width': 1, 'line-opacity': 0.6 } })
-      }
-      map.addSource('fn-venues', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'fn-venues-layer', type: 'circle', source: 'fn-venues', layout: { visibility: 'none' },
+      // Facility dots
+      map.addSource('fn-dots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addLayer({ id: 'fn-dots-layer', type: 'circle', source: 'fn-dots', layout: { visibility: 'none' },
         paint: { 'circle-color': '#888', 'circle-radius': 2, 'circle-opacity': 0.7, 'circle-stroke-width': 0 } })
 
       // External flows (below mask — mask hidden for this view)
@@ -298,42 +289,35 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
         paint: { 'fill-color': '#FF0800', 'fill-opacity': 0.04 } })
       map.addLayer({ id: 'ef-city-line-layer', type: 'line', source: 'ef-city-fill', layout: { visibility: 'none' },
         paint: { 'line-color': '#FF0800', 'line-width': 0.8, 'line-opacity': 0.35, 'line-dasharray': [4, 3] } })
-
       map.addSource('ef-lines', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'ef-lines-layer', type: 'line', source: 'ef-lines', layout: { visibility: 'none' },
         paint: { 'line-color': '#FF0800', 'line-width': 1, 'line-opacity': 0.6 } })
 
-      // ── City mask ─────────────────────────────────────────────────────────
+      // City mask
       map.addSource('city-mask', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'city-mask-fill', type: 'fill', source: 'city-mask',
         paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } })
 
-      // ── Layers above mask ─────────────────────────────────────────────────
+      // ── Above mask ────────────────────────────────────────────────────────
       // Placement dots
       map.addSource('pl-dots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      for (const [tier, color] of [['l', TC.l], ['m', TC.m], ['s', TC.s]]) {
+      for (const [tier, color] of [['l', TC.l], ['m', TC.m], ['s', TC.s]])
         map.addLayer({ id: `pl-dot-${tier}`, type: 'circle', source: 'pl-dots',
-          filter: ['==', ['get', 'tier'], tier],
-          layout: { visibility: 'none' },
+          filter: ['==', ['get', 'tier'], tier], layout: { visibility: 'none' },
           paint: { 'circle-color': color, 'circle-radius': 7, 'circle-opacity': 1, 'circle-stroke-width': 0 } })
-      }
 
       // Hub network node circles
-      for (const [tier, color, r] of [['l', TC.l, 9], ['m', TC.m, 7], ['s', TC.s, 5]]) {
+      for (const [tier, color, r] of [['l', TC.l, 9], ['m', TC.m, 7], ['s', TC.s, 5]])
         map.addLayer({ id: `hn-dot-${tier}`, type: 'circle', source: 'pl-dots',
-          filter: ['==', ['get', 'tier'], tier],
-          layout: { visibility: 'none' },
+          filter: ['==', ['get', 'tier'], tier], layout: { visibility: 'none' },
           paint: { 'circle-color': color, 'circle-radius': r, 'circle-opacity': 1,
                    'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' } })
-      }
 
-      // External flow Hub L markers (above mask)
+      // External flow: Hub L markers + city labels
       map.addSource('ef-hub-l', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'ef-hub-l-layer', type: 'circle', source: 'ef-hub-l', layout: { visibility: 'none' },
         paint: { 'circle-color': TC.l, 'circle-radius': 8, 'circle-opacity': 1,
                  'circle-stroke-width': 2, 'circle-stroke-color': '#fff' } })
-
-      // External city name labels (above mask)
       map.addSource('ef-labels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'ef-labels-layer', type: 'symbol', source: 'ef-labels', layout: { visibility: 'none' },
         layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'],
@@ -360,10 +344,7 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
       setMapReady(true)
     })
 
-    return () => {
-      fleetMarkersRef.current.forEach(m => m.remove())
-      map.remove(); mapRef.current = null
-    }
+    return () => { fleetMarkersRef.current.forEach(m => m.remove()); map.remove(); mapRef.current = null }
   }, [])
 
   // ── City boundary ─────────────────────────────────────────────────────────
@@ -375,10 +356,7 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
       mapRef.current?.getSource('city-mask')?.setData(buildCityMask(gj))
     }
     if (landingCityGeoJSON) { applyCity(landingCityGeoJSON); return }
-    try {
-      const raw = localStorage.getItem('wolfsburg_city_boundary_v1')
-      if (raw) { applyCity(JSON.parse(raw)); return }
-    } catch (_) {}
+    try { const raw = localStorage.getItem('wolfsburg_city_boundary_v1'); if (raw) { applyCity(JSON.parse(raw)); return } } catch (_) {}
     const q = `[out:json][timeout:30];relation["boundary"="administrative"]["name"="Wolfsburg"]["admin_level"="6"];out geom;`
     fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: `data=${encodeURIComponent(q)}`, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
       .then(r => r.json()).then(data => {
@@ -392,33 +370,29 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
   useEffect(() => {
     if (!mapReady || !Object.keys(districtBoundaries).length) return
     const features = []
-    for (const [, fc] of Object.entries(districtBoundaries))
-      if (fc?.features) features.push(...fc.features)
+    for (const [, fc] of Object.entries(districtBoundaries)) if (fc?.features) features.push(...fc.features)
     mapRef.current?.getSource('districts')?.setData({ type: 'FeatureCollection', features })
     mapRef.current?.getSource('dist-centroids')?.setData(buildCentroids(districtBoundaries))
   }, [mapReady, districtBoundaries])
 
-  // ── Auto-run algorithm ────────────────────────────────────────────────────
+  // ── Auto-run hub algorithm ─────────────────────────────────────────────────
   useEffect(() => {
-    if (!mapReady || !localCarParkings || !localBusStops) return
-    if (hubLMResults || autoTriggeredRef.current) return
-    autoTriggeredRef.current = true
-    buildRunAllHubs(store)()
+    if (!mapReady || !localCarParkings || !localBusStops || hubLMResults || autoTriggeredRef.current) return
+    autoTriggeredRef.current = true; buildRunAllHubs(store)()
   }, [mapReady, localCarParkings, localBusStops, hubLMResults])
 
-  // ── Hub dots source (placement + network nodes) ───────────────────────────
+  // ── Hub dots source (shared by placement + network nodes) ─────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
     const features = []
-    for (const hub of (hubLMResults?.hubL?.hubs || []))
-      if (inCity(hub.lon ?? hub.lng, hub.lat))
-        features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [hub.lon ?? hub.lng, hub.lat] }, properties: { tier: 'l' } })
-    for (const hub of (hubLMResults?.hubM?.hubs || []))
-      if (inCity(hub.lon ?? hub.lng, hub.lat))
-        features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [hub.lon ?? hub.lng, hub.lat] }, properties: { tier: 'm' } })
-    for (const hub of (hubSBusOnly || []).filter(h =>
-      (hubLMSStatusFilter === 'all' ? true : h.status === hubLMSStatusFilter) && inCity(h.lng, h.lat)))
-      features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [hub.lng, hub.lat] }, properties: { tier: 's' } })
+    for (const h of (hubLMResults?.hubL?.hubs || []))
+      if (inCity(h.lon ?? h.lng, h.lat))
+        features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [h.lon ?? h.lng, h.lat] }, properties: { tier: 'l' } })
+    for (const h of (hubLMResults?.hubM?.hubs || []))
+      if (inCity(h.lon ?? h.lng, h.lat))
+        features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [h.lon ?? h.lng, h.lat] }, properties: { tier: 'm' } })
+    for (const h of (hubSBusOnly || []).filter(h => (hubLMSStatusFilter === 'all' || h.status === hubLMSStatusFilter) && inCity(h.lng, h.lat)))
+      features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [h.lng, h.lat] }, properties: { tier: 's' } })
     mapRef.current.getSource('pl-dots')?.setData({ type: 'FeatureCollection', features })
   }, [mapReady, hubLMResults, hubSBusOnly, hubLMSStatusFilter])
 
@@ -432,31 +406,24 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
 
     show('city-mask-fill', !isEF)
 
-    // Placement
     show('pl-dot-l', isPl && hubLMShowL); show('pl-dot-m', isPl && hubLMShowM); show('pl-dot-s', isPl && hubLMShowS)
-
-    // Fleet circles
     show('fleet-cov-l-fill', isFl); show('fleet-cov-l-line', isFl)
     show('fleet-cov-m-fill', isFl); show('fleet-cov-m-line', isFl)
     show('fleet-cov-s-fill', isFl); show('fleet-cov-s-line', isFl)
 
-    // Hub network nodes + lines
     show('hn-dot-l', isHN); show('hn-dot-m', isHN); show('hn-dot-s', isHN)
-    show('hn-black-layer', isHN); show('hn-teal-layer', isHN); show('hn-green-layer', isHN)
+    for (const s of ['black', 'teal', 'green']) {
+      show(`hn-${s}-layer`, isHN)
+      show(`fn-${s}-layer`, isFN)
+    }
+    show('fn-dots-layer', isFN)
 
-    // Facility network lines + dots
-    show('fn-black-layer', isFN); show('fn-teal-layer', isFN); show('fn-green-layer', isFN)
-    show('fn-venues-layer', isFN)
-
-    // External flows
     show('ef-city-fill-layer', isEF); show('ef-city-line-layer', isEF)
-    show('ef-lines-layer', isEF)
-    show('ef-hub-l-layer', isEF); show('ef-labels-layer', isEF)
+    show('ef-lines-layer', isEF); show('ef-hub-l-layer', isEF); show('ef-labels-layer', isEF)
 
-    // Zoom transitions
-    const nowIsEF = isEF, wasEF = prevNetTab.current === 'ext-flow'
-    if (nowIsEF && !wasEF) map.flyTo({ center: [10.7, 52.25], zoom: 7.8, duration: 700 })
-    else if (!nowIsEF && wasEF) map.flyTo({ center: CENTER, zoom: ZOOM, duration: 600 })
+    const wasEF = prevNetTab.current === 'ext-flow'
+    if (isEF && !wasEF) map.flyTo({ center: [10.7, 52.25], zoom: 7.8, duration: 700 })
+    else if (!isEF && wasEF) map.flyTo({ center: CENTER, zoom: ZOOM, duration: 600 })
     prevNetTab.current = netTab
   }, [mapReady, tab, netTab, hubLMShowL, hubLMShowM, hubLMShowS])
 
@@ -473,16 +440,12 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
     const map = mapRef.current
     const lHubs = (hubLMResults.hubL?.hubs || []).filter(h => inCity(h.lon ?? h.lng, h.lat))
     const mHubs = (hubLMResults.hubM?.hubs || []).filter(h => inCity(h.lon ?? h.lng, h.lat))
-    const sHubs = (hubSBusOnly || []).filter(h =>
-      (hubLMSStatusFilter === 'all' ? true : h.status === hubLMSStatusFilter) && inCity(h.lng, h.lat))
-
+    const sHubs = (hubSBusOnly || []).filter(h => (hubLMSStatusFilter === 'all' || h.status === hubLMSStatusFilter) && inCity(h.lng, h.lat))
     map.getSource('fleet-cov-l')?.setData(makeCirclesFC(lHubs, 4000))
     map.getSource('fleet-cov-m')?.setData(makeCirclesFC(mHubs, 2000))
     map.getSource('fleet-cov-s')?.setData(makeCirclesFC(sHubs, 500, 'lng', 'lat'))
-
     const fp = computeFleetPerHub(lHubs.length, mHubs.length, sHubs.length)
-    const tl = fleetTotal(fp, 'l'), tm = fleetTotal(fp, 'm'), ts = fleetTotal(fp, 's')
-    const max = Math.max(1, tl, tm, ts)
+    const max = Math.max(1, fleetTotal(fp, 'l'), fleetTotal(fp, 'm'), fleetTotal(fp, 's'))
     const markers = []
     const addBars = (hubs, tier, lk = 'lon', lak = 'lat') => {
       for (const hub of hubs) {
@@ -495,15 +458,13 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
     fleetMarkersRef.current = markers
   }, [mapReady, tab, hubLMResults, hubSBusOnly, hubLMSStatusFilter])
 
-  // ── Network data computation ──────────────────────────────────────────────
+  // ── Network data ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !mapRef.current || tab !== 'network' || !hubLMResults) return
     const map = mapRef.current
-
     const lHubs = (hubLMResults.hubL?.hubs || []).filter(h => inCity(h.lon ?? h.lng, h.lat))
     const mHubs = (hubLMResults.hubM?.hubs || []).filter(h => inCity(h.lon ?? h.lng, h.lat))
-    const sHubs = (hubSBusOnly || []).filter(h =>
-      (hubLMSStatusFilter === 'all' ? true : h.status === hubLMSStatusFilter) && inCity(h.lng, h.lat))
+    const sHubs = (hubSBusOnly || []).filter(h => (hubLMSStatusFilter === 'all' || h.status === hubLMSStatusFilter) && inCity(h.lng, h.lat))
 
     // Hub network
     const hn = buildHubNetwork(lHubs, mHubs, sHubs)
@@ -512,23 +473,23 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
     map.getSource('hn-green')?.setData(hn.green)
 
     // Facility network
-    const fn = buildFacilityNetwork(lHubs, mHubs, sHubs, venues)
+    const fn = buildFacilityNetwork(lHubs, mHubs, sHubs, venues, localFacilities)
     map.getSource('fn-black')?.setData(fn.black)
     map.getSource('fn-teal')?.setData(fn.teal)
     map.getSource('fn-green')?.setData(fn.green)
-    map.getSource('fn-venues')?.setData({ type: 'FeatureCollection',
-      features: (venues || []).filter(v => v.lat && v.lng && inCity(v.lng, v.lat) &&
-        !EXCLUDED_CATS.has((v.category || v.type || '').toLowerCase()))
-        .map(v => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [v.lng, v.lat] }, properties: {} })) })
+    map.getSource('fn-dots')?.setData({ type: 'FeatureCollection',
+      features: fn.pts.map(([lon, lat]) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} })) })
 
     // External flows
     map.getSource('ef-lines')?.setData(buildExternalFlows(lHubs))
-    map.getSource('ef-city-fill')?.setData(buildCityCircles())
+    map.getSource('ef-city-fill')?.setData({ type: 'FeatureCollection',
+      features: COMMUTER_CITIES.map(c => ({ ...circleGeo(c.lon, c.lat, 6000 + (c.count / 15000) * 6000), properties: {} })) })
     map.getSource('ef-labels')?.setData({ type: 'FeatureCollection',
-      features: COMMUTER_CITIES.map(c => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [c.lon, c.lat] }, properties: { name: `${c.name}\n${(c.count/1000).toFixed(0)}k` } })) })
+      features: COMMUTER_CITIES.map(c => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
+        properties: { name: `${c.name}\n${(c.count / 1000).toFixed(0)}k/day` } })) })
     map.getSource('ef-hub-l')?.setData({ type: 'FeatureCollection',
       features: lHubs.map(h => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [h.lon ?? h.lng, h.lat] }, properties: {} })) })
-  }, [mapReady, tab, netTab, hubLMResults, hubSBusOnly, hubLMSStatusFilter, venues])
+  }, [mapReady, tab, netTab, hubLMResults, hubSBusOnly, hubLMSStatusFilter, venues, localFacilities])
 
   const F = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
