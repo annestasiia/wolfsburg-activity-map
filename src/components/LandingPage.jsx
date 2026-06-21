@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../store/appStore'
 import { DAYS } from '../constants'
+import { computeCapacity } from '../utils/capacityCalc'
 import MobilityMapSection    from './landing/MobilityMapSection'
 import LivabilityMapSection, { LANDUSE_COLORS } from './landing/LivabilityMapSection'
 import CentralityMapSection, { CENT_TABS } from './landing/CentralityMapSection'
 import FacilitiesMapSection  from './landing/FacilitiesMapSection'
-import HubMapSection         from './landing/HubMapSection'
+import HubMapSection, { HUB_TABS } from './landing/HubMapSection'
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
@@ -364,6 +365,122 @@ function LivabilityLeftPanel({ tab }) {
   )
 }
 
+// ── Hub left panel ─────────────────────────────────────────────────────────────
+
+function HubLeftPanel({ tab }) {
+  const { hubPopulation, setHubPopulation } = useAppStore()
+  const pop = hubPopulation || 130000
+  const cap = computeCapacity(pop)
+  const fmt = n => Math.round(n).toLocaleString('de-DE')
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '40px 36px' }}>
+      <div style={{ marginBottom: 26 }}>
+        <div style={EY}>04 — Hub Placement · Three-Tier Network</div>
+        <h2 style={{ fontFamily: F, fontSize: 'clamp(20px,1.8vw,28px)', fontWeight: 700, color: '#111', letterSpacing: '-0.03em', lineHeight: 1.1, margin: '0 0 14px' }}>
+          Hub System
+        </h2>
+        <p style={{ ...BD, fontSize: 12 }}>
+          Spatial optimisation of shared mobility hub locations, selecting from existing parking infrastructure
+          via AHP-weighted composite scoring. Replaces 49,648 private vehicles/day with ~630 shared vehicles.
+        </p>
+      </div>
+
+      {tab === 'placement' && (
+        <div>
+          <div style={LB}>Capacity Analysis</div>
+
+          {/* Population slider */}
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontFamily: F, fontSize: 11, color: '#666' }}>City residents</span>
+              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: '#111' }}>
+                {fmt(pop)}
+              </span>
+            </div>
+            <input
+              type="range" min={130000} max={250000} step={5000} value={pop}
+              onChange={e => setHubPopulation(+e.target.value)}
+              style={{ width: '100%', accentColor: '#1D1D1F', cursor: 'pointer' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>130 000</span>
+              <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>250 000</span>
+            </div>
+          </div>
+
+          {/* Peak trips result */}
+          <div style={{ padding: '14px 16px', background: '#F5F5F7', borderRadius: 8, marginBottom: 14 }}>
+            <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+              Peak trips in city center
+            </div>
+            <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
+              {fmt(cap.peak_hour_trips)}
+            </div>
+            <div style={{ fontFamily: F, fontSize: 11, color: '#888', marginTop: 4 }}>
+              trips/hour · calculated from modal split
+            </div>
+          </div>
+
+          {/* Tier legend */}
+          <div style={{ marginTop: 6 }}>
+            <div style={LB}>Hub tiers</div>
+            {[
+              { color: '#1D1D1F', label: 'Hub L', desc: 'Fleet depot · multi-storey car parks · 4 km coverage' },
+              { color: '#1D7A3A', label: 'Hub M', desc: 'District hub · underground car parks · 2 km coverage' },
+              { color: '#185FA5', label: 'Hub S', desc: 'Last-metre · bus interchanges · 500 m coverage' },
+            ].map(({ color, label, desc }) => (
+              <div key={label} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+                <div style={{ width: 20, height: 20, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 1 }} />
+                <div>
+                  <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111' }}>{label}</div>
+                  <div style={{ fontFamily: F, fontSize: 11, color: '#888', lineHeight: 1.4 }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === 'fleet' && (
+        <div>
+          <div style={LB}>Fleet Visualisation</div>
+          <p style={{ ...BD, fontSize: 12, marginBottom: 16 }}>
+            Each hub shown with its fleet allocation and coverage radius. Callout labels display
+            per-hub fleet composition based on the current capacity calculation.
+          </p>
+          {[
+            { color: '#FFD200', label: 'Hub L coverage', desc: '4 km radius' },
+            { color: '#FFD200', label: 'Hub M coverage', desc: '2 km radius' },
+            { color: '#FFD200', label: 'Hub S coverage', desc: '500 m radius' },
+          ].map(({ color, label, desc }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${color}`, background: `${color}22`, flexShrink: 0 }} />
+              <div>
+                <span style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: '#111' }}>{label}</span>
+                <span style={{ fontFamily: F, fontSize: 11, color: '#888', marginLeft: 6 }}>{desc}</span>
+              </div>
+            </div>
+          ))}
+          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D1D1F', flexShrink: 0 }} />
+            <span style={{ fontFamily: F, fontSize: 12, color: '#444' }}>Hub location · callout with fleet details</span>
+          </div>
+        </div>
+      )}
+
+      {tab === 'network' && (
+        <div>
+          <div style={LB}>Network</div>
+          <p style={{ ...BD, fontSize: 12, color: '#bbb', fontStyle: 'italic' }}>
+            Vehicle flow and network utilisation — in development.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Standard text content for non-mobility sections ─────────────────────────
 
 function DefaultLeftContent({ sec }) {
@@ -492,6 +609,7 @@ export default function LandingPage() {
   const [mobilityTab, setMobilityTab] = useState('activity')
   const [livabilityTab, setLivabilityTab] = useState('livability')
   const [centralityTab, setCentralityTab] = useState('centrality')
+  const [hubTab, setHubTab] = useState('placement')
 
   React.useEffect(() => {
     setNavOpen(false)
@@ -603,20 +721,15 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Hub — 40/60 standard */}
-        {OTHER_SECTIONS.map(sec => (
-          <section
-            key={sec.id}
-            style={{ display: 'flex', height: '100vh', border: '1px solid #E8E8E8', overflow: 'hidden' }}
-          >
-            <div style={{ width: '40%', flexShrink: 0, borderRight: '1px solid #E8E8E8' }}>
-              <DefaultLeftContent sec={sec} />
-            </div>
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-              <sec.MapSection />
-            </div>
-          </section>
-        ))}
+        {/* Hub — 40/60 with tabs */}
+        <section style={{ display:'flex', height:'100vh', border:'1px solid #E8E8E8', overflow:'hidden' }}>
+          <div style={{ width:'40%', flexShrink:0, borderRight:'1px solid #E8E8E8', overflow:'hidden' }}>
+            <HubLeftPanel tab={hubTab} />
+          </div>
+          <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+            <HubMapSection tab={hubTab} onTabChange={setHubTab} />
+          </div>
+        </section>
       </div>
 
       {/* ── Further Information — full width ──────────────────────────────── */}
