@@ -383,7 +383,7 @@ function DefaultLeftContent({ sec }) {
 // ── Centrality left panel ─────────────────────────────────────────────────────
 
 const CENT_MODE_INFO = {
-  centrality: { color:'#1D1D1F', label:'Combined score',    sub:'Walk + Bike + Public averaged' },
+  centrality: { color:'#1D1D1F', label:'Combined score',    sub:'Walk + Bike + Public averaged · Auto excluded: at 50 km/h nearly all amenities are reachable from anywhere, making the score near-uniform citywide' },
   walk:       { color:'#16A34A', label:'Walk accessibility', sub:'4.5 km/h · 15 min budget'     },
   bike:       { color:'#059669', label:'Bike accessibility', sub:'15 km/h · official cycle routes + roads' },
   public:     { color:'#CA8A04', label:'Public transit',     sub:'Walk to stop + 20 km/h bus · 15 min' },

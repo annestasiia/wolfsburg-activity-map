@@ -209,9 +209,11 @@ function buildActivityGrid(roads, busStops, carParkings, bikeParkings, cycling, 
   // Spread score from a feature point into adjacent cells (distance-weighted)
   const addScore = (lon, lat, w) => {
     const rc = rowOf(lat), cc = colOf(lon)
-    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    for (let dr = -4; dr <= 4; dr++) for (let dc = -4; dc <= 4; dc++) {
+      const d2 = dr * dr + dc * dc
+      if (d2 > 16) continue
       const cell = grid.get(key(rc + dr, cc + dc))
-      if (cell) cell.score += w / (1 + (dr * dr + dc * dc) * 0.5)
+      if (cell) cell.score += w / (1 + d2 * 0.4)
     }
   }
 
