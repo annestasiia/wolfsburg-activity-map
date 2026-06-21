@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import osmtogeojson from 'osmtogeojson'
 import { useAppStore } from '../../store/appStore'
 import { buildRunAllHubs } from '../HubNetworkSidebar'
-import { computeFleetPerHub } from '../../utils/fleetCalc'
+import { computeFleetPerHub, MODE_META } from '../../utils/fleetCalc'
 
 const CENTER = [10.7865, 52.4227]
 const ZOOM   = 11.5
@@ -141,33 +141,100 @@ function pointInCity(lon, lat, cityGeoJSON) {
 }
 
 // ── Fleet info label marker ───────────────────────────────────────────────────
-const MODE_SHORT = { e_bike: 'E-bike', autonomous_shuttle: 'Shuttle', autonomous_bus: 'Bus', autonomous_pod: 'Pod', car_sharing_ev: 'Car' }
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif"
+const TIER_LABEL = { l: 'Hub L', m: 'Hub M', s: 'Hub S' }
+const TIER_DESC  = { l: 'Fleet depot + fast charging', m: 'Intermodal transfer node', s: 'Bus/bike interchange' }
+const fmtArea = n => n >= 10000 ? `${(n / 10000).toFixed(2)} ha` : `${Math.round(n)} m²`
 
-function makeHubInfoEl(tier, hubData) {
-  const status   = tier === 's' ? 'existing' : 'proposed'
-  const label    = { l: 'Hub L', m: 'Hub M', s: 'Hub S' }[tier]
-  const dotSize  = { l: 8, m: 6, s: 4 }[tier]
+function makeHubInfoEl(tier, hub, hubData) {
+  const color   = TC[tier]
+  const dotSize = { l: 9, m: 7, s: 5 }[tier]
+  const status  = hub?.status || (tier === 's' ? 'existing' : 'proposed')
 
   const el = document.createElement('div')
   el.style.cssText = `display:flex;flex-direction:column;align-items:center;pointer-events:none;`
 
-  const text = document.createElement('div')
-  text.style.cssText = `font-family:${F};font-size:8px;color:#111;text-align:center;white-space:nowrap;line-height:1.4;margin-bottom:3px;`
+  if (tier !== 's') {
+    // Full card for L and M hubs
+    const card = document.createElement('div')
+    card.style.cssText = [
+      'background:#fff', `border:1px solid #E8E8E8`, `border-left:2px solid ${color}`,
+      'border-radius:5px', 'padding:6px 9px', `font-family:${F}`, 'margin-bottom:4px',
+      'min-width:160px', 'box-shadow:0 2px 8px rgba(0,0,0,0.10)',
+    ].join(';')
 
-  if (tier === 's') {
-    text.textContent = `Hub S · ${status}`
+    // Header
+    const hdr = document.createElement('div')
+    hdr.innerHTML = `
+      <div style="font-size:9px;font-weight:700;color:${color};letter-spacing:0.09em;text-transform:uppercase">${TIER_LABEL[tier]}</div>
+      <div style="font-size:10px;font-weight:600;color:#111;margin:2px 0 1px">${hub?.name || hub?.labelBus || ''}</div>
+      <div style="font-size:8px;color:#888">${TIER_DESC[tier]}</div>`
+    card.appendChild(hdr)
+
+    // Meta rows
+    const metaRows = []
+    if (hub?.area > 0)  metaRows.push(['Area',   fmtArea(hub.area)])
+    if (hub?.zone)      metaRows.push(['Zone',   hub.zone])
+    if (hub?.score !== undefined) metaRows.push(['Score', Math.round(hub.score)])
+    metaRows.push(['Status', status])
+
+    const metaDiv = document.createElement('div')
+    metaDiv.style.cssText = 'border-top:1px solid #eee;margin-top:5px;padding-top:4px;'
+    for (const [k, v] of metaRows) {
+      const row = document.createElement('div')
+      row.style.cssText = 'display:flex;justify-content:space-between;gap:10px;font-size:8px;padding:1.5px 0;'
+      const statusColor = v === 'existing' ? '#1D7A3A' : v === 'proposed' ? '#185FA5' : '#111'
+      row.innerHTML = `<span style="color:#888">${k}</span><span style="font-weight:600;color:${statusColor};text-transform:capitalize">${v}</span>`
+      metaDiv.appendChild(row)
+    }
+    card.appendChild(metaDiv)
+
+    // Fleet breakdown
+    const fleetModes = Object.entries(hubData || {}).filter(([k, v]) => k !== '_total' && v > 0)
+    if (fleetModes.length) {
+      const fleetDiv = document.createElement('div')
+      fleetDiv.style.cssText = 'border-top:1px solid #eee;margin-top:5px;padding-top:4px;'
+      const lbl = document.createElement('div')
+      lbl.style.cssText = 'font-size:7px;font-weight:700;color:#999;letter-spacing:0.09em;text-transform:uppercase;margin-bottom:3px;'
+      lbl.textContent = 'Fleet served (per hub)'
+      fleetDiv.appendChild(lbl)
+
+      for (const [mode, n] of fleetModes) {
+        const meta = MODE_META[mode]
+        const row = document.createElement('div')
+        row.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:8px;padding:1.5px 0;border-bottom:1px solid #F5F5F5;'
+        row.innerHTML = `
+          <div style="width:6px;height:6px;border-radius:50%;background:${meta?.color||'#ccc'};flex-shrink:0"></div>
+          <span style="flex:1;color:#444">${meta?.label||mode}</span>
+          <span style="font-family:monospace;font-weight:700;color:${color}">×${n}</span>`
+        fleetDiv.appendChild(row)
+      }
+      if (hubData?._total) {
+        const tot = document.createElement('div')
+        tot.style.cssText = `display:flex;justify-content:space-between;font-size:8.5px;font-weight:700;padding-top:3px;border-top:1px solid ${color}33;margin-top:2px;`
+        tot.innerHTML = `<span style="color:#222">Total vehicles</span><span style="font-family:monospace;color:${color}">×${hubData._total}</span>`
+        fleetDiv.appendChild(tot)
+      }
+      card.appendChild(fleetDiv)
+    }
+
+    el.appendChild(card)
   } else {
-    const lines = Object.entries(hubData || {})
-      .filter(([, v]) => v > 0)
-      .map(([k, v]) => `${MODE_SHORT[k] || k} ×${v}`)
-    text.innerHTML = `<b>${label}</b> · ${status}<br><span style="font-size:7.5px;color:#444">${lines.slice(0, 3).join(' · ')}</span>`
+    // Compact label for S hubs (potentially 100+)
+    const fleetModes = Object.entries(hubData || {}).filter(([k, v]) => k !== '_total' && v > 0)
+    const fleetStr = fleetModes.map(([k, v]) => `${MODE_META[k]?.label||k} ×${v}`).join(' · ')
+    const lbl = document.createElement('div')
+    lbl.style.cssText = `font-family:${F};font-size:7px;color:#444;text-align:center;white-space:nowrap;margin-bottom:2px;line-height:1.4;`
+    lbl.innerHTML = `<span style="font-weight:600;color:#111">Hub S</span> · ${status}${fleetStr ? `<br><span style="color:#666">${fleetStr}</span>` : ''}`
+    el.appendChild(lbl)
   }
 
+  // Stem + dot
+  const stem = document.createElement('div')
+  stem.style.cssText = 'width:1px;height:5px;background:#aaa;'
   const dot = document.createElement('div')
   dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:#111;flex-shrink:0;`
-
-  el.appendChild(text)
+  el.appendChild(stem)
   el.appendChild(dot)
   return el
 }
@@ -493,7 +560,7 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
 
     const addLabels = (hubs, tier, lk = 'lon', lak = 'lat') => {
       for (const hub of hubs) {
-        const el = makeHubInfoEl(tier, fp?.[`hub_${tier}`])
+        const el = makeHubInfoEl(tier, hub, fp?.[`hub_${tier}`])
         markers.push(new maplibregl.Marker({ element: el, anchor: 'bottom' })
           .setLngLat([hub[lk] ?? hub.lng, hub[lak] ?? hub.lat]).addTo(map))
       }
