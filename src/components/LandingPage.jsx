@@ -452,13 +452,16 @@ function HubLeftPanel({ tab }) {
         <div>
           <div style={LB}>Network Analysis</div>
           {[
-            { title: 'Network Hubs', desc: 'Topology of shuttle routes: L → M → S connections and inter-hub transfer flows.' },
-            { title: 'Facility Network', desc: 'Lines from each hub to the nearby destinations that drove its placement score.' },
-            { title: 'Hub L External', desc: 'Regional flows from Braunschweig, Gifhorn and Hannover converging to Hub L gateway nodes.' },
-          ].map(({ title, desc }) => (
-            <div key={title} style={{ marginBottom: 14 }}>
-              <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111', marginBottom: 3 }}>{title}</div>
-              <div style={{ fontFamily: F, fontSize: 11, color: '#888', lineHeight: 1.4 }}>{desc}</div>
+            { color: '#111111', title: 'Network Hubs', desc: 'Hub-to-hub connections by transport mode. L↔L: autonomous bus. L↔M (≤1500 m): shuttle + pod. M↔M (≤1000 m): shuttle + pod. M↔S (≤600 m): pod + e-bike. S↔S (≤400 m): e-bike.' },
+            { color: '#01796F', title: 'Facility Network', desc: 'Each venue is connected to its nearest hub within 800 m. Line color indicates hub tier. Source: curated venue dataset, Pendleratlas BA 2022.' },
+            { color: '#FF0800', title: 'External Flows', desc: 'Daily commuter flows converging to Hub L gateway nodes. Total Einpendler: 76,715/day (Pendleratlas BA 2022). All external commuters enter the network via Hub L.' },
+          ].map(({ color, title, desc }) => (
+            <div key={title} style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'flex-start' }}>
+              <div style={{ width: 3, background: color, borderRadius: 2, flexShrink: 0, marginTop: 2, alignSelf: 'stretch' }} />
+              <div>
+                <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111', marginBottom: 3 }}>{title}</div>
+                <div style={{ fontFamily: F, fontSize: 11, color: '#888', lineHeight: 1.5 }}>{desc}</div>
+              </div>
             </div>
           ))}
         </div>
