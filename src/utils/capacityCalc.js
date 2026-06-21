@@ -69,7 +69,7 @@ export function computeDensityConfig(cityPopulation = 130000) {
   return {
     high:   Math.max(80,  Math.round(200 * inv)),   // dense urban
     medium: Math.max(200, Math.round(350 * inv)),   // suburban
-    low:    Math.max(400, Math.round(400 * inv)),   // outlying villages — same exclusion as high = more hubs
+    low:    Math.max(100, Math.round(100 * inv)),   // outlying villages — 100m → nearly every bus stop qualifies
   }
 }
 

@@ -239,8 +239,12 @@ export function runIntermodalAlgorithm(venues, busStopsGeoJSON, carParkingsGeoJS
   const busCandidates  = candidatesFromBusStops(busStopsGeoJSON, facilities, parksGeoJSON, bikeParkingsGeoJSON, residentialGeoJSON)
   const carCandidates  = candidatesFromCarParkings(carParkingsGeoJSON, facilities, parksGeoJSON, bikeParkingsGeoJSON, residentialGeoJSON)
 
-  // Step 2: filter
-  const allCandidates = [...busCandidates, ...carCandidates].filter(c => c.score > 0)
+  // Step 2: filter — all bus stops qualify (score=0 = no nearby venues but still serves as S hub)
+  //                  car parkings need a positive score (must have some facility/venue nearby)
+  const allCandidates = [
+    ...busCandidates,
+    ...carCandidates.filter(c => c.score > 0),
+  ]
 
   // Step 3: density-based greedy select from unified pool
   const selected = greedySelectDensity(allCandidates, densityConfig)
