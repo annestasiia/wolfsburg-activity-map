@@ -368,10 +368,14 @@ function LivabilityLeftPanel({ tab }) {
 // ── Hub left panel ─────────────────────────────────────────────────────────────
 
 function HubLeftPanel({ tab }) {
-  const { hubPopulation, setHubPopulation } = useAppStore()
-  const pop = hubPopulation || 130000
-  const cap = computeCapacity(pop)
+  const cap = computeCapacity(130000)
   const fmt = n => Math.round(n).toLocaleString('de-DE')
+
+  const TIERS = [
+    { color: '#1D1D1F', label: 'Hub L', desc: 'Fleet depot · multi-storey car parks · 4 km coverage' },
+    { color: '#01796F', label: 'Hub M', desc: 'District hub · underground car parks · 2 km coverage' },
+    { color: '#3EA055', label: 'Hub S', desc: 'Last-metre · bus interchanges · 400 m coverage' },
+  ]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '40px 36px' }}>
@@ -390,27 +394,13 @@ function HubLeftPanel({ tab }) {
         <div>
           <div style={LB}>Capacity Analysis</div>
 
-          {/* Population slider */}
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontFamily: F, fontSize: 11, color: '#666' }}>City residents</span>
-              <span style={{ fontFamily: F, fontSize: 13, fontWeight: 700, color: '#111' }}>
-                {fmt(pop)}
-              </span>
-            </div>
-            <input
-              type="range" min={130000} max={250000} step={5000} value={pop}
-              onChange={e => setHubPopulation(+e.target.value)}
-              style={{ width: '100%', accentColor: '#1D1D1F', cursor: 'pointer' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-              <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>130 000</span>
-              <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>250 000</span>
-            </div>
+          {/* Static scenario label */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontFamily: F, fontSize: 11, color: '#888' }}>130,000 residents · baseline scenario</span>
           </div>
 
           {/* Peak trips result */}
-          <div style={{ padding: '14px 16px', background: '#F5F5F7', borderRadius: 8, marginBottom: 14 }}>
+          <div style={{ padding: '14px 16px', background: '#F5F5F7', borderRadius: 8, marginBottom: 18 }}>
             <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
               Peak trips in city center
             </div>
@@ -423,58 +413,54 @@ function HubLeftPanel({ tab }) {
           </div>
 
           {/* Tier legend */}
-          <div style={{ marginTop: 6 }}>
-            <div style={LB}>Hub tiers</div>
-            {[
-              { color: '#1D1D1F', label: 'Hub L', desc: 'Fleet depot · multi-storey car parks · 4 km coverage' },
-              { color: '#1D7A3A', label: 'Hub M', desc: 'District hub · underground car parks · 2 km coverage' },
-              { color: '#185FA5', label: 'Hub S', desc: 'Last-metre · bus interchanges · 500 m coverage' },
-            ].map(({ color, label, desc }) => (
-              <div key={label} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                <div style={{ width: 20, height: 20, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 1 }} />
-                <div>
-                  <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111' }}>{label}</div>
-                  <div style={{ fontFamily: F, fontSize: 11, color: '#888', lineHeight: 1.4 }}>{desc}</div>
-                </div>
+          <div style={LB}>Hub tiers</div>
+          {TIERS.map(({ color, label, desc }) => (
+            <div key={label} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+              <div style={{ width: 14, height: 14, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111' }}>{label}</div>
+                <div style={{ fontFamily: F, fontSize: 11, color: '#888', lineHeight: 1.4 }}>{desc}</div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
 
       {tab === 'fleet' && (
         <div>
-          <div style={LB}>Fleet Visualisation</div>
-          <p style={{ ...BD, fontSize: 12, marginBottom: 16 }}>
-            Each hub shown with its fleet allocation and coverage radius. Callout labels display
-            per-hub fleet composition based on the current capacity calculation.
+          <div style={LB}>Fleet per hub</div>
+          <p style={{ ...BD, fontSize: 12, marginBottom: 18 }}>
+            Bar height is proportional to fleet size at each hub. Yellow circles show service coverage radius.
           </p>
-          {[
-            { color: '#FFD200', label: 'Hub L coverage', desc: '4 km radius' },
-            { color: '#FFD200', label: 'Hub M coverage', desc: '2 km radius' },
-            { color: '#FFD200', label: 'Hub S coverage', desc: '500 m radius' },
-          ].map(({ color, label, desc }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${color}`, background: `${color}22`, flexShrink: 0 }} />
+          {TIERS.map(({ color, label, desc }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{ width: 10, height: 28, background: color, borderRadius: '2px 2px 0 0', flexShrink: 0 }} />
               <div>
-                <span style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: '#111' }}>{label}</span>
-                <span style={{ fontFamily: F, fontSize: 11, color: '#888', marginLeft: 6 }}>{desc}</span>
+                <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111' }}>{label}</div>
+                <div style={{ fontFamily: F, fontSize: 11, color: '#888' }}>{desc.split('·').slice(-1)[0].trim()}</div>
               </div>
             </div>
           ))}
-          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D1D1F', flexShrink: 0 }} />
-            <span style={{ fontFamily: F, fontSize: 12, color: '#444' }}>Hub location · callout with fleet details</span>
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1.5px solid #FFD200', background: '#FFD20015', flexShrink: 0 }} />
+            <span style={{ fontFamily: F, fontSize: 11, color: '#888' }}>Coverage area (L 4 km · M 2 km · S 500 m)</span>
           </div>
         </div>
       )}
 
       {tab === 'network' && (
         <div>
-          <div style={LB}>Network</div>
-          <p style={{ ...BD, fontSize: 12, color: '#bbb', fontStyle: 'italic' }}>
-            Vehicle flow and network utilisation — in development.
-          </p>
+          <div style={LB}>Network Analysis</div>
+          {[
+            { title: 'Network Hubs', desc: 'Topology of shuttle routes: L → M → S connections and inter-hub transfer flows.' },
+            { title: 'Facility Network', desc: 'Lines from each hub to the nearby destinations that drove its placement score.' },
+            { title: 'Hub L External', desc: 'Regional flows from Braunschweig, Gifhorn and Hannover converging to Hub L gateway nodes.' },
+          ].map(({ title, desc }) => (
+            <div key={title} style={{ marginBottom: 14 }}>
+              <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111', marginBottom: 3 }}>{title}</div>
+              <div style={{ fontFamily: F, fontSize: 11, color: '#888', lineHeight: 1.4 }}>{desc}</div>
+            </div>
+          ))}
         </div>
       )}
     </div>
