@@ -264,13 +264,13 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
           paint: { 'line-color': '#FFD200', 'line-width': 1.5, 'line-opacity': 0.75 } })
       }
 
-      // Network lines (0.5px, 50% opacity — thin flow lines)
+      // Network lines (0.5px, 10% opacity — very thin flow lines)
       for (const prefix of ['hn', 'fn']) {
         for (const [suffix, color] of [['black', TC.l], ['teal', TC.m], ['green', TC.s]]) {
           const id = `${prefix}-${suffix}`
           map.addSource(id, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
           map.addLayer({ id: `${id}-layer`, type: 'line', source: id, layout: { visibility: 'none' },
-            paint: { 'line-color': color, 'line-width': 0.5, 'line-opacity': 0.5 } })
+            paint: { 'line-color': color, 'line-width': 0.5, 'line-opacity': 0.1 } })
         }
       }
       // Facility dots
@@ -288,12 +288,7 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
       map.addLayer({ id: 'ef-lines-layer', type: 'line', source: 'ef-lines', layout: { visibility: 'none' },
         paint: { 'line-color': '#FF0800', 'line-width': 0.5, 'line-opacity': 0.5 } })
 
-      // City mask
-      map.addSource('city-mask', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      map.addLayer({ id: 'city-mask-fill', type: 'fill', source: 'city-mask',
-        paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } })
-
-      // ── Above mask ────────────────────────────────────────────────────────
+      // Hub dots — below city mask so dots outside the city boundary are hidden by the white fill
       map.addSource('pl-dots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       for (const [tier, color] of [['l', TC.l], ['m', TC.m], ['s', TC.s]])
         map.addLayer({ id: `pl-dot-${tier}`, type: 'circle', source: 'pl-dots',
@@ -305,6 +300,13 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
           filter: ['==', ['get', 'tier'], tier], layout: { visibility: 'none' },
           paint: { 'circle-color': color, 'circle-radius': r, 'circle-opacity': 1,
                    'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' } })
+
+      // City mask (above hub dots — clips anything outside the city polygon)
+      map.addSource('city-mask', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
+      map.addLayer({ id: 'city-mask-fill', type: 'fill', source: 'city-mask',
+        paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } })
+
+      // ── Above mask (only External Flows elements that need to show outside city) ──
 
       map.addSource('ef-hub-l', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'ef-hub-l-layer', type: 'circle', source: 'ef-hub-l', layout: { visibility: 'none' },
@@ -404,7 +406,7 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
 
     show('pl-dot-l', isPl && hubLMShowL); show('pl-dot-m', isPl && hubLMShowM); show('pl-dot-s', isPl && hubLMShowS)
 
-    show('fleet-roads-layer', isFl); show('fleet-cycling-layer', isFl)
+    show('fleet-roads-layer', isFl || isHN || isFN); show('fleet-cycling-layer', isFl || isHN || isFN)
     show('fleet-cov-l-fill', isFl); show('fleet-cov-l-line', isFl)
     show('fleet-cov-m-fill', isFl); show('fleet-cov-m-line', isFl)
     show('fleet-cov-s-fill', isFl); show('fleet-cov-s-line', isFl)
