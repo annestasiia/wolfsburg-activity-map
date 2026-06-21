@@ -184,7 +184,7 @@ function parkingToPoints(geoJSON, cityGeo) {
 // 500m × 500m invisible grid, proportional circles (50–240m radius) per cell.
 // At 52.42°N: 500m ≈ 0.004524° lat, 500m ≈ 0.007382° lon
 // 250m grid; radii 50–240m (diameter up to 480m, ~10m gap at max)
-const ACT_LAT = 0.002262, ACT_LON = 0.003691
+const ACT_LAT = 0.000900, ACT_LON = 0.001479
 const ACT_MIN_R = 50, ACT_MAX_R = 240
 
 function buildActivityGrid(roads, busStops, carParkings, bikeParkings, cycling, cityGeo) {
@@ -331,8 +331,12 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
       map.addLayer({ id: 'activity-circles', type: 'circle', source: 'activity-grid',
         layout: { visibility: 'none' },
         paint: {
-          'circle-color': '#FFD300',
-          'circle-opacity': 0.90,
+          'circle-color': ['interpolate', ['linear'], ['get', 'radius_m'],
+            50,  '#FF9E3D',
+            145, '#FF5C00',
+            240, '#BF00FF',
+          ],
+          'circle-opacity': 0.85,
           'circle-stroke-width': 0,
           'circle-radius': ['interpolate', ['exponential', 2], ['zoom'],
             9,  ['*', ['get', 'radius_m'], 0.00536],

@@ -96,7 +96,7 @@ function isInsideCity(lng, lat, cityGeo) {
 }
 
 // ── Livability proportional symbol grid (250m, facility density) ──────────────
-const LIV_LAT = 0.002262, LIV_LON = 0.003691
+const LIV_LAT = 0.000900, LIV_LON = 0.001479
 const LIV_MIN_R = 50, LIV_MAX_R = 240
 
 function buildLivabilityGrid(venues, localFacilities, localHistoric, cityGeo) {
@@ -202,7 +202,12 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
       map.addLayer({ id: 'liv-circles', type: 'circle', source: 'liv-grid',
         layout: { visibility: 'none' },
         paint: {
-          'circle-color': '#E62020', 'circle-opacity': 0.90, 'circle-stroke-width': 0,
+          'circle-color': ['interpolate', ['linear'], ['get', 'radius_m'],
+            50,  '#90D5FF',
+            145, '#10069F',
+            240, '#131936',
+          ],
+          'circle-opacity': 0.85, 'circle-stroke-width': 0,
           'circle-radius': ['interpolate', ['exponential', 2], ['zoom'],
             9,  ['*', ['get', 'radius_m'], 0.00536],
             10, ['*', ['get', 'radius_m'], 0.01073],

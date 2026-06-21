@@ -239,17 +239,18 @@ function MobilityLeftPanel({ tab }) {
             Proportional symbol grid (500 m cells). Circle size encodes combined transport
             intensity — roads, bus stops, parkings, cycling infrastructure.
           </p>
-          {/* Size legend */}
+          {/* Size + colour legend */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 16 }}>
-            {[{ r: 4, label: 'Low' }, { r: 8, label: 'Mid' }, { r: 14, label: 'High' }].map(({ r, label }) => (
+            {[{ r: 4, label: 'Low', color: '#FF9E3D' }, { r: 8, label: 'Mid', color: '#FF5C00' }, { r: 14, label: 'High', color: '#BF00FF' }].map(({ r, label, color }) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                 <svg width={r * 2 + 4} height={r * 2 + 4}>
-                  <circle cx={r + 2} cy={r + 2} r={r} fill="#FFD300" />
+                  <circle cx={r + 2} cy={r + 2} r={r} fill={color} />
                 </svg>
                 <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
               </div>
             ))}
           </div>
+          <div style={{ height: 6, borderRadius: 3, background: 'linear-gradient(to right, #FF9E3D, #FF5C00, #BF00FF)', marginBottom: 10 }} />
           <div style={{ fontFamily: F, fontSize: 11, color: '#bbb', lineHeight: 1.6 }}>
             Sources: OSM road network · bus stops ·<br />
             car &amp; bike parkings · official cycling routes
@@ -284,15 +285,16 @@ function LivabilityLeftPanel({ tab }) {
             of commercial venues, facilities and historic sites.
           </p>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 16 }}>
-            {[{ r: 4, label: 'Low' }, { r: 8, label: 'Mid' }, { r: 14, label: 'High' }].map(({ r, label }) => (
+            {[{ r: 4, label: 'Low', color: '#90D5FF' }, { r: 8, label: 'Mid', color: '#10069F' }, { r: 14, label: 'High', color: '#131936' }].map(({ r, label, color }) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                 <svg width={r * 2 + 4} height={r * 2 + 4}>
-                  <circle cx={r + 2} cy={r + 2} r={r} fill="#E62020" />
+                  <circle cx={r + 2} cy={r + 2} r={r} fill={color} />
                 </svg>
                 <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
               </div>
             ))}
           </div>
+          <div style={{ height: 6, borderRadius: 3, background: 'linear-gradient(to right, #90D5FF, #10069F, #131936)', marginBottom: 10 }} />
           <div style={{ fontFamily: F, fontSize: 11, color: '#bbb', lineHeight: 1.6 }}>
             Sources: venues registry · OSM facilities · historic sites
           </div>
