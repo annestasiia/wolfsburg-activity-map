@@ -601,7 +601,6 @@ export default function LandingPage() {
   const [livabilityTab, setLivabilityTab] = useState('livability')
   const [centralityTab, setCentralityTab] = useState('centrality')
   const [hubTab, setHubTab] = useState('placement')
-  const [compTab, setCompTab] = useState('walk')
 
   React.useEffect(() => {
     setNavOpen(false)
@@ -724,7 +723,7 @@ export default function LandingPage() {
         </section>
 
         {/* Comparative Analysis — full width, two side-by-side maps */}
-        <ComparativeAnalysisSection tab={compTab} onTabChange={setCompTab} />
+        <ComparativeAnalysisSection />
 
         {/* Design Elements and Typology */}
         <DesignTypologySection />
