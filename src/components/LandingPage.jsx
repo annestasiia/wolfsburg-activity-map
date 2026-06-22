@@ -3,8 +3,6 @@ import { useAppStore } from '../store/appStore'
 import { DAYS } from '../constants'
 import { computeCapacity } from '../utils/capacityCalc'
 import MobilityMapSection    from './landing/MobilityMapSection'
-import MobilityStatsPanel    from './landing/MobilityStatsPanel'
-import CentralityStatsPanel  from './landing/CentralityStatsPanel'
 import LivabilityMapSection, { LANDUSE_COLORS } from './landing/LivabilityMapSection'
 import CentralityMapSection, { CENT_TABS } from './landing/CentralityMapSection'
 import FacilitiesMapSection  from './landing/FacilitiesMapSection'
@@ -692,9 +690,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Mobility district bar chart — switches with active tab */}
-        <MobilityStatsPanel mobilityTab={mobilityTab} onMobilityTabChange={setMobilityTab} />
-
         {/* Livability — 40/60 with tabs */}
         <section style={{ display: 'flex', height: '100vh', border: '1px solid #E8E8E8', overflow: 'hidden' }}>
           <div style={{ width: '40%', flexShrink: 0, borderRight: '1px solid #E8E8E8', overflow: 'hidden' }}>
@@ -714,9 +709,6 @@ export default function LandingPage() {
             <CentralityMapSection tab={centralityTab} onTabChange={setCentralityTab} />
           </div>
         </section>
-
-        {/* Centrality district bar chart */}
-        <CentralityStatsPanel centralityTab={centralityTab} onCentralityTabChange={setCentralityTab} />
 
         {/* Hub — 40/60 with tabs */}
         <section style={{ display:'flex', height:'100vh', border:'1px solid #E8E8E8', overflow:'hidden' }}>
