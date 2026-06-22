@@ -223,7 +223,8 @@ export default function ComparativeAnalysisSection({ tab, onTabChange }) {
 
   // Fetch hub centrality data
   useEffect(() => {
-    fetch('/wolfsburg_centrality_hubs.geojson')
+    const base = import.meta.env.BASE_URL
+    fetch(`${base}wolfsburg_centrality_hubs.geojson`)
       .then(r => r.json())
       .then(d => {
         setHubsData(d)
@@ -235,7 +236,8 @@ export default function ComparativeAnalysisSection({ tab, onTabChange }) {
   // Fetch city boundary if not in store
   useEffect(() => {
     if (landingCityGeoJSON) return
-    fetch('/wolfsburg_districts_union.geojson')
+    const base = import.meta.env.BASE_URL
+    fetch(`${base}wolfsburg_districts_union.geojson`)
       .then(r => r.json())
       .then(setLandingCityGeoJSON)
       .catch(() => {})
