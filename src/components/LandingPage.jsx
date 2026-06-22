@@ -3,6 +3,7 @@ import { useAppStore } from '../store/appStore'
 import { DAYS } from '../constants'
 import { computeCapacity } from '../utils/capacityCalc'
 import MobilityMapSection    from './landing/MobilityMapSection'
+import MobilityStatsPanel    from './landing/MobilityStatsPanel'
 import LivabilityMapSection, { LANDUSE_COLORS } from './landing/LivabilityMapSection'
 import CentralityMapSection, { CENT_TABS } from './landing/CentralityMapSection'
 import FacilitiesMapSection  from './landing/FacilitiesMapSection'
@@ -689,6 +690,9 @@ export default function LandingPage() {
             <MobilityMapSection tab={mobilityTab} onTabChange={setMobilityTab} />
           </div>
         </section>
+
+        {/* Mobility district stats — full-width, reacts to active tab */}
+        <MobilityStatsPanel mobilityTab={mobilityTab} />
 
         {/* Livability — 40/60 with tabs */}
         <section style={{ display: 'flex', height: '100vh', border: '1px solid #E8E8E8', overflow: 'hidden' }}>
