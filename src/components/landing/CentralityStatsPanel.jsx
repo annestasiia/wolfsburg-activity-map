@@ -3,31 +3,39 @@ import { useAppStore } from '../../store/appStore'
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
-export const MOB_TABS = [
-  { id: 'activity', label: 'Activity Map' },
-  { id: 'auto',     label: 'Auto'         },
-  { id: 'public',   label: 'Public'       },
-  { id: 'cycling',  label: 'Cycling'      },
+export const CENT_STAT_TABS = [
+  { id: 'centrality', label: 'All modes' },
+  { id: 'walk',       label: 'Walk'      },
+  { id: 'bike',       label: 'Bike'      },
+  { id: 'public',     label: 'Public'    },
+  { id: 'auto',       label: 'Auto'      },
 ]
 
 const TAB_CFG = {
-  activity: { label: 'Activity Map',     color: '#1D1D1F', yLabel: 'Avg. transport accessibility (%)' },
-  auto:     { label: 'Auto',             color: '#C10016', yLabel: 'Road network density (%)'          },
-  public:   { label: 'Public Transit',   color: '#5539CC', yLabel: 'Bus stop coverage (%)'             },
-  cycling:  { label: 'Cycling',          color: '#004225', yLabel: 'Cycling infrastructure (%)'        },
+  centrality: { label: 'All Modes (avg.)',   color: '#1D1D1F', yLabel: 'Avg. centrality score (%)' },
+  walk:       { label: 'Walk',               color: '#16A34A', yLabel: 'Walk centrality (%)'        },
+  bike:       { label: 'Bike',               color: '#059669', yLabel: 'Bike centrality (%)'        },
+  public:     { label: 'Public Transit',     color: '#CA8A04', yLabel: 'Public centrality (%)'      },
+  auto:       { label: 'Auto',               color: '#DC2626', yLabel: 'Auto centrality (%)'        },
 }
 
-const MODES = [
-  { key: 'auto',    color: '#C10016', label: 'Auto'    },
-  { key: 'public',  color: '#5539CC', label: 'Public'  },
-  { key: 'cycling', color: '#004225', label: 'Cycling' },
+// Keys inside centralitydata GeoJSON feature.properties
+// CentralityMapSection MODE_CONFIG maps: walk→'w', bike→'b', auto→'a', public→'p'
+const PROP = { walk: 'w', bike: 'b', auto: 'a', public: 'p' }
+
+const MODE_LIST = [
+  { key: 'walk',   propKey: 'w', color: '#16A34A', label: 'Walk'   },
+  { key: 'bike',   propKey: 'b', color: '#059669', label: 'Bike'   },
+  { key: 'public', propKey: 'p', color: '#CA8A04', label: 'Public' },
+  { key: 'auto',   propKey: 'a', color: '#DC2626', label: 'Auto'   },
 ]
 
 // ── Score computation ─────────────────────────────────────────────────────────
-function computeScores(districtBoundaries, roads, localBusStops, localCyclingOfficial) {
+function computeScores(districtBoundaries, localCentrality) {
   const names = Object.keys(districtBoundaries)
-  if (!names.length) return { names: [], scores: {} }
+  if (!names.length || !localCentrality?.features?.length) return { names: [], scores: {} }
 
+  // Build bboxes per district
   const bboxes = {}
   for (const name of names) {
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity
@@ -43,39 +51,55 @@ function computeScores(districtBoundaries, roads, localBusStops, localCyclingOff
     bboxes[name] = [x0, y0, x1, y1]
   }
 
-  const roadPts  = (roads?.features || []).map(f => f.geometry?.coordinates?.[0]).filter(Boolean)
-  const busPts   = (localBusStops?.features || []).map(f => f.geometry?.coordinates).filter(c => c && !Array.isArray(c[0]))
-  const cyclePts = []
-  for (const f of (localCyclingOfficial?.features || [])) {
-    const g = f.geometry; if (!g) continue
-    const ls = g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : []
-    for (const line of ls) if (line[0]) cyclePts.push(line[0])
+  // Precompute all centrality point coordinates + scores
+  const pts = []
+  for (const f of localCentrality.features) {
+    const g = f.geometry
+    if (g?.type !== 'Point') continue
+    const [lo, la] = g.coordinates
+    const p = f.properties || {}
+    pts.push({
+      lo, la,
+      w: p.w ?? p.score_walk  ?? 0,
+      b: p.b ?? p.score_bike  ?? 0,
+      a: p.a ?? p.score_drive ?? 0,
+      p: p.p ?? p.score_pt    ?? 0,
+    })
   }
 
-  const countIn = (pts, [x0, y0, x1, y1]) => {
-    let n = 0
-    for (const [lo, la] of pts) if (lo >= x0 && lo <= x1 && la >= y0 && la <= y1) n++
-    return n
-  }
-
-  const raw = {}
+  // Accumulate sums per district (bbox approach)
+  const acc = {}
   for (const name of names)
-    raw[name] = {
-      auto:    countIn(roadPts,  bboxes[name]),
-      public:  countIn(busPts,   bboxes[name]),
-      cycling: countIn(cyclePts, bboxes[name]),
-    }
+    acc[name] = { w: 0, b: 0, a: 0, p: 0, cnt: 0 }
 
-  const maxA = Math.max(...names.map(n => raw[n].auto),    1)
-  const maxP = Math.max(...names.map(n => raw[n].public),  1)
-  const maxC = Math.max(...names.map(n => raw[n].cycling), 1)
+  for (const pt of pts) {
+    for (const name of names) {
+      const [x0, y0, x1, y1] = bboxes[name]
+      if (pt.lo >= x0 && pt.lo <= x1 && pt.la >= y0 && pt.la <= y1) {
+        acc[name].w += pt.w; acc[name].b += pt.b; acc[name].a += pt.a; acc[name].p += pt.p
+        acc[name].cnt++
+      }
+    }
+  }
+
+  // Average → normalise to 0–1
+  const avg = {}
+  for (const name of names) {
+    const c = acc[name].cnt || 1
+    avg[name] = { w: acc[name].w / c, b: acc[name].b / c, a: acc[name].a / c, p: acc[name].p / c }
+  }
+
+  const maxOf = key => Math.max(...names.map(n => avg[n][key]), 1)
+  const mW = maxOf('w'), mB = maxOf('b'), mA = maxOf('a'), mP = maxOf('p')
 
   const scores = {}
   for (const name of names)
     scores[name] = {
-      auto:    raw[name].auto    / maxA,
-      public:  raw[name].public  / maxP,
-      cycling: raw[name].cycling / maxC,
+      walk:   avg[name].w / mW,
+      bike:   avg[name].b / mB,
+      auto:   avg[name].a / mA,
+      public: avg[name].p / mP,
+      all:    (avg[name].w / mW + avg[name].b / mB + avg[name].a / mA + avg[name].p / mP) / 4,
     }
 
   return { names: [...names].sort((a, b) => a.localeCompare(b, 'de')), scores }
@@ -83,26 +107,26 @@ function computeScores(districtBoundaries, roads, localBusStops, localCyclingOff
 
 // ── SVG chart constants ───────────────────────────────────────────────────────
 const MT = 12, MR = 16, MB = 92, ML = 48
-const SLOT = 28          // wider slots
+const SLOT = 28
 const CH   = 160
 
-export default function MobilityStatsPanel({ mobilityTab, onMobilityTabChange }) {
-  const { districtBoundaries, roads, localBusStops, localCyclingOfficial } = useAppStore()
+export default function CentralityStatsPanel({ centralityTab, onCentralityTabChange }) {
+  const { districtBoundaries, localCentrality } = useAppStore()
 
   const { names, scores } = useMemo(
-    () => computeScores(districtBoundaries, roads, localBusStops, localCyclingOfficial),
-    [districtBoundaries, roads, localBusStops, localCyclingOfficial],
+    () => computeScores(districtBoundaries, localCentrality),
+    [districtBoundaries, localCentrality],
   )
 
   if (!names.length) return null
 
-  const cfg   = TAB_CFG[mobilityTab] || TAB_CFG.activity
-  const n     = names.length
-  const VW    = ML + n * SLOT + MR
-  const VH    = MT + CH + MB
-  const isAct = mobilityTab === 'activity'
-  const barW  = isAct ? SLOT * 0.2 : SLOT * 0.6
-  const gap   = SLOT * 0.08
+  const cfg    = TAB_CFG[centralityTab] || TAB_CFG.centrality
+  const n      = names.length
+  const VW     = ML + n * SLOT + MR
+  const VH     = MT + CH + MB
+  const isAll  = centralityTab === 'centrality'
+  const barW   = isAll ? SLOT * 0.2 : SLOT * 0.6
+  const gap    = SLOT * 0.08
   const yTicks = [0, 25, 50, 75, 100]
 
   return (
@@ -123,24 +147,24 @@ export default function MobilityStatsPanel({ mobilityTab, onMobilityTabChange })
           borderRadius: 8, padding: '3px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
         }}>
-          {MOB_TABS.map(({ id, label }) => (
-            <button key={id} onClick={() => onMobilityTabChange?.(id)} style={{
+          {CENT_STAT_TABS.map(({ id, label }) => (
+            <button key={id} onClick={() => onCentralityTabChange?.(id)} style={{
               padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
               fontFamily: F, fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em',
-              background: mobilityTab === id ? '#1D1D1F' : 'transparent',
-              color:      mobilityTab === id ? '#fff'    : '#666',
+              background: centralityTab === id ? '#1D1D1F' : 'transparent',
+              color:      centralityTab === id ? '#fff'    : '#666',
               transition: 'background 0.15s, color 0.15s',
             }}>{label}</button>
           ))}
         </div>
       </div>
 
-      {/* Y-axis label + optional activity legend */}
+      {/* Y-axis label + legend for combined view */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <span style={{ fontFamily: F, fontSize: 10, color: '#BBB' }}>{cfg.yLabel}</span>
-        {isAct && (
+        {isAll && (
           <div style={{ display: 'flex', gap: 16 }}>
-            {MODES.map(({ key, color, label }) => (
+            {MODE_LIST.map(({ key, color, label }) => (
               <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 10, height: 10, background: color, borderRadius: 2 }} />
                 <span style={{ fontFamily: F, fontSize: 10, color: '#888' }}>{label}</span>
@@ -173,16 +197,15 @@ export default function MobilityStatsPanel({ mobilityTab, onMobilityTabChange })
           const base = MT + CH
 
           let bars
-          if (isAct) {
-            const totalW = 3 * barW + 2 * gap
+          if (isAll) {
+            const totalW = 4 * barW + 3 * gap
             const sx = cx - totalW / 2
-            bars = MODES.map(({ key, color }, mi) => {
+            bars = MODE_LIST.map(({ key, color }, mi) => {
               const h = Math.max((scores[name]?.[key] || 0) * CH, 0.5)
               return <rect key={key} x={sx + mi * (barW + gap)} y={base - h} width={barW} height={h} fill={color} opacity={0.82} rx={0.8} />
             })
           } else {
-            const mode = mobilityTab === 'auto' ? 'auto' : mobilityTab === 'public' ? 'public' : 'cycling'
-            const h = Math.max((scores[name]?.[mode] || 0) * CH, 0.5)
+            const h = Math.max((scores[name]?.[centralityTab] || 0) * CH, 0.5)
             bars = <rect x={cx - barW / 2} y={base - h} width={barW} height={h} fill={cfg.color} opacity={0.85} rx={1} />
           }
 
