@@ -127,7 +127,7 @@ def add_hub_network_edges(G, hub_pts, radius_m=HUB_RADIUS_M, speed=HUB_SPEED):
         else:
             G.add_edge(node1, node2, weight=t)
             added += 1
-    log(f"Hub network: added {added} virtual edges between {len(hub_pts)} hub nodes at ≤{radius_m//1000}km")
+    log(f"Hub network: added {added} virtual edges between {len(hub_pts)} hub nodes at <={radius_m//1000}km")
 
 # ── Grid ──────────────────────────────────────────────────────────────────────
 def make_grid():
@@ -326,10 +326,10 @@ def main():
     try:
         with open(baseline_path, encoding="utf-8") as f:
             baseline = json.load(f)
-        bw = [feat["properties"]["score_walk"]  for feat in baseline["features"]]
-        bb = [feat["properties"]["score_bike"]  for feat in baseline["features"]]
-        ba = [feat["properties"]["score_drive"] for feat in baseline["features"]]
-        bp = [feat["properties"]["score_pt"]    for feat in baseline["features"]]
+        bw = [feat["properties"].get("w", feat["properties"].get("score_walk",  0)) for feat in baseline["features"]]
+        bb = [feat["properties"].get("b", feat["properties"].get("score_bike",  0)) for feat in baseline["features"]]
+        ba = [feat["properties"].get("a", feat["properties"].get("score_drive", 0)) for feat in baseline["features"]]
+        bp = [feat["properties"].get("p", feat["properties"].get("score_pt",    0)) for feat in baseline["features"]]
         # Normalise hub scores relative to baseline max so colours are directly comparable
         def norm_rel(arr, baseline_vals):
             mx = max(max(baseline_vals), arr.max(), 1)
@@ -357,10 +357,10 @@ def main():
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [lo, la]},
             "properties": {
-                "score_walk":  round(sw, 1),
-                "score_bike":  round(sb, 1),
-                "score_drive": round(sa, 1),
-                "score_pt":    round(sp, 1),
+                "w": round(sw, 1),
+                "b": round(sb, 1),
+                "a": round(sa, 1),
+                "p": round(sp, 1),
             },
         })
 

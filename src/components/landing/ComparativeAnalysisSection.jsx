@@ -15,10 +15,10 @@ const BLANK_STYLE = {
 }
 
 export const COMP_TABS = [
-  { id: 'walk',   label: 'Walk',   color: '#16A34A', propKey: 'score_walk'  },
-  { id: 'bike',   label: 'Bike',   color: '#059669', propKey: 'score_bike'  },
-  { id: 'public', label: 'Public', color: '#CA8A04', propKey: 'score_pt'    },
-  { id: 'auto',   label: 'Auto',   color: '#DC2626', propKey: 'score_drive' },
+  { id: 'walk',   label: 'Walk',   color: '#16A34A', propKey: 'w' },
+  { id: 'bike',   label: 'Bike',   color: '#059669', propKey: 'b' },
+  { id: 'public', label: 'Public', color: '#CA8A04', propKey: 'p' },
+  { id: 'auto',   label: 'Auto',   color: '#DC2626', propKey: 'a' },
 ]
 
 // ── GL expression helpers ─────────────────────────────────────────────────────
@@ -30,7 +30,7 @@ function hexAlpha(hex, a) {
 }
 
 function colorExpr(propKey, color) {
-  if (propKey === 'score_drive') {
+  if (propKey === 'a') {
     return ['interpolate', ['linear'], ['get', propKey],
       0, '#FFF44F', 50, '#FF7A00', 100, '#E62020']
   }
@@ -45,7 +45,7 @@ function colorExpr(propKey, color) {
 
 function radiusExpr(propKey) {
   const val = ['get', propKey]
-  if (propKey === 'score_drive') {
+  if (propKey === 'a') {
     return ['interpolate', ['linear'], val, 0, 0.3, 20, 1.2, 50, 3.0, 80, 5.5, 100, 8.0]
   }
   return ['interpolate', ['linear'], val, 0, 0.4, 20, 1.8, 50, 3.5, 80, 5.5, 100, 7.5]
