@@ -6,7 +6,9 @@ import MobilityMapSection    from './landing/MobilityMapSection'
 import LivabilityMapSection, { LANDUSE_COLORS } from './landing/LivabilityMapSection'
 import CentralityMapSection, { CENT_TABS } from './landing/CentralityMapSection'
 import FacilitiesMapSection  from './landing/FacilitiesMapSection'
-import HubMapSection, { HUB_TABS } from './landing/HubMapSection'
+import HubMapSection, { HUB_TABS }         from './landing/HubMapSection'
+import ComparativeAnalysisSection           from './landing/ComparativeAnalysisSection'
+import DesignTypologySection                from './landing/DesignTypologySection'
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
@@ -599,6 +601,7 @@ export default function LandingPage() {
   const [livabilityTab, setLivabilityTab] = useState('livability')
   const [centralityTab, setCentralityTab] = useState('centrality')
   const [hubTab, setHubTab] = useState('placement')
+  const [compTab, setCompTab] = useState('walk')
 
   React.useEffect(() => {
     setNavOpen(false)
@@ -719,6 +722,13 @@ export default function LandingPage() {
             <HubMapSection tab={hubTab} onTabChange={setHubTab} />
           </div>
         </section>
+
+        {/* Comparative Analysis — full width, two side-by-side maps */}
+        <ComparativeAnalysisSection tab={compTab} onTabChange={setCompTab} />
+
+        {/* Design Elements and Typology */}
+        <DesignTypologySection />
+
       </div>
 
       {/* ── Further Information — full width ──────────────────────────────── */}
