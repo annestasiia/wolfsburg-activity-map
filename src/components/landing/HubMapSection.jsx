@@ -318,10 +318,10 @@ export default function HubMapSection({ tab = 'placement', onTabChange, netTab =
       // Facility Network lines
       map.addSource('fn-lines', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'fn-lines-layer', type: 'line', source: 'fn-lines', layout: { visibility: 'none' },
-        paint: { 'line-color': '#10069F', 'line-width': 0.5, 'line-opacity': 0.20 } })
+        paint: { 'line-color': '#10069F', 'line-width': 0.3, 'line-opacity': 0.06 } })
       map.addSource('fn-dots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'fn-dots-layer', type: 'circle', source: 'fn-dots', layout: { visibility: 'none' },
-        paint: { 'circle-color': '#10069F', 'circle-radius': 1.5, 'circle-opacity': 0.20, 'circle-stroke-width': 0 } })
+        paint: { 'circle-color': '#10069F', 'circle-radius': 1.5, 'circle-opacity': 0.35, 'circle-stroke-width': 0 } })
 
       // External flows
       map.addSource('ef-city-fill', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
