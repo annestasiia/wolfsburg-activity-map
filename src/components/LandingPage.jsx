@@ -8,7 +8,6 @@ import CentralityMapSection, { CENT_TABS } from './landing/CentralityMapSection'
 import FacilitiesMapSection  from './landing/FacilitiesMapSection'
 import HubMapSection, { HUB_TABS }         from './landing/HubMapSection'
 import ComparativeAnalysisSection           from './landing/ComparativeAnalysisSection'
-import DesignTypologySection                from './landing/DesignTypologySection'
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
@@ -764,12 +763,10 @@ const OTHER_SECTIONS = [
   },
 ]
 
-const FURTHER = [
-  { label: 'Post-Car Strategy',        id: 'strategy' },
-  { label: 'Capacity Analysis',        id: 'capacity' },
-  { label: 'Hubs Placement Algorithm', id: 'hub',      mode: 'hub-network' },
-  { label: 'Hubs Algorithm Work',      id: 'hub-algo' },
-  { label: 'Urban Design',             id: 'urban'    },
+const FURTHER_LINKS = [
+  { label: 'Capacity Analysis',   id: 'capacity'  },
+  { label: 'Hubs Algorithm Work', id: 'hub-algo'  },
+  { label: 'Urban Design',        id: 'urban'     },
 ]
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -787,9 +784,9 @@ export default function LandingPage() {
     setLandingSectionMode('geo', 'mobility')
   }, [])
 
-  const navigateTo = (id, mode) => {
+  const navigateTo = (id, mode, noMenu = false) => {
     setShowLanding(false)
-    setNavOpen(true)
+    setNavOpen(!noMenu)
     setActiveSection(id)
     if (mode) setActiveMode(mode)
   }
@@ -905,9 +902,6 @@ export default function LandingPage() {
         {/* Comparative Analysis — full width, two side-by-side maps */}
         <ComparativeAnalysisSection />
 
-        {/* Design Elements and Typology */}
-        <DesignTypologySection />
-
       </div>
 
       {/* ── Further Information — full width ──────────────────────────────── */}
@@ -915,21 +909,18 @@ export default function LandingPage() {
         <div style={EY}>Further Information</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
           <div>
-            {FURTHER.map(({ label, id, mode }) => (
-              <button
-                key={id}
-                onClick={() => navigateTo(id, mode)}
-                style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '18px 0',
-                  background: 'none', border: 'none', borderBottom: '1px solid #E8E8E8',
-                  cursor: 'pointer', width: '100%',
-                }}
-              >
-                <span style={{ fontFamily: F, fontSize: 16, fontWeight: 400, color: '#111' }}>{label}</span>
-                <span style={{ fontFamily: F, fontSize: 18, color: '#bbb' }}>→</span>
-              </button>
-            ))}
+            {/* External links */}
+            <a
+              href="#"
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '18px 0', borderBottom: '1px solid #E8E8E8',
+                color: '#111', textDecoration: 'none', fontFamily: F,
+              }}
+            >
+              <span style={{ fontSize: 16, fontWeight: 400 }}>Project Website</span>
+              <span style={{ fontSize: 18, color: '#bbb' }}>↗</span>
+            </a>
             <a
               href="https://github.com/annestasiia/wolfsburg-activity-map"
               target="_blank"
@@ -943,6 +934,22 @@ export default function LandingPage() {
               <span style={{ fontSize: 16, fontWeight: 400 }}>GitHub Repository</span>
               <span style={{ fontSize: 18, color: '#bbb' }}>↗</span>
             </a>
+            {/* Internal — scroll page only, no left menu */}
+            {FURTHER_LINKS.map(({ label, id }) => (
+              <button
+                key={id}
+                onClick={() => navigateTo(id, undefined, true)}
+                style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '18px 0',
+                  background: 'none', border: 'none', borderBottom: '1px solid #E8E8E8',
+                  cursor: 'pointer', width: '100%',
+                }}
+              >
+                <span style={{ fontFamily: F, fontSize: 16, fontWeight: 400, color: '#111' }}>{label}</span>
+                <span style={{ fontFamily: F, fontSize: 18, color: '#bbb' }}>→</span>
+              </button>
+            ))}
           </div>
         </div>
       </section>
