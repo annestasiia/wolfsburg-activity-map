@@ -17,13 +17,15 @@ const BLANK_STYLE = {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const HUB_COLOR  = '#10069F'
-const CAR_COLOR  = '#10069F'
-const BUS_COLOR  = '#C90016'
-const BIKE_COLOR = '#C90016'
-const COV_L_COLOR = '#FF3503'
-const COV_M_COLOR = '#FFD200'
-const COV_S_COLOR = '#C90016'
+const HUB_COLOR      = '#10069F'
+const CAR_COLOR      = '#10069F'
+const BUS_COLOR      = '#C90016'
+const BIKE_COLOR     = '#1A7A00'   // green for bike parking
+const COV_L_COLOR    = '#FF3503'
+const COV_M_COLOR    = '#FFD200'
+const COV_S_COLOR    = '#C90016'
+const ROAD_GREY      = '#C8C8CC'
+const CYCLING_GREY   = '#B0B0B8'
 
 // Road types to show (hide service, track, path, footway)
 const ROAD_TYPES = ['motorway','motorway_link','trunk','trunk_link',
@@ -32,14 +34,15 @@ const ROAD_TYPES = ['motorway','motorway_link','trunk','trunk_link',
 
 const ROAD_FILTER = ['in', ['get', 'highway'], ['literal', ROAD_TYPES]]
 
+// Thicker widths
 const ROAD_WIDTH = ['match', ['get', 'highway'],
-  'motorway', 2.5, 'motorway_link', 1.8,
-  'trunk', 2.2,    'trunk_link', 1.5,
-  'primary', 1.8,  'primary_link', 1.4,
-  'secondary', 1.3,'secondary_link', 1.0,
-  'tertiary', 0.9, 'tertiary_link', 0.7,
-  'residential', 0.5, 'living_street', 0.5, 'unclassified', 0.5,
-  0.4,
+  'motorway', 3.5, 'motorway_link', 2.5,
+  'trunk', 3.0,    'trunk_link', 2.2,
+  'primary', 2.5,  'primary_link', 2.0,
+  'secondary', 1.8,'secondary_link', 1.5,
+  'tertiary', 1.2, 'tertiary_link', 1.0,
+  'residential', 0.8, 'living_street', 0.8, 'unclassified', 0.8,
+  0.5,
 ]
 
 // Zoom-interpolated radius expression for a given metres value
@@ -161,7 +164,7 @@ function buildAfterHubDots(lHubs, mHubs, sHubs) {
   return { type: 'FeatureCollection', features }
 }
 
-// Coverage circles: L=800m #FF3503, M=400m #FFD200, S=200m #C90016
+// Coverage circles: L=800m, M=400m, S=200m
 function buildAfterCoverage(lHubs, mHubs, sHubs) {
   const features = []
   const lon = h => h.lon ?? h.lng
@@ -214,6 +217,7 @@ function IntermodalMap({ id, side, layers, cityGeoJSON, districtBoundaries, onMo
 
     addSrc('districts', EMPTY)
     addSrc('roads', EMPTY)
+    addSrc('cycling', EMPTY)
     addSrc('city-mask', EMPTY)
     addSrc('city-bound', EMPTY)
     addSrc('grid', graticule)
@@ -234,54 +238,62 @@ function IntermodalMap({ id, side, layers, cityGeoJSON, districtBoundaries, onMo
       paint: { 'line-color': '#CCCCCC', 'line-width': 0.5, 'line-opacity': 0.8 } })
 
     if (side === 'before') {
-      // 2. Roads — light grey, hierarchical width
+      // Roads — light grey, thicker hierarchical widths
       map.addLayer({ id: 'roads-layer', type: 'line', source: 'roads',
         filter: ROAD_FILTER,
-        paint: { 'line-color': '#D4D4D8', 'line-width': ROAD_WIDTH, 'line-opacity': 0.9 } })
+        paint: { 'line-color': ROAD_GREY, 'line-width': ROAD_WIDTH, 'line-opacity': 1 } })
 
-      // 3. Point layers (below mask, sized in metres)
-      // Car parking — #10069F, 100m
+      // Cycling paths — same grey
+      map.addLayer({ id: 'cycling-layer', type: 'line', source: 'cycling',
+        paint: { 'line-color': CYCLING_GREY, 'line-width': 1.2, 'line-opacity': 1 } })
+
+      // Point layers — ×3 radii, no opacity
+      // Car parking — #10069F, 300m
       map.addLayer({ id: 'car-park-layer', type: 'circle', source: 'car-parks',
-        paint: { 'circle-color': CAR_COLOR, 'circle-opacity': 0.45, 'circle-stroke-width': 0,
-          'circle-radius': radExpr(100) } })
-      // Bus stops — #C90016, 70m
+        paint: { 'circle-color': CAR_COLOR, 'circle-opacity': 1, 'circle-stroke-width': 0,
+          'circle-radius': radExpr(300) } })
+      // Bus stops — #C90016, 210m
       map.addLayer({ id: 'bus-stop-layer', type: 'circle', source: 'bus-stops',
-        paint: { 'circle-color': BUS_COLOR, 'circle-opacity': 0.5, 'circle-stroke-width': 0,
-          'circle-radius': radExpr(70) } })
-      // Bike parking — #C90016, 50m
+        paint: { 'circle-color': BUS_COLOR, 'circle-opacity': 1, 'circle-stroke-width': 0,
+          'circle-radius': radExpr(210) } })
+      // Bike parking — green, 150m
       map.addLayer({ id: 'bike-park-layer', type: 'circle', source: 'bike-parks',
-        paint: { 'circle-color': BIKE_COLOR, 'circle-opacity': 0.45, 'circle-stroke-width': 0,
-          'circle-radius': radExpr(50) } })
+        paint: { 'circle-color': BIKE_COLOR, 'circle-opacity': 1, 'circle-stroke-width': 0,
+          'circle-radius': radExpr(150) } })
 
     } else {
-      // 2. Triangulation network (thin, below everything)
+      // Triangulation network — full opacity, thicker
       map.addLayer({ id: 'hub-tri-layer', type: 'line', source: 'hub-tri',
-        paint: { 'line-color': HUB_COLOR, 'line-width': 0.4, 'line-opacity': 0.2 } })
+        paint: { 'line-color': HUB_COLOR, 'line-width': 1.0, 'line-opacity': 1 } })
 
-      // 3. Coverage circles
+      // Coverage circles
       const covColor = ['match', ['get', 'tier'], 'l', COV_L_COLOR, 'm', COV_M_COLOR, COV_S_COLOR]
       map.addLayer({ id: 'hub-cov-fill', type: 'fill', source: 'hub-cov',
         paint: { 'fill-color': covColor, 'fill-opacity': 0.07 } })
       map.addLayer({ id: 'hub-cov-stroke', type: 'line', source: 'hub-cov',
-        paint: { 'line-color': covColor, 'line-width': 0.8, 'line-opacity': 0.35, 'line-dasharray': [3, 4] } })
+        paint: { 'line-color': covColor, 'line-width': 0.8, 'line-opacity': 1, 'line-dasharray': [3, 4] } })
 
-      // 4. Roads — #10069F, hierarchical width, low opacity
+      // Roads — #10069F, full opacity, thicker
       map.addLayer({ id: 'roads-layer', type: 'line', source: 'roads',
         filter: ROAD_FILTER,
-        paint: { 'line-color': HUB_COLOR, 'line-width': ROAD_WIDTH, 'line-opacity': 0.18 } })
+        paint: { 'line-color': HUB_COLOR, 'line-width': ROAD_WIDTH, 'line-opacity': 1 } })
 
-      // 5. Hub dots — all #10069F, size by tier
+      // Cycling paths — same blue
+      map.addLayer({ id: 'cycling-layer', type: 'line', source: 'cycling',
+        paint: { 'line-color': HUB_COLOR, 'line-width': 1.2, 'line-opacity': 1 } })
+
+      // Hub dots — all #10069F, ×3 radii, no opacity
       map.addLayer({ id: 'hub-l-layer', type: 'circle', source: 'hub-dots',
         filter: ['==', ['get', 'tier'], 'l'],
-        paint: { 'circle-color': HUB_COLOR, 'circle-radius': radExpr(100),
+        paint: { 'circle-color': HUB_COLOR, 'circle-radius': radExpr(300),
           'circle-opacity': 1, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.5 } })
       map.addLayer({ id: 'hub-m-layer', type: 'circle', source: 'hub-dots',
         filter: ['==', ['get', 'tier'], 'm'],
-        paint: { 'circle-color': HUB_COLOR, 'circle-radius': radExpr(70),
+        paint: { 'circle-color': HUB_COLOR, 'circle-radius': radExpr(210),
           'circle-opacity': 1, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.2 } })
       map.addLayer({ id: 'hub-s-layer', type: 'circle', source: 'hub-dots',
         filter: ['==', ['get', 'tier'], 's'],
-        paint: { 'circle-color': HUB_COLOR, 'circle-radius': radExpr(50),
+        paint: { 'circle-color': HUB_COLOR, 'circle-radius': radExpr(150),
           'circle-opacity': 1, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 0.8 } })
     }
 
@@ -318,11 +330,12 @@ function IntermodalMap({ id, side, layers, cityGeoJSON, districtBoundaries, onMo
     map.getSource('dist-labels')?.setData(buildCentroids(districtBoundaries))
   }, [ready, districtBoundaries])
 
-  // Road data
+  // Road + cycling data (both maps)
   useEffect(() => {
     const map = mapRef.current; if (!map || !ready) return
     map.getSource('roads')?.setData(layers.roads || EMPTY)
-  }, [ready, layers.roads])
+    map.getSource('cycling')?.setData(layers.cycling || EMPTY)
+  }, [ready, layers.roads, layers.cycling])
 
   // Before-specific point data
   useEffect(() => {
@@ -375,7 +388,8 @@ function LineSvg({ color, width = 1.5, dash }) {
 // ── Main section ──────────────────────────────────────────────────────────────
 export default function ComparativeAnalysisSection() {
   const {
-    roads, localBusStops, localBikeParkings, localCarParkings,
+    roads, localCycling,
+    localBusStops, localBikeParkings, localCarParkings,
     hubLMResults, hubSBusOnly,
     landingCityGeoJSON, setLandingCityGeoJSON,
     districtBoundaries,
@@ -420,17 +434,19 @@ export default function ComparativeAnalysisSection() {
 
   const beforeLayers = useMemo(() => ({
     roads,
+    cycling:  localCycling,
     carPark:  localCarParkings,
     busStops: localBusStops,
     bikePark: localBikeParkings,
-  }), [roads, localCarParkings, localBusStops, localBikeParkings])
+  }), [roads, localCycling, localCarParkings, localBusStops, localBikeParkings])
 
   const afterLayers = useMemo(() => ({
     roads,
-    hubTri:  hubGeo.tri,
-    hubDots: hubGeo.dots,
-    hubCov:  hubGeo.cov,
-  }), [roads, hubGeo])
+    cycling:  localCycling,
+    hubTri:   hubGeo.tri,
+    hubDots:  hubGeo.dots,
+    hubCov:   hubGeo.cov,
+  }), [roads, localCycling, hubGeo])
 
   const hasHubs = (hubLMResults?.hubL?.hubs?.length || 0) + (hubSBusOnly?.length || 0) > 0
 
@@ -458,7 +474,6 @@ export default function ComparativeAnalysisSection() {
 
         {/* ── LEFT — Before ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '2px solid #E8E8E8' }}>
-          {/* Map */}
           <div style={{ height: '72vh', position: 'relative' }}>
             <div style={{
               position: 'absolute', top: 16, left: 16, zIndex: 10,
@@ -476,24 +491,23 @@ export default function ComparativeAnalysisSection() {
 
           {/* Left legend */}
           <div style={{ padding: '14px 24px', borderTop: '1px solid #E8E8E8', display: 'flex', flexWrap: 'wrap', gap: `${GAP}px 20px` }}>
-            <LegendRow label="Roads (by hierarchy)">
-              <LineSvg color="#AAAAAA" width={2} />
+            <LegendRow label="Roads &amp; cycling paths">
+              <LineSvg color={ROAD_GREY} width={2} />
             </LegendRow>
-            <LegendRow label="Car parking — 100 m radius">
-              <CircleSvg r={6} fill={CAR_COLOR} opacity={0.45} />
+            <LegendRow label="Car parking">
+              <CircleSvg r={6} fill={CAR_COLOR} />
             </LegendRow>
-            <LegendRow label="Bus stops — 70 m radius">
-              <CircleSvg r={5} fill={BUS_COLOR} opacity={0.5} />
+            <LegendRow label="Bus stops">
+              <CircleSvg r={5} fill={BUS_COLOR} />
             </LegendRow>
-            <LegendRow label="Bike parking — 50 m radius">
-              <CircleSvg r={4} fill={BIKE_COLOR} opacity={0.45} />
+            <LegendRow label="Bike parking">
+              <CircleSvg r={4} fill={BIKE_COLOR} />
             </LegendRow>
           </div>
         </div>
 
         {/* ── RIGHT — After ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* Map */}
           <div style={{ height: '72vh', position: 'relative' }}>
             <div style={{
               position: 'absolute', top: 16, left: 16, zIndex: 10,
@@ -516,29 +530,29 @@ export default function ComparativeAnalysisSection() {
 
           {/* Right legend */}
           <div style={{ padding: '14px 24px', borderTop: '1px solid #E8E8E8', display: 'flex', flexWrap: 'wrap', gap: `${GAP}px 20px` }}>
-            <LegendRow label="Hub L — 100 m">
+            <LegendRow label="Hub L">
               <CircleSvg r={7} fill={HUB_COLOR} stroke="#fff" strokeW={1.5} />
             </LegendRow>
-            <LegendRow label="Hub M — 70 m">
+            <LegendRow label="Hub M">
               <CircleSvg r={5} fill={HUB_COLOR} stroke="#fff" strokeW={1.2} />
             </LegendRow>
-            <LegendRow label="Hub S — 50 m">
+            <LegendRow label="Hub S">
               <CircleSvg r={4} fill={HUB_COLOR} stroke="#fff" strokeW={0.8} />
             </LegendRow>
-            <LegendRow label="L coverage 800 m">
-              <CircleSvg r={7} fill={COV_L_COLOR} stroke={COV_L_COLOR} strokeW={1} opacity={0.15} />
+            <LegendRow label="Hub L coverage">
+              <CircleSvg r={7} fill={COV_L_COLOR} stroke={COV_L_COLOR} strokeW={1} opacity={0.2} />
             </LegendRow>
-            <LegendRow label="M coverage 400 m">
-              <CircleSvg r={5} fill={COV_M_COLOR} stroke={COV_M_COLOR} strokeW={1} opacity={0.15} />
+            <LegendRow label="Hub M coverage">
+              <CircleSvg r={5} fill={COV_M_COLOR} stroke={COV_M_COLOR} strokeW={1} opacity={0.2} />
             </LegendRow>
-            <LegendRow label="S coverage 200 m">
-              <CircleSvg r={4} fill={COV_S_COLOR} stroke={COV_S_COLOR} strokeW={1} opacity={0.15} />
+            <LegendRow label="Hub S coverage">
+              <CircleSvg r={4} fill={COV_S_COLOR} stroke={COV_S_COLOR} strokeW={1} opacity={0.2} />
             </LegendRow>
-            <LegendRow label="Hub network (triangulation)">
-              <LineSvg color={HUB_COLOR} width={0.8} />
+            <LegendRow label="Hub connection network">
+              <LineSvg color={HUB_COLOR} width={1.2} />
             </LegendRow>
-            <LegendRow label="Roads (by hierarchy)">
-              <LineSvg color={HUB_COLOR} width={1.5} />
+            <LegendRow label="Roads &amp; cycling paths">
+              <LineSvg color={HUB_COLOR} width={2} />
             </LegendRow>
           </div>
         </div>
