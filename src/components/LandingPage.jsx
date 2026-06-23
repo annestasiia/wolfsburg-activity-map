@@ -123,47 +123,61 @@ function MobilityLeftPanel({ tab }) {
       {tab === 'auto' && (
         <>
           <div style={{ marginBottom: 20 }}>
-            <div style={LB}>Road Network</div>
-            <SymbolRow label="Motorway / trunk">
-              <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#0000FF" strokeWidth="5" strokeLinecap="round" /></svg>
-            </SymbolRow>
-            <SymbolRow label="Primary / secondary">
-              <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#0000FF" strokeWidth="2.5" strokeLinecap="round" /></svg>
-            </SymbolRow>
-            <SymbolRow label="Local roads">
-              <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#0000FF" strokeWidth="1" strokeLinecap="round" /></svg>
-            </SymbolRow>
+            {/* Two-column legend: Road Network | Car Parking */}
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ flex: 1 }}>
+                <div style={LB}>Road Network</div>
+                <SymbolRow label="Motorway / trunk">
+                  <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#0000FF" strokeWidth="5" strokeLinecap="round" /></svg>
+                </SymbolRow>
+                <SymbolRow label="Primary / secondary">
+                  <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#0000FF" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                </SymbolRow>
+                <SymbolRow label="Local roads">
+                  <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#0000FF" strokeWidth="1" strokeLinecap="round" /></svg>
+                </SymbolRow>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={LB}>Car Parking</div>
+                <SymbolRow label="Location">
+                  <svg width="20" height="20">
+                    <circle cx="10" cy="10" r="9" fill="#FF99CC" opacity="0.35" />
+                    <circle cx="10" cy="10" r="2" fill="#5539CC" />
+                  </svg>
+                </SymbolRow>
+                <SymbolRow label="Halo = capacity">
+                  <svg width="30" height="20">
+                    {[[5, 5, 0.35], [11, 10, 0.35], [19, 16, 0.35]].map(([cx, r, op], i) => (
+                      <g key={i}>
+                        <circle cx={cx} cy="10" r={r} fill="#FF99CC" opacity={op} />
+                        <circle cx={cx} cy="10" r="2" fill="#5539CC" />
+                      </g>
+                    ))}
+                  </svg>
+                </SymbolRow>
+              </div>
+            </div>
 
-            <div style={LB}>Traffic Activity (day/time)</div>
-            <SymbolRow label="Low ↔ High — glow width varies">
-              <svg width="28" height="14">
-                <line x1="0" y1="7" x2="28" y2="7" stroke="#FF1493" strokeWidth="12" strokeLinecap="round" opacity="0.5" />
-                <line x1="0" y1="7" x2="28" y2="7" stroke="#0000FF" strokeWidth="4" strokeLinecap="round" />
-              </svg>
-            </SymbolRow>
-
-            <div style={LB}>District Activity</div>
-            <GradBar gradient="#FFFCB5, #FFF300" labelLeft="Low" labelRight="High" />
-
-            <div style={LB}>Car Parking</div>
-            <SymbolRow label="Parking location">
-              <svg width="20" height="20">
-                <circle cx="10" cy="10" r="9" fill="#FF99CC" opacity="0.35" />
-                <circle cx="10" cy="10" r="2" fill="#5539CC" />
-              </svg>
-            </SymbolRow>
-            <SymbolRow label="Halo size = capacity (S → L)">
-              <svg width="30" height="20">
-                {[[5, 5, 0.35], [11, 10, 0.35], [19, 16, 0.35]].map(([cx, r, op], i) => (
-                  <g key={i}>
-                    <circle cx={cx} cy="10" r={r} fill="#FF99CC" opacity={op} />
-                    <circle cx={cx} cy="10" r="2" fill="#5539CC" />
-                  </g>
-                ))}
-              </svg>
-            </SymbolRow>
+            <div style={{ marginTop: 14 }}>
+              <div style={LB}>Traffic Activity</div>
+              <SymbolRow label="Low ↔ High — glow width varies">
+                <svg width="28" height="14">
+                  <line x1="0" y1="7" x2="28" y2="7" stroke="#FF1493" strokeWidth="12" strokeLinecap="round" opacity="0.5" />
+                  <line x1="0" y1="7" x2="28" y2="7" stroke="#0000FF" strokeWidth="4" strokeLinecap="round" />
+                </svg>
+              </SymbolRow>
+            </div>
           </div>
-          <DayTimeControls />
+
+          <div style={{ borderTop: '1px solid #E8E8E8', paddingTop: 16, marginTop: 'auto' }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              Wolfsburg is a car-oriented city with a high modal share of private automobile use.
+              Despite its spatially fragmented structure — a monocentric industrial core surrounded
+              by dispersed residential settlements — the road network provides comparatively strong
+              connectivity. Traffic intensity converges towards the VW Werk and the city centre,
+              reproducing a classic hub-and-spoke pattern characteristic of company towns.
+            </p>
+          </div>
         </>
       )}
 
@@ -171,44 +185,55 @@ function MobilityLeftPanel({ tab }) {
       {tab === 'public' && (
         <>
           <div style={{ marginBottom: 20 }}>
-            <div style={LB}>Bus Routes</div>
-            <SymbolRow label="Route line">
-              <svg width="28" height="14">
-                <line x1="0" y1="7" x2="28" y2="7" stroke="#ff6464" strokeWidth="9" strokeLinecap="round" opacity="0.55" />
-                <line x1="0" y1="7" x2="28" y2="7" stroke="#C10016" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </SymbolRow>
-
-            <div style={LB}>Traffic Activity (day/time)</div>
-            <SymbolRow label="Low ↔ High — glow width varies">
-              <svg width="28" height="14">
-                <line x1="0" y1="7" x2="28" y2="7" stroke="#ff6464" strokeWidth="12" strokeLinecap="round" opacity="0.55" />
-                <line x1="0" y1="7" x2="28" y2="7" stroke="#C10016" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </SymbolRow>
-
-            <div style={LB}>Bus Stops</div>
-            <SymbolRow label="Stop location">
-              <svg width="20" height="20">
-                <circle cx="10" cy="10" r="8" fill="#ff6464" opacity="0.30" />
-                <circle cx="10" cy="10" r="2" fill="#C10016" />
-              </svg>
-            </SymbolRow>
-            <SymbolRow label="Halo = load by time/day">
-              <svg width="30" height="20">
-                {[[5, 4], [14, 9], [24, 14]].map(([cx, r], i) => (
-                  <g key={i}>
-                    <circle cx={cx} cy="10" r={r} fill="#ff6464" opacity="0.30" />
-                    <circle cx={cx} cy="10" r="2" fill="#C10016" />
-                  </g>
-                ))}
-              </svg>
-            </SymbolRow>
-
-            <div style={LB}>District Activity</div>
-            <GradBar gradient="#FFFCB5, #FFF300" labelLeft="Low" labelRight="High" />
+            {/* Two-column: Bus Routes | Bus Stops */}
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ flex: 1 }}>
+                <div style={LB}>Bus Routes</div>
+                <SymbolRow label="Route line">
+                  <svg width="28" height="14">
+                    <line x1="0" y1="7" x2="28" y2="7" stroke="#ff6464" strokeWidth="9" strokeLinecap="round" opacity="0.55" />
+                    <line x1="0" y1="7" x2="28" y2="7" stroke="#C10016" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </SymbolRow>
+                <SymbolRow label="Glow = activity">
+                  <svg width="28" height="14">
+                    <line x1="0" y1="7" x2="28" y2="7" stroke="#ff6464" strokeWidth="12" strokeLinecap="round" opacity="0.55" />
+                    <line x1="0" y1="7" x2="28" y2="7" stroke="#C10016" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </SymbolRow>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={LB}>Bus Stops</div>
+                <SymbolRow label="Stop location">
+                  <svg width="20" height="20">
+                    <circle cx="10" cy="10" r="8" fill="#ff6464" opacity="0.30" />
+                    <circle cx="10" cy="10" r="2" fill="#C10016" />
+                  </svg>
+                </SymbolRow>
+                <SymbolRow label="Halo = load">
+                  <svg width="30" height="20">
+                    {[[5, 4], [14, 9], [24, 14]].map(([cx, r], i) => (
+                      <g key={i}>
+                        <circle cx={cx} cy="10" r={r} fill="#ff6464" opacity="0.30" />
+                        <circle cx={cx} cy="10" r="2" fill="#C10016" />
+                      </g>
+                    ))}
+                  </svg>
+                </SymbolRow>
+              </div>
+            </div>
           </div>
-          <DayTimeControls />
+
+          <div style={{ borderTop: '1px solid #E8E8E8', paddingTop: 16, marginTop: 'auto' }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              Despite its car-centric spatial structure, Wolfsburg maintains a functional public
+              transport network that connects peripheral residential districts to the urban core.
+              The bus system provides a degree of spatial equity, offering mobility access to
+              residents without private vehicles. Route intensity concentrates along the main
+              corridors linking outlying settlements to the city centre and the VW Werk,
+              reinforcing the monocentric character of the city's transport demand.
+            </p>
+          </div>
         </>
       )}
 
@@ -230,33 +255,54 @@ function MobilityLeftPanel({ tab }) {
               </svg>
             </SymbolRow>
           </div>
-          <DayTimeControls />
+
+          <div style={{ borderTop: '1px solid #E8E8E8', paddingTop: 16, marginTop: 'auto' }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              The cycle network shown represents the <em>planned</em> cycling infrastructure
+              sourced from the Wolfsburg Geoportal. The existing network currently covers
+              primarily the city centre and its immediate surroundings. The planned routes
+              are intended to extend cycling connectivity to outlying residential districts,
+              addressing the current modal gap in active mobility.
+              For the spatial analysis, the dataset currently registered in OpenStreetMap
+              was used as the analytical baseline.
+            </p>
+          </div>
         </>
       )}
 
       {/* ── Activity Map ── */}
       {tab === 'activity' && (
-        <div>
-          <div style={LB}>Transport Activity</div>
-          <p style={{ ...BD, fontSize: 12, marginBottom: 16 }}>
-            Proportional symbol grid (500 m cells). Circle size encodes combined transport
-            intensity — roads, bus stops, parkings, cycling infrastructure.
-          </p>
-          {/* Size + colour legend */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 16 }}>
-            {[{ r: 4, label: 'Low', color: '#FF9E3D' }, { r: 8, label: 'Mid', color: '#FF5C00' }, { r: 14, label: 'High', color: '#BF00FF' }].map(({ r, label, color }) => (
-              <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <svg width={r * 2 + 4} height={r * 2 + 4}>
-                  <circle cx={r + 2} cy={r + 2} r={r} fill={color} />
-                </svg>
-                <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
-              </div>
-            ))}
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div>
+            <div style={LB}>Transport Activity</div>
+            <p style={{ ...BD, fontSize: 12, marginBottom: 16 }}>
+              Proportional symbol grid (500 m cells). Circle size encodes combined transport
+              intensity — roads, bus stops, parkings, cycling infrastructure.
+            </p>
+            {/* Size + colour legend */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 16 }}>
+              {[{ r: 4, label: 'Low', color: '#FF9E3D' }, { r: 8, label: 'Mid', color: '#FF5C00' }, { r: 14, label: 'High', color: '#BF00FF' }].map(({ r, label, color }) => (
+                <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <svg width={r * 2 + 4} height={r * 2 + 4}>
+                    <circle cx={r + 2} cy={r + 2} r={r} fill={color} />
+                  </svg>
+                  <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: 'linear-gradient(to right, #FF9E3D, #FF5C00, #BF00FF)', marginBottom: 16 }} />
           </div>
-          <div style={{ height: 6, borderRadius: 3, background: 'linear-gradient(to right, #FF9E3D, #FF5C00, #BF00FF)', marginBottom: 10 }} />
-          <div style={{ fontFamily: F, fontSize: 11, color: '#bbb', lineHeight: 1.6 }}>
-            Sources: OSM road network · bus stops ·<br />
-            car &amp; bike parkings · official cycling routes
+
+          <div style={{ borderTop: '1px solid #E8E8E8', paddingTop: 16, marginTop: 'auto' }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              The transport activity map reveals Wolfsburg's satellite urban structure: a dominant
+              core concentrating the majority of transport infrastructure and activity, surrounded
+              by dispersed residential settlements with significantly lower intensity. This
+              monocentric pattern, characteristic of company towns, reflects the historical
+              gravitational pull of the VW Werk. Peripheral districts exhibit limited autonomous
+              transport capacity, with movement directed primarily towards the central hub rather
+              than distributed across a polycentric network.
+            </p>
           </div>
         </div>
       )}

@@ -3,6 +3,54 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import osmtogeojson from 'osmtogeojson'
 import { useAppStore } from '../../store/appStore'
+import { DAYS } from '../../constants'
+
+const FM = "'Helvetica Neue', Helvetica, Arial, sans-serif"
+
+function slotToTimeM(slot) {
+  const h = Math.floor(slot / 2).toString().padStart(2, '0')
+  const m = slot % 2 === 0 ? '00' : '30'
+  return `${h}:${m}`
+}
+function timeToSlotM(t) {
+  if (!t) return 16
+  const [h, m] = t.split(':').map(Number)
+  return h * 2 + (m >= 30 ? 1 : 0)
+}
+
+function CompactDayTime() {
+  const { selectedDay, selectedTime, setSelectedDay, setSelectedTime } = useAppStore()
+  const slot = timeToSlotM(selectedTime)
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.96)', border: '1px solid #E0E0E0',
+      borderRadius: 8, padding: '5px 8px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+      display: 'flex', flexDirection: 'column', gap: 4, zIndex: 10,
+    }}>
+      <div style={{ display: 'flex', gap: 2 }}>
+        {DAYS.map(d => (
+          <button key={d} onClick={() => setSelectedDay(d)} style={{
+            padding: '2px 5px', borderRadius: 4, border: '1px solid',
+            borderColor: selectedDay === d ? '#1D1D1F' : '#E0E0E0',
+            background: selectedDay === d ? '#1D1D1F' : 'transparent',
+            color: selectedDay === d ? '#fff' : '#666',
+            fontFamily: FM, fontSize: 9, fontWeight: 700, cursor: 'pointer', lineHeight: 1.4,
+          }}>{d}</button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <span style={{ fontFamily: FM, fontSize: 8, color: '#BBB' }}>00:00</span>
+        <input type="range" min={0} max={47} value={slot}
+          onChange={e => setSelectedTime(slotToTimeM(parseInt(e.target.value)))}
+          style={{ flex: 1, accentColor: '#1D1D1F', height: 2 }} />
+        <span style={{ fontFamily: FM, fontSize: 9, color: '#444', minWidth: 30, textAlign: 'right', fontWeight: 600 }}>
+          {selectedTime || '08:00'}
+        </span>
+      </div>
+    </div>
+  )
+}
 
 const CENTER = [10.7865, 52.4227]
 const ZOOM = 12
@@ -614,23 +662,28 @@ export default function MobilityMapSection({ tab = 'auto', onTabChange }) {
       {mapReady && (
         <div style={{
           position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', gap: 2,
-          background: 'rgba(255,255,255,0.96)', border: '1px solid #E0E0E0',
-          borderRadius: 8, padding: '3px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.10)', zIndex: 10, whiteSpace: 'nowrap',
+          display: 'flex', gap: 8, alignItems: 'center', whiteSpace: 'nowrap',
         }}>
-          {TABS.map(({ label, id }) => (
-            <button key={id} onClick={() => onTabChange?.(id)} style={{
-              padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
-              fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-              fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em',
-              background: tab === id ? '#1D1D1F' : 'transparent',
-              color:      tab === id ? '#fff'    : '#666',
-              transition: 'background 0.15s, color 0.15s',
-            }}>
-              {label}
-            </button>
-          ))}
+          {(tab === 'auto' || tab === 'public') && <CompactDayTime />}
+          <div style={{
+            display: 'flex', gap: 2,
+            background: 'rgba(255,255,255,0.96)', border: '1px solid #E0E0E0',
+            borderRadius: 8, padding: '3px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.10)', zIndex: 10,
+          }}>
+            {TABS.map(({ label, id }) => (
+              <button key={id} onClick={() => onTabChange?.(id)} style={{
+                padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                fontFamily: FM,
+                fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em',
+                background: tab === id ? '#1D1D1F' : 'transparent',
+                color:      tab === id ? '#fff'    : '#666',
+                transition: 'background 0.15s, color 0.15s',
+              }}>
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
