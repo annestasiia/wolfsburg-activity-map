@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import osmtogeojson from 'osmtogeojson'
 import { useAppStore } from '../../store/appStore'
 
 const F      = "'Helvetica Neue', Helvetica, Arial, sans-serif"
@@ -15,8 +16,42 @@ const BLANK_STYLE = {
   layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#ffffff' } }],
 }
 
-const TC = { l: '#111111', m: '#01796F', s: '#3EA055' }
-const NET_COV = { l: 6000, m: 4000, s: 5000 }
+// ── Constants ─────────────────────────────────────────────────────────────────
+const HUB_COLOR  = '#10069F'
+const CAR_COLOR  = '#10069F'
+const BUS_COLOR  = '#C90016'
+const BIKE_COLOR = '#C90016'
+const COV_L_COLOR = '#FF3503'
+const COV_M_COLOR = '#FFD200'
+const COV_S_COLOR = '#C90016'
+
+// Road types to show (hide service, track, path, footway)
+const ROAD_TYPES = ['motorway','motorway_link','trunk','trunk_link',
+  'primary','primary_link','secondary','secondary_link',
+  'tertiary','tertiary_link','residential','unclassified','living_street']
+
+const ROAD_FILTER = ['in', ['get', 'highway'], ['literal', ROAD_TYPES]]
+
+const ROAD_WIDTH = ['match', ['get', 'highway'],
+  'motorway', 2.5, 'motorway_link', 1.8,
+  'trunk', 2.2,    'trunk_link', 1.5,
+  'primary', 1.8,  'primary_link', 1.4,
+  'secondary', 1.3,'secondary_link', 1.0,
+  'tertiary', 0.9, 'tertiary_link', 0.7,
+  'residential', 0.5, 'living_street', 0.5, 'unclassified', 0.5,
+  0.4,
+]
+
+// Zoom-interpolated radius expression for a given metres value
+const radExpr = (rm) => ['interpolate', ['exponential', 2], ['zoom'],
+  9,  rm * 0.00536,
+  10, rm * 0.01073,
+  11, rm * 0.02146,
+  12, rm * 0.04301,
+  13, rm * 0.08602,
+  14, rm * 0.17204,
+  15, rm * 0.34408,
+]
 
 // ── Geo helpers ───────────────────────────────────────────────────────────────
 function hav(lat1, lon1, lat2, lon2) {
@@ -88,33 +123,33 @@ function buildDistrictLines(districtBoundaries) {
 }
 
 // ── Hub geometry ──────────────────────────────────────────────────────────────
+const EMPTY = { type: 'FeatureCollection', features: [] }
+
 function linesFC(pairs) {
   return { type: 'FeatureCollection', features: pairs.map(([c1, c2]) =>
     ({ type: 'Feature', geometry: { type: 'LineString', coordinates: [c1, c2] }, properties: {} })) }
 }
 
-// Peak hour: only hierarchical connections L→M, L→S, M→S (not S→S)
-function buildPeakHourNetwork(lHubs, mHubs, sHubs) {
-  const pairs = []
-  const lon = h => h.lon ?? h.lng
-
-  for (const l of lHubs) {
-    for (const m of mHubs)
-      if (hav(l.lat, lon(l), m.lat, lon(m)) <= NET_COV.l)
-        pairs.push([[lon(l), l.lat], [lon(m), m.lat]])
-    for (const s of sHubs)
-      if (hav(l.lat, lon(l), s.lat, s.lng) <= NET_COV.l)
-        pairs.push([[lon(l), l.lat], [s.lng, s.lat]])
+// k-nearest-neighbour triangulation (k=3) connecting all hub points
+function buildTriangulation(lHubs, mHubs, sHubs) {
+  const pts = [
+    ...lHubs.filter(h => inCity(h.lon ?? h.lng, h.lat)).map(h => [h.lon ?? h.lng, h.lat]),
+    ...mHubs.filter(h => inCity(h.lon ?? h.lng, h.lat)).map(h => [h.lon ?? h.lng, h.lat]),
+    ...sHubs.filter(h => inCity(h.lng, h.lat)).map(h => [h.lng, h.lat]),
+  ]
+  const pairs = [], seen = new Set()
+  for (let i = 0; i < pts.length; i++) {
+    const dists = pts.map((p, j) => [j, hav(pts[i][1], pts[i][0], p[1], p[0])]).filter(([j]) => j !== i)
+    dists.sort((a, b) => a[1] - b[1])
+    for (const [j] of dists.slice(0, 3)) {
+      const key = `${Math.min(i, j)}-${Math.max(i, j)}`
+      if (!seen.has(key)) { seen.add(key); pairs.push([pts[i], pts[j]]) }
+    }
   }
-  for (const m of mHubs)
-    for (const s of sHubs)
-      if (hav(m.lat, lon(m), s.lat, s.lng) <= NET_COV.m)
-        pairs.push([[lon(m), m.lat], [s.lng, s.lat]])
-
   return linesFC(pairs)
 }
 
-function buildHubDots(lHubs, mHubs, sHubs) {
+function buildAfterHubDots(lHubs, mHubs, sHubs) {
   const features = []
   const lon = h => h.lon ?? h.lng
   for (const h of lHubs) if (inCity(lon(h), h.lat))
@@ -126,197 +161,221 @@ function buildHubDots(lHubs, mHubs, sHubs) {
   return { type: 'FeatureCollection', features }
 }
 
-function buildCoverageCircles(lHubs, mHubs, sHubs) {
+// Coverage circles: L=800m #FF3503, M=400m #FFD200, S=200m #C90016
+function buildAfterCoverage(lHubs, mHubs, sHubs) {
   const features = []
   const lon = h => h.lon ?? h.lng
   for (const h of sHubs) if (inCity(h.lng, h.lat))
-    features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [circleCoords(h.lng, h.lat, 400)] }, properties: { tier: 's' } })
+    features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [circleCoords(h.lng, h.lat, 200)] }, properties: { tier: 's' } })
   for (const h of mHubs) if (inCity(lon(h), h.lat))
-    features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [circleCoords(lon(h), h.lat, 800)] }, properties: { tier: 'm' } })
+    features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [circleCoords(lon(h), h.lat, 400)] }, properties: { tier: 'm' } })
   for (const h of lHubs) if (inCity(lon(h), h.lat))
-    features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [circleCoords(lon(h), h.lat, 1200)] }, properties: { tier: 'l' } })
+    features.push({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [circleCoords(lon(h), h.lat, 800)] }, properties: { tier: 'l' } })
   return { type: 'FeatureCollection', features }
 }
 
-const EMPTY = { type: 'FeatureCollection', features: [] }
-
-// ── Single map component ──────────────────────────────────────────────────────
-function IntermodalMap({ id, layers, cityGeoJSON, districtBoundaries, onMove, syncRef }) {
+// ── Single map ────────────────────────────────────────────────────────────────
+function IntermodalMap({ id, side, layers, cityGeoJSON, districtBoundaries, onMove, syncRef }) {
   const containerRef = useRef(null)
   const mapRef       = useRef(null)
   const [ready, setReady] = useState(false)
   const syncing = useRef(false)
+  const graticule = useMemo(() => buildGraticule(), [])
 
   useEffect(() => {
     if (!containerRef.current) return
     const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: BLANK_STYLE,
-      center: CENTER, zoom: ZOOM,
-      attributionControl: false,
+      container: containerRef.current, style: BLANK_STYLE,
+      center: CENTER, zoom: ZOOM, attributionControl: false,
     })
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left')
     mapRef.current = map
     syncRef.current[id] = map
-
     map.on('load', () => setReady(true))
     map.on('move', () => {
       if (syncing.current) return
       onMove({ center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch(), sourceId: id })
     })
-    return () => {
-      delete syncRef.current[id]
-      map.remove(); mapRef.current = null; setReady(false)
-    }
+    return () => { delete syncRef.current[id]; map.remove(); mapRef.current = null; setReady(false) }
   }, [])
 
   useEffect(() => {
     if (!mapRef.current) return
     mapRef.current._syncReceive = ({ center, zoom, bearing, pitch, sourceId }) => {
       if (sourceId === id) return
-      syncing.current = true
-      mapRef.current.jumpTo({ center, zoom, bearing, pitch })
-      syncing.current = false
+      syncing.current = true; mapRef.current.jumpTo({ center, zoom, bearing, pitch }); syncing.current = false
     }
   }, [id])
 
-  // Add all layers on load
+  // Build layers on load
   useEffect(() => {
-    const map = mapRef.current
-    if (!map || !ready) return
-
+    const map = mapRef.current; if (!map || !ready) return
     const addSrc = (sid, data) => { if (!map.getSource(sid)) map.addSource(sid, { type: 'geojson', data: data || EMPTY }) }
 
-    // Sources
-    addSrc('districts',   EMPTY)
-    addSrc('hub-net',     EMPTY)
-    addSrc('hub-circles', EMPTY)
-    addSrc('roads',       EMPTY)
-    addSrc('busRoutes',   EMPTY)
-    addSrc('cycling',     EMPTY)
-    addSrc('carPark',     EMPTY)
-    addSrc('bikePark',    EMPTY)
-    addSrc('busStops',    EMPTY)
-    addSrc('hub-dots',    EMPTY)
-    addSrc('city-mask',   EMPTY)
-    addSrc('city-bound',  EMPTY)
-    addSrc('grid',        buildGraticule())
+    addSrc('districts', EMPTY)
+    addSrc('roads', EMPTY)
+    addSrc('city-mask', EMPTY)
+    addSrc('city-bound', EMPTY)
+    addSrc('grid', graticule)
     addSrc('dist-labels', EMPTY)
 
-    // ── Layer order (bottom → top) ────────────────────────────────────────────
+    if (side === 'before') {
+      addSrc('car-parks', EMPTY)
+      addSrc('bus-stops', EMPTY)
+      addSrc('bike-parks', EMPTY)
+    } else {
+      addSrc('hub-tri', EMPTY)
+      addSrc('hub-cov', EMPTY)
+      addSrc('hub-dots', EMPTY)
+    }
 
-    // 1. District boundary lines
+    // 1. District outlines
     map.addLayer({ id: 'district-outline', type: 'line', source: 'districts',
       paint: { 'line-color': '#CCCCCC', 'line-width': 0.5, 'line-opacity': 0.8 } })
 
-    // 2. Hub connections — BOTTOMMOST data layer, below everything
-    map.addLayer({ id: 'hub-net-layer', type: 'line', source: 'hub-net',
-      paint: { 'line-color': '#999999', 'line-width': 0.5, 'line-opacity': 0.3 } })
+    if (side === 'before') {
+      // 2. Roads — light grey, hierarchical width
+      map.addLayer({ id: 'roads-layer', type: 'line', source: 'roads',
+        filter: ROAD_FILTER,
+        paint: { 'line-color': '#D4D4D8', 'line-width': ROAD_WIDTH, 'line-opacity': 0.9 } })
 
-    // 3. Hub coverage circles (fill then stroke)
-    map.addLayer({ id: 'hub-cov-fill', type: 'fill', source: 'hub-circles',
-      paint: {
-        'fill-color': ['match', ['get', 'tier'], 'l', TC.l, 'm', TC.m, TC.s],
-        'fill-opacity': 0.05,
-      } })
-    map.addLayer({ id: 'hub-cov-stroke', type: 'line', source: 'hub-circles',
-      paint: {
-        'line-color': ['match', ['get', 'tier'], 'l', TC.l, 'm', TC.m, TC.s],
-        'line-width': 0.7, 'line-opacity': 0.25, 'line-dasharray': [3, 4],
-      } })
+      // 3. Point layers (below mask, sized in metres)
+      // Car parking — #10069F, 100m
+      map.addLayer({ id: 'car-park-layer', type: 'circle', source: 'car-parks',
+        paint: { 'circle-color': CAR_COLOR, 'circle-opacity': 0.45, 'circle-stroke-width': 0,
+          'circle-radius': radExpr(100) } })
+      // Bus stops — #C90016, 70m
+      map.addLayer({ id: 'bus-stop-layer', type: 'circle', source: 'bus-stops',
+        paint: { 'circle-color': BUS_COLOR, 'circle-opacity': 0.5, 'circle-stroke-width': 0,
+          'circle-radius': radExpr(70) } })
+      // Bike parking — #C90016, 50m
+      map.addLayer({ id: 'bike-park-layer', type: 'circle', source: 'bike-parks',
+        paint: { 'circle-color': BIKE_COLOR, 'circle-opacity': 0.45, 'circle-stroke-width': 0,
+          'circle-radius': radExpr(50) } })
 
-    // 4. Roads
-    map.addLayer({ id: 'roads-layer', type: 'line', source: 'roads',
-      paint: { 'line-color': '#CCCCCC', 'line-width': 0.6 } })
+    } else {
+      // 2. Triangulation network (thin, below everything)
+      map.addLayer({ id: 'hub-tri-layer', type: 'line', source: 'hub-tri',
+        paint: { 'line-color': HUB_COLOR, 'line-width': 0.4, 'line-opacity': 0.2 } })
 
-    // 5. Bus routes
-    map.addLayer({ id: 'bus-routes-layer', type: 'line', source: 'busRoutes',
-      paint: { 'line-color': '#5539CC', 'line-width': 1.2, 'line-opacity': 0.65 } })
+      // 3. Coverage circles
+      const covColor = ['match', ['get', 'tier'], 'l', COV_L_COLOR, 'm', COV_M_COLOR, COV_S_COLOR]
+      map.addLayer({ id: 'hub-cov-fill', type: 'fill', source: 'hub-cov',
+        paint: { 'fill-color': covColor, 'fill-opacity': 0.07 } })
+      map.addLayer({ id: 'hub-cov-stroke', type: 'line', source: 'hub-cov',
+        paint: { 'line-color': covColor, 'line-width': 0.8, 'line-opacity': 0.35, 'line-dasharray': [3, 4] } })
 
-    // 6. Cycling
-    map.addLayer({ id: 'cycling-layer', type: 'line', source: 'cycling',
-      paint: { 'line-color': '#004225', 'line-width': 1.0, 'line-opacity': 0.65 } })
+      // 4. Roads — #10069F, hierarchical width, low opacity
+      map.addLayer({ id: 'roads-layer', type: 'line', source: 'roads',
+        filter: ROAD_FILTER,
+        paint: { 'line-color': HUB_COLOR, 'line-width': ROAD_WIDTH, 'line-opacity': 0.18 } })
 
-    // 7. Point layers
-    map.addLayer({ id: 'car-park-layer', type: 'circle', source: 'carPark',
-      paint: { 'circle-radius': 1.5, 'circle-color': '#C10016', 'circle-opacity': 0.5 } })
-    map.addLayer({ id: 'bike-park-layer', type: 'circle', source: 'bikePark',
-      paint: { 'circle-radius': 1.5, 'circle-color': '#004225', 'circle-opacity': 0.6 } })
-    map.addLayer({ id: 'bus-stops-layer', type: 'circle', source: 'busStops',
-      paint: { 'circle-radius': 2, 'circle-color': '#5539CC', 'circle-opacity': 0.7 } })
+      // 5. Hub dots — all #10069F, size by tier
+      map.addLayer({ id: 'hub-l-layer', type: 'circle', source: 'hub-dots',
+        filter: ['==', ['get', 'tier'], 'l'],
+        paint: { 'circle-color': HUB_COLOR, 'circle-radius': radExpr(100),
+          'circle-opacity': 1, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.5 } })
+      map.addLayer({ id: 'hub-m-layer', type: 'circle', source: 'hub-dots',
+        filter: ['==', ['get', 'tier'], 'm'],
+        paint: { 'circle-color': HUB_COLOR, 'circle-radius': radExpr(70),
+          'circle-opacity': 1, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.2 } })
+      map.addLayer({ id: 'hub-s-layer', type: 'circle', source: 'hub-dots',
+        filter: ['==', ['get', 'tier'], 's'],
+        paint: { 'circle-color': HUB_COLOR, 'circle-radius': radExpr(50),
+          'circle-opacity': 1, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 0.8 } })
+    }
 
-    // 8. Hub dots (above stops, below mask)
-    map.addLayer({ id: 'hub-dots-layer', type: 'circle', source: 'hub-dots',
-      paint: {
-        'circle-radius':       ['match', ['get', 'tier'], 'l', 7, 'm', 5, 3.5],
-        'circle-color':        ['match', ['get', 'tier'], 'l', TC.l, 'm', TC.m, TC.s],
-        'circle-stroke-width': 1.5,
-        'circle-stroke-color': '#ffffff',
-      } })
-
-    // 9. City mask — clips everything outside city
+    // City mask
     map.addLayer({ id: 'city-mask-fill', type: 'fill', source: 'city-mask',
       paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } })
 
-    // 10. Graticule (above mask)
+    // Graticule
     map.addLayer({ id: 'grid-line', type: 'line', source: 'grid',
       paint: { 'line-color': '#BBBBBB', 'line-width': 0.4, 'line-opacity': 0.5, 'line-dasharray': [4, 6] } })
 
-    // 11. District labels (above mask, above graticule)
+    // District labels
     map.addLayer({ id: 'district-labels', type: 'symbol', source: 'dist-labels',
-      layout: {
-        'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'],
-        'text-size': 9, 'text-anchor': 'center', 'text-allow-overlap': false,
-      },
-      paint: { 'text-color': '#555555', 'text-opacity': 0.85 },
-    })
+      layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'],
+        'text-size': 9, 'text-anchor': 'center', 'text-allow-overlap': false },
+      paint: { 'text-color': '#555555', 'text-opacity': 0.85 } })
 
-    // 12. City boundary (topmost — always visible)
+    // City boundary (topmost)
     map.addLayer({ id: 'city-bound-line', type: 'line', source: 'city-bound',
       paint: { 'line-color': '#1D1D1F', 'line-width': 4, 'line-opacity': 0.95 } })
-  }, [ready])
+  }, [ready, side])
 
-  // Update city mask + boundary
+  // City mask + boundary
   useEffect(() => {
     const map = mapRef.current; if (!map || !ready || !cityGeoJSON) return
     map.getSource('city-mask')?.setData(buildCityMask(cityGeoJSON))
     map.getSource('city-bound')?.setData(cityGeoJSON)
   }, [ready, cityGeoJSON])
 
-  // Update districts
+  // Districts
   useEffect(() => {
     const map = mapRef.current; if (!map || !ready || !Object.keys(districtBoundaries).length) return
     map.getSource('districts')?.setData(buildDistrictLines(districtBoundaries))
     map.getSource('dist-labels')?.setData(buildCentroids(districtBoundaries))
   }, [ready, districtBoundaries])
 
-  // Update transport layers
+  // Road data
   useEffect(() => {
     const map = mapRef.current; if (!map || !ready) return
     map.getSource('roads')?.setData(layers.roads || EMPTY)
-    map.getSource('busRoutes')?.setData(layers.busRoutes || EMPTY)
-    map.getSource('cycling')?.setData(layers.cycling || EMPTY)
-    map.getSource('busStops')?.setData(layers.busStops || EMPTY)
-    map.getSource('bikePark')?.setData(layers.bikePark || EMPTY)
-    map.getSource('carPark')?.setData(layers.carPark || EMPTY)
-  }, [ready, layers.roads, layers.busRoutes, layers.cycling, layers.busStops, layers.bikePark, layers.carPark])
+  }, [ready, layers.roads])
 
-  // Update hub layers
+  // Before-specific point data
   useEffect(() => {
-    const map = mapRef.current; if (!map || !ready) return
-    map.getSource('hub-net')?.setData(layers.hubNet || EMPTY)
+    const map = mapRef.current; if (!map || !ready || side !== 'before') return
+    map.getSource('car-parks')?.setData(layers.carPark || EMPTY)
+    map.getSource('bus-stops')?.setData(layers.busStops || EMPTY)
+    map.getSource('bike-parks')?.setData(layers.bikePark || EMPTY)
+  }, [ready, side, layers.carPark, layers.busStops, layers.bikePark])
+
+  // After-specific hub data
+  useEffect(() => {
+    const map = mapRef.current; if (!map || !ready || side !== 'after') return
+    map.getSource('hub-tri')?.setData(layers.hubTri || EMPTY)
+    map.getSource('hub-cov')?.setData(layers.hubCov || EMPTY)
     map.getSource('hub-dots')?.setData(layers.hubDots || EMPTY)
-    map.getSource('hub-circles')?.setData(layers.hubCircles || EMPTY)
-  }, [ready, layers.hubNet, layers.hubDots, layers.hubCircles])
+  }, [ready, side, layers.hubTri, layers.hubCov, layers.hubDots])
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+}
+
+// ── Legend atoms ──────────────────────────────────────────────────────────────
+function LegendRow({ children, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+      <div style={{ flexShrink: 0 }}>{children}</div>
+      <span style={{ fontFamily: F, fontSize: 10, color: '#666' }}>{label}</span>
+    </div>
+  )
+}
+
+function CircleSvg({ r, fill, stroke, strokeW = 0, opacity = 1 }) {
+  const s = r * 2 + (strokeW > 0 ? 4 : 2)
+  return (
+    <svg width={s} height={s}>
+      <circle cx={s / 2} cy={s / 2} r={r} fill={fill} fillOpacity={opacity}
+        stroke={stroke} strokeWidth={strokeW} />
+    </svg>
+  )
+}
+
+function LineSvg({ color, width = 1.5, dash }) {
+  return (
+    <svg width={24} height={10}>
+      <line x1={0} y1={5} x2={24} y2={5} stroke={color} strokeWidth={width}
+        strokeDasharray={dash} strokeLinecap="round" />
+    </svg>
+  )
 }
 
 // ── Main section ──────────────────────────────────────────────────────────────
 export default function ComparativeAnalysisSection() {
   const {
-    roads, localBusRoutes, localCyclingOfficial,
-    localBusStops, localBikeParkings, localCarParkings,
+    roads, localBusStops, localBikeParkings, localCarParkings,
     hubLMResults, hubSBusOnly,
     landingCityGeoJSON, setLandingCityGeoJSON,
     districtBoundaries,
@@ -326,8 +385,19 @@ export default function ComparativeAnalysisSection() {
 
   useEffect(() => {
     if (landingCityGeoJSON) return
-    fetch(`${import.meta.env.BASE_URL}wolfsburg_districts_union.geojson`)
-      .then(r => r.json()).then(setLandingCityGeoJSON).catch(() => {})
+    try {
+      const raw = localStorage.getItem('wolfsburg_city_boundary_v1')
+      if (raw) { setLandingCityGeoJSON(JSON.parse(raw)); return }
+    } catch (_) {}
+    const q = `[out:json][timeout:30];relation["boundary"="administrative"]["name"="Wolfsburg"]["admin_level"="6"];out geom;`
+    fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST', body: `data=${encodeURIComponent(q)}`,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }).then(r => r.json()).then(data => {
+      const gj = osmtogeojson(data)
+      try { localStorage.setItem('wolfsburg_city_boundary_v1', JSON.stringify(gj)) } catch (_) {}
+      setLandingCityGeoJSON(gj)
+    }).catch(() => {})
   }, [landingCityGeoJSON])
 
   const handleMove = useCallback((evt) => {
@@ -340,26 +410,31 @@ export default function ComparativeAnalysisSection() {
     const mH = hubLMResults?.hubM?.hubs || []
     const sH = hubSBusOnly || []
     if (!lH.length && !mH.length && !sH.length)
-      return { net: EMPTY, dots: EMPTY, circles: EMPTY }
+      return { tri: EMPTY, dots: EMPTY, cov: EMPTY }
     return {
-      net:     buildPeakHourNetwork(lH, mH, sH),
-      dots:    buildHubDots(lH, mH, sH),
-      circles: buildCoverageCircles(lH, mH, sH),
+      tri:  buildTriangulation(lH, mH, sH),
+      dots: buildAfterHubDots(lH, mH, sH),
+      cov:  buildAfterCoverage(lH, mH, sH),
     }
   }, [hubLMResults, hubSBusOnly])
 
-  const baseLayers = useMemo(() => ({
-    roads: roads, busRoutes: localBusRoutes, cycling: localCyclingOfficial,
-    busStops: localBusStops, bikePark: localBikeParkings, carPark: localCarParkings,
-    hubNet: EMPTY, hubDots: EMPTY, hubCircles: EMPTY,
-  }), [roads, localBusRoutes, localCyclingOfficial, localBusStops, localBikeParkings, localCarParkings])
+  const beforeLayers = useMemo(() => ({
+    roads,
+    carPark:  localCarParkings,
+    busStops: localBusStops,
+    bikePark: localBikeParkings,
+  }), [roads, localCarParkings, localBusStops, localBikeParkings])
 
   const afterLayers = useMemo(() => ({
-    ...baseLayers,
-    hubNet: hubGeo.net, hubDots: hubGeo.dots, hubCircles: hubGeo.circles,
-  }), [baseLayers, hubGeo])
+    roads,
+    hubTri:  hubGeo.tri,
+    hubDots: hubGeo.dots,
+    hubCov:  hubGeo.cov,
+  }), [roads, hubGeo])
 
   const hasHubs = (hubLMResults?.hubL?.hubs?.length || 0) + (hubSBusOnly?.length || 0) > 0
+
+  const GAP = 10
 
   return (
     <section style={{ background: '#fff', borderTop: '2px solid #111' }}>
@@ -372,85 +447,100 @@ export default function ComparativeAnalysisSection() {
           Intermodal Connectivity
         </h2>
         <p style={{ fontFamily: F, fontSize: 12, color: '#888', lineHeight: 1.7, maxWidth: 600, margin: 0 }}>
-          Before: bus, cycling and road networks exist as isolated silos — no physical interchange
-          points between modes. After: S/M/L hubs connect all modes at transfer nodes,
-          enabling chains such as bike → bus → autonomous shuttle within a single journey.
-          Connections shown reflect peak hour demand.
+          Before: car parkings, bus stops, and bicycle parking exist as isolated mode-specific
+          infrastructure with no physical interchange. After: hub nodes co-locate all modes,
+          enabling seamless transfers — bike → bus → autonomous shuttle — within a single journey.
         </p>
       </div>
 
-      {/* Two maps */}
-      <div style={{ display: 'flex', height: '80vh' }}>
-        {/* LEFT — Before */}
-        <div style={{ flex: 1, position: 'relative', borderRight: '2px solid #E8E8E8' }}>
-          <div style={{
-            position: 'absolute', top: 16, left: 16, zIndex: 10,
-            background: 'rgba(255,255,255,0.92)', border: '1px solid #E0E0E0',
-            borderRadius: 6, padding: '6px 14px',
-            fontFamily: F, fontSize: 11, fontWeight: 700, color: '#444',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          }}>
-            Before — Isolated Networks
-          </div>
-          <IntermodalMap id="before" layers={baseLayers}
-            cityGeoJSON={landingCityGeoJSON} districtBoundaries={districtBoundaries}
-            onMove={handleMove} syncRef={syncRef} />
-        </div>
+      {/* Two map columns */}
+      <div style={{ display: 'flex' }}>
 
-        {/* RIGHT — After */}
-        <div style={{ flex: 1, position: 'relative' }}>
-          <div style={{
-            position: 'absolute', top: 16, left: 16, zIndex: 10,
-            background: 'rgba(255,255,255,0.92)', border: `1px solid ${TC.s}44`,
-            borderRadius: 6, padding: '6px 14px',
-            fontFamily: F, fontSize: 11, fontWeight: 700, color: TC.s,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          }}>
-            After — Hub System · Peak Hour
-          </div>
-          {!hasHubs && (
-            <div style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontFamily: F, fontSize: 11, color: '#AAA' }}>Hub data loading…</span>
+        {/* ── LEFT — Before ── */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '2px solid #E8E8E8' }}>
+          {/* Map */}
+          <div style={{ height: '72vh', position: 'relative' }}>
+            <div style={{
+              position: 'absolute', top: 16, left: 16, zIndex: 10,
+              background: 'rgba(255,255,255,0.92)', border: '1px solid #E0E0E0',
+              borderRadius: 6, padding: '6px 14px',
+              fontFamily: F, fontSize: 11, fontWeight: 700, color: '#444',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            }}>
+              Before — Isolated Networks
             </div>
-          )}
-          <IntermodalMap id="after" layers={afterLayers}
-            cityGeoJSON={landingCityGeoJSON} districtBoundaries={districtBoundaries}
-            onMove={handleMove} syncRef={syncRef} />
-        </div>
-      </div>
+            <IntermodalMap id="before" side="before" layers={beforeLayers}
+              cityGeoJSON={landingCityGeoJSON} districtBoundaries={districtBoundaries}
+              onMove={handleMove} syncRef={syncRef} />
+          </div>
 
-      {/* Legend */}
-      <div style={{ padding: '14px 72px', borderTop: '1px solid #E8E8E8', display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-        {[
-          { color: '#CCCCCC', label: 'Roads',        line: true  },
-          { color: '#5539CC', label: 'Bus routes',    line: true  },
-          { color: '#004225', label: 'Cycling',       line: true  },
-          { color: '#5539CC', label: 'Bus stops',     line: false },
-          { color: '#004225', label: 'Bike parking',  line: false },
-          { color: '#C10016', label: 'Car parking',   line: false },
-        ].map(({ color, label, line }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {line
-              ? <svg width={20} height={8}><line x1={0} y1={4} x2={20} y2={4} stroke={color} strokeWidth={2} /></svg>
-              : <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />}
-            <span style={{ fontFamily: F, fontSize: 10, color: '#888' }}>{label}</span>
+          {/* Left legend */}
+          <div style={{ padding: '14px 24px', borderTop: '1px solid #E8E8E8', display: 'flex', flexWrap: 'wrap', gap: `${GAP}px 20px` }}>
+            <LegendRow label="Roads (by hierarchy)">
+              <LineSvg color="#AAAAAA" width={2} />
+            </LegendRow>
+            <LegendRow label="Car parking — 100 m radius">
+              <CircleSvg r={6} fill={CAR_COLOR} opacity={0.45} />
+            </LegendRow>
+            <LegendRow label="Bus stops — 70 m radius">
+              <CircleSvg r={5} fill={BUS_COLOR} opacity={0.5} />
+            </LegendRow>
+            <LegendRow label="Bike parking — 50 m radius">
+              <CircleSvg r={4} fill={BIKE_COLOR} opacity={0.45} />
+            </LegendRow>
           </div>
-        ))}
-        <div style={{ width: 1, height: 14, background: '#E0E0E0' }} />
-        {[
-          { color: TC.l, label: 'Hub L' },
-          { color: TC.m, label: 'Hub M' },
-          { color: TC.s, label: 'Hub S' },
-        ].map(({ color, label }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-            <span style={{ fontFamily: F, fontSize: 10, color: '#888' }}>{label}</span>
+        </div>
+
+        {/* ── RIGHT — After ── */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {/* Map */}
+          <div style={{ height: '72vh', position: 'relative' }}>
+            <div style={{
+              position: 'absolute', top: 16, left: 16, zIndex: 10,
+              background: 'rgba(255,255,255,0.92)', border: `1px solid ${HUB_COLOR}44`,
+              borderRadius: 6, padding: '6px 14px',
+              fontFamily: F, fontSize: 11, fontWeight: 700, color: HUB_COLOR,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            }}>
+              After — Hub System
+            </div>
+            {!hasHubs && (
+              <div style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontFamily: F, fontSize: 11, color: '#AAA' }}>Hub data loading…</span>
+              </div>
+            )}
+            <IntermodalMap id="after" side="after" layers={afterLayers}
+              cityGeoJSON={landingCityGeoJSON} districtBoundaries={districtBoundaries}
+              onMove={handleMove} syncRef={syncRef} />
           </div>
-        ))}
-        <div style={{ width: 1, height: 14, background: '#E0E0E0' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <svg width={20} height={8}><line x1={0} y1={4} x2={20} y2={4} stroke="#999" strokeWidth={1} /></svg>
-          <span style={{ fontFamily: F, fontSize: 10, color: '#888' }}>Hub connections (peak hour)</span>
+
+          {/* Right legend */}
+          <div style={{ padding: '14px 24px', borderTop: '1px solid #E8E8E8', display: 'flex', flexWrap: 'wrap', gap: `${GAP}px 20px` }}>
+            <LegendRow label="Hub L — 100 m">
+              <CircleSvg r={7} fill={HUB_COLOR} stroke="#fff" strokeW={1.5} />
+            </LegendRow>
+            <LegendRow label="Hub M — 70 m">
+              <CircleSvg r={5} fill={HUB_COLOR} stroke="#fff" strokeW={1.2} />
+            </LegendRow>
+            <LegendRow label="Hub S — 50 m">
+              <CircleSvg r={4} fill={HUB_COLOR} stroke="#fff" strokeW={0.8} />
+            </LegendRow>
+            <LegendRow label="L coverage 800 m">
+              <CircleSvg r={7} fill={COV_L_COLOR} stroke={COV_L_COLOR} strokeW={1} opacity={0.15} />
+            </LegendRow>
+            <LegendRow label="M coverage 400 m">
+              <CircleSvg r={5} fill={COV_M_COLOR} stroke={COV_M_COLOR} strokeW={1} opacity={0.15} />
+            </LegendRow>
+            <LegendRow label="S coverage 200 m">
+              <CircleSvg r={4} fill={COV_S_COLOR} stroke={COV_S_COLOR} strokeW={1} opacity={0.15} />
+            </LegendRow>
+            <LegendRow label="Hub network (triangulation)">
+              <LineSvg color={HUB_COLOR} width={0.8} />
+            </LegendRow>
+            <LegendRow label="Roads (by hierarchy)">
+              <LineSvg color={HUB_COLOR} width={1.5} />
+            </LegendRow>
+          </div>
         </div>
       </div>
     </section>
