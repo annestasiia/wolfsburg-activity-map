@@ -597,6 +597,14 @@ const CENT_MODE_INFO = {
   auto:       { color:'#DC2626', label:'Auto accessibility', sub:'50 km/h (maxspeed tag) · 15 min' },
 }
 
+const CENT_CAPTIONS = {
+  centrality: `Peak multi-modal accessibility — excluding the private car — is currently the privilege of residents in the central districts of Stadtmitte, Schillerteich, and Laagberg. The combined score reveals a steep spatial gradient: even a modest displacement from the urban core sharply reduces the share of amenities reachable on foot, by bicycle, or by public transport within 15 minutes. This pattern reflects the structural car dependency embedded in Wolfsburg's dispersed, monocentric urban form — the road and settlement configuration imposes a de facto mobility barrier on those without access to a private vehicle.`,
+  walk:   `Pedestrian accessibility is concentrated almost exclusively in the urban core. The 15-minute walking catchment captures a significant share of amenities only in the innermost districts; beyond these, inter-building distances and the dominance of road infrastructure over pedestrian connectivity reduce walkable access sharply. For the majority of Wolfsburg's residents, the car is a functional necessity rather than a choice.`,
+  bike:   `Cycling extends the effective accessibility catchment considerably compared to walking, but the gap between the planned and existing cycling infrastructure — particularly in outlying districts — constrains this potential. Within the centre, cycling scores are competitive with public transit; in peripheral settlements, the absence of dedicated cycling routes and the hostile road environment suppress modal uptake.`,
+  public: `Public transport accessibility mirrors the monocentric convergence visible across all modes. Bus routes radiate from the city centre and the VW Werk, providing adequate coverage along major corridors while declining sharply in secondary residential areas. The system supports commuting to key destinations but offers limited flexibility for non-radial journeys or off-peak travel, restricting its role as a genuine car alternative for daily mobility.`,
+  auto:   `Automobile accessibility is near-uniform across the entire city — a direct consequence of Wolfsburg's road network design. Within a 15-minute drive at 50 km/h, virtually every amenity is reachable from any location. This structural equality of motorised access is precisely what has suppressed the development of alternatives: the car performs so efficiently that the network has never required the density, mix, or walkability that typically sustain other modes.`,
+}
+
 function CentralityLeftPanel({ tab }) {
   const cfg = CENT_MODE_INFO[tab] || CENT_MODE_INFO.centrality
   return (
@@ -612,41 +620,55 @@ function CentralityLeftPanel({ tab }) {
         </p>
       </div>
 
-      <div style={{ marginBottom: 24 }}>
-        <div style={LB}>Active mode</div>
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-          <div style={{ width:14, height:14, borderRadius:'50%', background:cfg.color }} />
-          <span style={{ fontFamily:F, fontSize:13, fontWeight:600, color:'#111' }}>{cfg.label}</span>
+      <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
+        <div style={{ flex:1 }}>
+          <div style={{ marginBottom: 24 }}>
+            <div style={LB}>Active mode</div>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+              <div style={{ width:14, height:14, borderRadius:'50%', background:cfg.color }} />
+              <span style={{ fontFamily:F, fontSize:13, fontWeight:600, color:'#111' }}>{cfg.label}</span>
+            </div>
+            <p style={{ fontFamily:F, fontSize:11, color:'#999', margin:0 }}>{cfg.sub}</p>
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <div style={LB}>Score gradient</div>
+            <div style={{ height:8, borderRadius:4, marginBottom:6, border:'1px solid #eee',
+              background: tab === 'centrality'
+                ? 'linear-gradient(to right, #ffffff, #2FEF10, #FFF44F, #E62020)'
+                : tab === 'auto'
+                ? 'linear-gradient(to right, #FFF44F, #FF7A00, #E62020)'
+                : `linear-gradient(to right, #ffffff, ${cfg.color})` }} />
+            <div style={{ display:'flex', justifyContent:'space-between' }}>
+              <span style={{ fontFamily:F, fontSize:10, color:'#aaa' }}>0 — no access</span>
+              <span style={{ fontFamily:F, fontSize:10, color:'#aaa' }}>100 — best</span>
+            </div>
+          </div>
+
+          {/* Destinations + Method only on the combined tab */}
+          {tab === 'centrality' && (
+            <>
+              <div style={{ paddingTop:16, borderTop:'1px solid #E8E8E8' }}>
+                <div style={LB}>Destinations</div>
+                <p style={{ fontFamily:F, fontSize:11, color:'#555', lineHeight:1.7, margin:0 }}>
+                  1 170 OSM amenities: schools, supermarkets, pharmacies, doctors, bakeries, banks, community centres + VW Werk gates (5 access points).
+                </p>
+              </div>
+              <div style={{ marginTop:16 }}>
+                <div style={LB}>Method</div>
+                <p style={{ fontFamily:F, fontSize:11, color:'#555', lineHeight:1.7, margin:0 }}>
+                  Reverse Dijkstra from each destination on mode-specific graph. Count reachable destinations per grid node. Normalised 0–100 within each mode.
+                </p>
+              </div>
+            </>
+          )}
         </div>
-        <p style={{ fontFamily:F, fontSize:11, color:'#999', margin:0 }}>{cfg.sub}</p>
-      </div>
 
-      <div style={{ marginBottom: 24 }}>
-        <div style={LB}>Score gradient</div>
-        <div style={{ height:8, borderRadius:4, marginBottom:6, border:'1px solid #eee',
-          background: tab === 'centrality'
-            ? 'linear-gradient(to right, #ffffff, #2FEF10, #FFF44F, #E62020)'
-            : tab === 'auto'
-            ? 'linear-gradient(to right, #FFF44F, #FF7A00, #E62020)'
-            : `linear-gradient(to right, #ffffff, ${cfg.color})` }} />
-        <div style={{ display:'flex', justifyContent:'space-between' }}>
-          <span style={{ fontFamily:F, fontSize:10, color:'#aaa' }}>0 — no access</span>
-          <span style={{ fontFamily:F, fontSize:10, color:'#aaa' }}>100 — best</span>
+        <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-start', borderTop:'1px solid #E8E8E8', paddingTop:16 }}>
+          <p style={{ fontFamily:F, fontSize:11, color:'#555', lineHeight:1.7, margin:0 }}>
+            {CENT_CAPTIONS[tab] || CENT_CAPTIONS.centrality}
+          </p>
         </div>
-      </div>
-
-      <div style={{ paddingTop:20, borderTop:'1px solid #E8E8E8' }}>
-        <div style={LB}>Destinations</div>
-        <p style={{ fontFamily:F, fontSize:12, color:'#555', lineHeight:1.7, margin:0 }}>
-          1 170 OSM amenities: schools, supermarkets, pharmacies, doctors, bakeries, banks, community centres + VW Werk gates (5 access points).
-        </p>
-      </div>
-
-      <div style={{ marginTop:22 }}>
-        <div style={LB}>Method</div>
-        <p style={{ fontFamily:F, fontSize:12, color:'#555', lineHeight:1.7, margin:0 }}>
-          Reverse Dijkstra from each destination on mode-specific graph. Count reachable destinations per grid node. Normalised 0–100 within each mode.
-        </p>
       </div>
     </div>
   )
