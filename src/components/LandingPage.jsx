@@ -451,15 +451,15 @@ function LivabilityLeftPanel({ tab }) {
 
 // ── Hub left panel ─────────────────────────────────────────────────────────────
 
-function HubLeftPanel({ tab }) {
+const HUB_TIERS = [
+  { color: '#1D1D1F', label: 'Hub L', desc: 'Large intermodal terminal · multi-storey car park · autonomous shuttle depot · 4 km catchment' },
+  { color: '#01796F', label: 'Hub M', desc: 'District interchange · underground parking · e-bike + shuttle · 2 km catchment' },
+  { color: '#3EA055', label: 'Hub S', desc: 'Last-mile node · bus interchange · e-bike + shared pod · 400 m catchment' },
+]
+
+function HubLeftPanel({ tab, netTab }) {
   const cap = computeCapacity(130000)
   const fmt = n => Math.round(n).toLocaleString('de-DE')
-
-  const TIERS = [
-    { color: '#1D1D1F', label: 'Hub L', desc: 'Fleet depot · multi-storey car parks · 4 km coverage' },
-    { color: '#01796F', label: 'Hub M', desc: 'District hub · underground car parks · 2 km coverage' },
-    { color: '#3EA055', label: 'Hub S', desc: 'Last-metre · bus interchanges · 400 m coverage' },
-  ]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '40px 36px' }}>
@@ -469,85 +469,160 @@ function HubLeftPanel({ tab }) {
           Hub System
         </h2>
         <p style={{ ...BD, fontSize: 12 }}>
-          Spatial optimisation of shared mobility hub locations, selecting from existing parking infrastructure
-          via AHP-weighted composite scoring. Replaces 49,648 private vehicles/day with ~630 shared vehicles.
+          A three-tier shared mobility network enabling seamless mode-chaining across the city —
+          e-bike, autonomous shuttle, and shared pod — without a private vehicle.
         </p>
       </div>
 
+      {/* ── Placement ── */}
       {tab === 'placement' && (
-        <div>
-          <div style={LB}>Capacity Analysis</div>
-
-          {/* Static scenario label */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <span style={{ fontFamily: F, fontSize: 11, color: '#888' }}>130,000 residents · baseline scenario</span>
-          </div>
-
-          {/* Peak trips result */}
-          <div style={{ padding: '14px 16px', background: '#F5F5F7', borderRadius: 8, marginBottom: 18 }}>
-            <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
-              Peak trips in city center
-            </div>
-            <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
-              {fmt(cap.peak_hour_trips)}
-            </div>
-            <div style={{ fontFamily: F, fontSize: 11, color: '#888', marginTop: 4 }}>
-              trips/hour · calculated from modal split
-            </div>
-          </div>
-
-          {/* Tier legend */}
-          <div style={LB}>Hub tiers</div>
-          {TIERS.map(({ color, label, desc }) => (
-            <div key={label} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-              <div style={{ width: 14, height: 14, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111' }}>{label}</div>
-                <div style={{ fontFamily: F, fontSize: 11, color: '#888', lineHeight: 1.4 }}>{desc}</div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <div style={LB}>Hub tiers</div>
+            {HUB_TIERS.map(({ color, label, desc }) => (
+              <div key={label} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111' }}>{label}</span>
+                  <span style={{ fontFamily: F, fontSize: 11, color: '#888', marginLeft: 6 }}>{desc}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              Hub locations are selected from existing parking infrastructure using AHP-weighted
+              composite scoring: Mobility accessibility (35%), Facility proximity (30%),
+              Green coverage (15%), and Network coverage (20%). Hub L occupies multi-storey
+              car parks with the highest combined scores; Hub M targets underground facilities
+              in district centres; Hub S is placed at bus interchanges and last-mile demand
+              points. The algorithm identifies sites that replace 49,648 private vehicle trips/day
+              with ~630 shared vehicles and e-bikes across the three tiers.
+            </p>
+          </div>
         </div>
       )}
 
+      {/* ── Fleet ── */}
       {tab === 'fleet' && (
-        <div>
-          <div style={LB}>Fleet per hub</div>
-          <p style={{ ...BD, fontSize: 12, marginBottom: 18 }}>
-            Bar height is proportional to fleet size at each hub. Yellow circles show service coverage radius.
-          </p>
-          {TIERS.map(({ color, label, desc }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 10, height: 28, background: color, borderRadius: '2px 2px 0 0', flexShrink: 0 }} />
-              <div>
-                <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111' }}>{label}</div>
-                <div style={{ fontFamily: F, fontSize: 11, color: '#888' }}>{desc.split('·').slice(-1)[0].trim()}</div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <div style={LB}>Fleet sizing</div>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, marginBottom: 16 }}>
+              Fleet size per hub is derived from modal split analysis for 130,000 residents.
+              Peak-hour trip demand ({fmt(cap.peak_hour_trips)} trips/hour) is distributed
+              across tiers based on service area population and catchment radius. Hub L holds
+              the largest autonomous shuttle fleet; Hub M carries mixed shuttles and pods;
+              Hub S provides e-bikes and shared pods for last-mile coverage.
+            </p>
+            <div style={{ padding: '12px 14px', background: '#F5F5F7', borderRadius: 8 }}>
+              <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>
+                Peak trips · city centre
               </div>
+              <div style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: '#111' }}>
+                {fmt(cap.peak_hour_trips)}
+              </div>
+              <div style={{ fontFamily: F, fontSize: 10, color: '#888', marginTop: 2 }}>trips / hour · 130,000 residents</div>
             </div>
-          ))}
-          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1.5px solid #FFD200', background: '#FFD20015', flexShrink: 0 }} />
-            <span style={{ fontFamily: F, fontSize: 11, color: '#888' }}>Coverage area (L 4 km · M 2 km · S 500 m)</span>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              Strategic hub placement transforms urban mobility by creating accessible
+              interchange points distributed across the city's spatial gradient. Residents
+              of peripheral districts gain on-demand access to shared e-bikes, autonomous
+              shuttles, and pods — ending the structural dependency on private car ownership.
+              The network replaces isolated transport modes with a connected, on-demand system
+              in which every journey can be completed without a private vehicle.
+            </p>
           </div>
         </div>
       )}
 
-      {tab === 'network' && (
-        <div>
-          <div style={LB}>Network Analysis</div>
-          {[
-            { color: '#111111', title: 'Network Hubs', desc: 'Hub-to-hub connections by transport mode. L↔L: autonomous bus. L↔M (≤1500 m): shuttle + pod. M↔M (≤1000 m): shuttle + pod. M↔S (≤600 m): pod + e-bike. S↔S (≤400 m): e-bike.' },
-            { color: '#01796F', title: 'Facility Network', desc: 'Each venue is connected to its nearest hub within 800 m. Line color indicates hub tier. Source: curated venue dataset, Pendleratlas BA 2022.' },
-            { color: '#FF0800', title: 'External Flows', desc: 'Daily commuter flows converging to Hub L gateway nodes. Total Einpendler: 76,715/day (Pendleratlas BA 2022). All external commuters enter the network via Hub L.' },
-          ].map(({ color, title, desc }) => (
-            <div key={title} style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'flex-start' }}>
-              <div style={{ width: 3, background: color, borderRadius: 2, flexShrink: 0, marginTop: 2, alignSelf: 'stretch' }} />
-              <div>
-                <div style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111', marginBottom: 3 }}>{title}</div>
-                <div style={{ fontFamily: F, fontSize: 11, color: '#888', lineHeight: 1.5 }}>{desc}</div>
+      {/* ── Network — sub-tabs ── */}
+      {tab === 'network' && netTab === 'hub-net' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <div style={LB}>Network Hubs</div>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: '0 0 12px' }}>
+              Hub-to-hub connections form the mobility backbone of the network. Each tier pair
+              is served by a dedicated mode matched to distance and demand:
+            </p>
+            {[
+              ['L ↔ L', 'Autonomous bus'],
+              ['L ↔ M ≤ 1 500 m', 'Shuttle + pod'],
+              ['M ↔ M ≤ 1 000 m', 'Shuttle + pod'],
+              ['M ↔ S ≤ 600 m', 'Pod + e-bike'],
+              ['S ↔ S ≤ 400 m', 'E-bike'],
+            ].map(([pair, mode]) => (
+              <div key={pair} style={{ display: 'flex', gap: 8, marginBottom: 5, alignItems: 'baseline' }}>
+                <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: '#111', minWidth: 110, flexShrink: 0 }}>{pair}</span>
+                <span style={{ fontFamily: F, fontSize: 11, color: '#888' }}>{mode}</span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              By introducing the hub network, the city gains the opportunity to become
+              progressively more connected — beginning with districts closest to the centre,
+              and gradually extending mobility coverage to more remote settlements as the
+              network expands. This spatial sequencing ensures that accessibility improvements
+              are achievable incrementally, without requiring full deployment before delivering
+              benefit. The hub system makes different modes of mobility structurally available
+              across all districts, reducing car dependency at the network level.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {tab === 'network' && netTab === 'fac-net' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <div style={LB}>Facility Network</div>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              Each registered venue and urban facility is linked to its nearest hub within 800 m,
+              creating a spatial accessibility overlay. The hub tier determines the likely
+              access mode: Hub S serves facilities on foot or e-bike; Hub M by pod or e-bike;
+              Hub L by autonomous shuttle. Line colour encodes hub tier — the connection
+              structure reflects both proximity and hierarchy within the mobility network.
+            </p>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              The facility network analysis shows that proposed hub locations substantially
+              improve non-motorised access to urban amenities across all districts. Areas where
+              current walking and cycling accessibility scores are lowest — peripheral residential
+              districts — benefit most from hub-mediated connectivity. Hub placement transforms
+              mobility gaps into connected catchments, enabling residents to reach everyday
+              destinations without a private vehicle.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {tab === 'network' && netTab === 'ext-flow' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <div style={LB}>External Flows</div>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              Wolfsburg receives 76,715 daily commuters (Einpendler) from surrounding
+              municipalities — primarily Gifhorn, Helmstedt, Braunschweig, and Hanover
+              (Pendleratlas BA 2022). These flows converge via the main rail and road corridors
+              and enter the shared mobility network exclusively through Hub L gateway nodes,
+              which act as the primary intermodal interface between the regional and internal
+              mobility systems. All external commuters are absorbed and distributed at L-tier
+              hubs before continuing by shuttle, pod, or e-bike.
+            </p>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              Integrating external commuter flows into the hub network is critical for reducing
+              the volume of private vehicles entering the city. By positioning Hub L nodes at
+              the main entry points, the system creates a seamless transition from regional
+              transport to the internal shared mobility network — making it practical for
+              Einpendler to leave their cars outside the city boundary and complete their
+              journey by shared mobility means.
+            </p>
+          </div>
         </div>
       )}
     </div>
@@ -705,6 +780,7 @@ export default function LandingPage() {
   const [livabilityTab, setLivabilityTab] = useState('livability')
   const [centralityTab, setCentralityTab] = useState('centrality')
   const [hubTab, setHubTab] = useState('placement')
+  const [hubNetTab, setHubNetTab] = useState('hub-net')
 
   React.useEffect(() => {
     setNavOpen(false)
@@ -819,10 +895,10 @@ export default function LandingPage() {
         {/* Hub — 40/60 with tabs */}
         <section style={{ display:'flex', height:'100vh', border:'1px solid #E8E8E8', overflow:'hidden' }}>
           <div style={{ width:'40%', flexShrink:0, borderRight:'1px solid #E8E8E8', overflow:'hidden' }}>
-            <HubLeftPanel tab={hubTab} />
+            <HubLeftPanel tab={hubTab} netTab={hubNetTab} />
           </div>
           <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
-            <HubMapSection tab={hubTab} onTabChange={setHubTab} />
+            <HubMapSection tab={hubTab} onTabChange={setHubTab} netTab={hubNetTab} onNetTabChange={setHubNetTab} />
           </div>
         </section>
 

@@ -258,12 +258,12 @@ function buildExternalFlows(lHubs) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function HubMapSection({ tab = 'placement', onTabChange }) {
+export default function HubMapSection({ tab = 'placement', onTabChange, netTab = 'hub-net', onNetTabChange }) {
   const mapDivRef       = useRef(null)
   const mapRef          = useRef(null)
   const fleetMarkersRef = useRef([])
   const [mapReady, setMapReady] = useState(false)
-  const [netTab, setNetTab]     = useState('hub-net')
+  const setNetTab = onNetTabChange || (() => {})
   const autoTriggeredRef        = useRef(false)
   const prevNetTab              = useRef(null)
 
@@ -310,15 +310,15 @@ export default function HubMapSection({ tab = 'placement', onTabChange }) {
           paint: { 'line-color': '#FFD200', 'line-width': 1.5, 'line-opacity': 0.75 } })
       }
 
-      // Hub Network lines — grey, 70% opacity
+      // Hub Network lines
       map.addSource('hn-lines', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'hn-lines-layer', type: 'line', source: 'hn-lines', layout: { visibility: 'none' },
-        paint: { 'line-color': '#999999', 'line-width': 0.5, 'line-opacity': 0.3 } })
+        paint: { 'line-color': '#999999', 'line-width': 0.5, 'line-opacity': 0.15 } })
 
-      // Facility Network lines — blue #10069F, 70% opacity
+      // Facility Network lines
       map.addSource('fn-lines', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'fn-lines-layer', type: 'line', source: 'fn-lines', layout: { visibility: 'none' },
-        paint: { 'line-color': '#10069F', 'line-width': 0.5, 'line-opacity': 0.2 } })
+        paint: { 'line-color': '#10069F', 'line-width': 0.5, 'line-opacity': 0.15 } })
       map.addSource('fn-dots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'fn-dots-layer', type: 'circle', source: 'fn-dots', layout: { visibility: 'none' },
         paint: { 'circle-color': '#10069F', 'circle-radius': 1.5, 'circle-opacity': 0.5, 'circle-stroke-width': 0 } })
