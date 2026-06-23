@@ -24,7 +24,7 @@ export const TABS = [
 export const LANDUSE_COLORS = {
   forest:         '#2D6A4F',
   meadow:         '#95D5B2',
-  farmland:       '#DDB892',
+  farmland:       '#004225',
   water:          '#48CAE4',
   park:           '#52B788',
   residential:    '#F4A429',
@@ -33,8 +33,8 @@ export const LANDUSE_COLORS = {
   education:      '#2496E8',
   administrative: '#F26B3A',
   institutional:  '#D43FB8',
-  parking:        '#14C4C4',
-  railway:        '#8FC73E',
+  parking:        '#1D1D1F',
+  railway:        '#CC2200',
 }
 
 // ── Shared base utilities ─────────────────────────────────────────────────────
@@ -206,24 +206,27 @@ function peakLevelAt(peakTimes, dayLabel, hour) {
   return max
 }
 
-function computeRings(venue, dayLabel, hour) {
-  const dayLevel  = parseLevel(venue.days?.[dayLabel])
+function computeActivityData(venue, dayLabel, hour) {
+  const dayLevel = parseLevel(venue.days?.[dayLabel])
+  if (dayLevel === 0) return { actLevel: 0, radius_m: 0 }
   const peakLevel = peakLevelAt(venue.peakTimes, dayLabel, hour)
   const effective = Math.max(dayLevel, peakLevel)
-  // base mapping: 0→1, 1→2, 2→3, 3→4; peak boost +1 when peak > base day
-  const base  = effective === 0 ? 1 : effective === 1 ? 2 : effective === 2 ? 3 : 4
-  const boost = peakLevel > 0 && peakLevel > dayLevel ? 1 : 0
-  return Math.min(5, base + boost)
+  // radius_m: low→150, med→300, high→500
+  const radius_m = effective === 1 ? 150 : effective === 2 ? 300 : 500
+  return { actLevel: effective, radius_m }
 }
 
 function buildActivityGeoJSON(venues, dayLabel, hour) {
   const features = (venues || [])
     .filter(v => v.lat && v.lng)
-    .map(v => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
-      properties: { name: v.name, category: v.category, rings: computeRings(v, dayLabel, hour) },
-    }))
+    .map(v => {
+      const { actLevel, radius_m } = computeActivityData(v, dayLabel, hour)
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
+        properties: { name: v.name, category: v.category, actLevel, radius_m },
+      }
+    })
   return { type: 'FeatureCollection', features }
 }
 
@@ -301,10 +304,10 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
       // ── Land use polygons ────────────────────────────────────────────────
       map.addSource('landuse', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       const luColor = ['match', ['get', 'category'],
-        'forest', '#2D6A4F', 'meadow', '#95D5B2', 'farmland', '#DDB892', 'water', '#48CAE4',
+        'forest', '#2D6A4F', 'meadow', '#95D5B2', 'farmland', '#004225', 'water', '#48CAE4',
         'park', '#52B788', 'residential', '#F4A429', 'commercial', '#E8305A', 'industrial', '#5B4FCF',
         'education', '#2496E8', 'administrative', '#F26B3A', 'institutional', '#D43FB8',
-        'parking', '#14C4C4', 'railway', '#8FC73E', '#cccccc',
+        'parking', '#1D1D1F', 'railway', '#CC2200', '#cccccc',
       ]
       map.addLayer({ id: 'landuse-fill', type: 'fill', source: 'landuse',
         layout: { visibility: 'none' },
@@ -313,26 +316,39 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
         layout: { visibility: 'none' },
         paint: { 'line-color': '#ffffff', 'line-width': 0.3, 'line-opacity': 0.4 } })
 
-      // ── Activity rings (5 ring layers outer→inner, then dot) ────────────
+      // ── Activity: proportional halo (open venues) + dot (all venues) ─────
       map.addSource('activity', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      // Outer rings first so inner rings paint on top
-      const ringRadii = [30, 22, 16, 11, 7]  // ring-5 → ring-1 radii in px
-      for (let n = 5; n >= 1; n--) {
-        map.addLayer({ id: `act-ring-${n}`, type: 'circle', source: 'activity',
-          layout: { visibility: 'none' },
-          filter: ['>=', ['get', 'rings'], n],
-          paint: {
-            'circle-color': 'rgba(255,153,204,0.06)',
-            'circle-stroke-color': '#FF99CC',
-            'circle-stroke-width': 1.5,
-            'circle-radius': ringRadii[5 - n],
-            'circle-opacity': 1,
-          },
-        })
-      }
+      // Halo: only rendered for open venues (actLevel > 0), radius scales with radius_m
+      map.addLayer({ id: 'act-halo', type: 'circle', source: 'activity',
+        layout: { visibility: 'none' },
+        filter: ['>', ['get', 'actLevel'], 0],
+        paint: {
+          'circle-color': '#10069F',
+          'circle-opacity': 0.13,
+          'circle-stroke-color': '#10069F',
+          'circle-stroke-width': 1.5,
+          'circle-stroke-opacity': 0.75,
+          'circle-radius': ['interpolate', ['exponential', 2], ['zoom'],
+            9,  ['*', ['get', 'radius_m'], 0.00536],
+            10, ['*', ['get', 'radius_m'], 0.01073],
+            11, ['*', ['get', 'radius_m'], 0.02146],
+            12, ['*', ['get', 'radius_m'], 0.04301],
+            13, ['*', ['get', 'radius_m'], 0.08602],
+            14, ['*', ['get', 'radius_m'], 0.17204],
+            15, ['*', ['get', 'radius_m'], 0.34408],
+          ],
+        },
+      })
+      // Dot: all venues always visible (dimmed when closed)
       map.addLayer({ id: 'act-dot', type: 'circle', source: 'activity',
         layout: { visibility: 'none' },
-        paint: { 'circle-color': '#10069F', 'circle-radius': 3.5, 'circle-opacity': 1, 'circle-stroke-width': 0 } })
+        paint: {
+          'circle-color': '#10069F',
+          'circle-radius': 3.5,
+          'circle-opacity': ['case', ['>', ['get', 'actLevel'], 0], 1, 0.35],
+          'circle-stroke-width': 0,
+        },
+      })
 
       // ── WHITE MASK (above all data layers) ──────────────────────────────
       map.addSource('city-mask', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
@@ -414,7 +430,7 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
     setVis('liv-circles',  tab === 'livability')
     setVis('landuse-fill', tab === 'landuse')
     setVis('landuse-line', tab === 'landuse')
-    for (let n = 1; n <= 5; n++) setVis(`act-ring-${n}`, tab === 'activity')
+    setVis('act-halo',     tab === 'activity')
     setVis('act-dot',      tab === 'activity')
   }, [mapReady, tab])
 
@@ -426,57 +442,57 @@ export default function LivabilityMapSection({ tab = 'livability', onTabChange }
       {mapReady && (
         <div style={{
           position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', gap: 2,
-          background: 'rgba(255,255,255,0.96)', border: '1px solid #E0E0E0',
-          borderRadius: 8, padding: '3px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.10)', zIndex: 10, whiteSpace: 'nowrap',
+          display: 'flex', gap: 8, alignItems: 'center', whiteSpace: 'nowrap',
         }}>
-          {TABS.map(({ label, id }) => (
-            <button key={id} onClick={() => onTabChange?.(id)} style={{
-              padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
-              fontFamily: F, fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em',
-              background: tab === id ? '#1D1D1F' : 'transparent',
-              color:      tab === id ? '#fff'    : '#666',
-              transition: 'background 0.15s, color 0.15s',
+          {/* Compact day/time selector — only shown for Activity tab */}
+          {tab === 'activity' && (
+            <div style={{
+              background: 'rgba(255,255,255,0.96)', border: '1px solid #E0E0E0',
+              borderRadius: 8, padding: '5px 8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+              display: 'flex', flexDirection: 'column', gap: 4, zIndex: 10,
             }}>
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+              <div style={{ display: 'flex', gap: 2 }}>
+                {ACT_DAY_ORDER.map(d => (
+                  <button key={d} onClick={() => setActDay(d)} style={{
+                    padding: '2px 5px', borderRadius: 4, border: '1px solid',
+                    borderColor: actDay === d ? '#10069F' : '#E0E0E0',
+                    background: actDay === d ? '#10069F' : 'transparent',
+                    color: actDay === d ? '#fff' : '#666',
+                    fontFamily: F, fontSize: 9, fontWeight: 700, cursor: 'pointer', lineHeight: 1.4,
+                  }}>{d}</button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontFamily: F, fontSize: 8, color: '#BBB' }}>00:00</span>
+                <input type="range" min={0} max={23} step={1} value={actHour}
+                  onChange={e => setActHour(+e.target.value)}
+                  style={{ flex: 1, accentColor: '#10069F', height: 2 }} />
+                <span style={{ fontFamily: F, fontSize: 9, color: '#10069F', minWidth: 32, textAlign: 'right', fontWeight: 700 }}>
+                  {String(actHour).padStart(2, '0')}:00
+                </span>
+              </div>
+            </div>
+          )}
 
-      {/* ── Activity time slider ── */}
-      {mapReady && tab === 'activity' && (
-        <div style={{
-          position: 'absolute', bottom: 36, left: '50%', transform: 'translateX(-50%)',
-          background: 'rgba(255,255,255,0.97)', border: '1px solid #E0E0E0',
-          borderRadius: 12, padding: '12px 18px',
-          boxShadow: '0 2px 14px rgba(0,0,0,0.12)',
-          zIndex: 10, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 340,
-        }}>
-          {/* Day buttons */}
-          <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
-            {ACT_DAY_ORDER.map(d => (
-              <button key={d} onClick={() => setActDay(d)} style={{
-                padding: '3px 9px', borderRadius: 5, border: 'none', cursor: 'pointer',
-                fontFamily: F, fontSize: 11, fontWeight: 600,
-                background: actDay === d ? '#10069F' : '#F2F2F7',
-                color: actDay === d ? '#fff' : '#555',
-                transition: 'background 0.12s, color 0.12s',
-              }}>{d}</button>
+          {/* Tab switcher */}
+          <div style={{
+            display: 'flex', gap: 2,
+            background: 'rgba(255,255,255,0.96)', border: '1px solid #E0E0E0',
+            borderRadius: 8, padding: '3px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.10)', zIndex: 10,
+          }}>
+            {TABS.map(({ label, id }) => (
+              <button key={id} onClick={() => onTabChange?.(id)} style={{
+                padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                fontFamily: F, fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em',
+                background: tab === id ? '#1D1D1F' : 'transparent',
+                color:      tab === id ? '#fff'    : '#666',
+                transition: 'background 0.15s, color 0.15s',
+              }}>
+                {label}
+              </button>
             ))}
-          </div>
-          {/* Hour slider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontFamily: F, fontSize: 12, fontWeight: 600, color: '#10069F', minWidth: 38 }}>
-              {String(actHour).padStart(2, '0')}:00
-            </span>
-            <input
-              type="range" min={0} max={23} step={1} value={actHour}
-              onChange={e => setActHour(+e.target.value)}
-              style={{ flex: 1, accentColor: '#10069F', cursor: 'pointer' }}
-            />
-            <span style={{ fontFamily: F, fontSize: 10, color: '#999', minWidth: 28 }}>23:00</span>
           </div>
         </div>
       )}

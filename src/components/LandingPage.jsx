@@ -121,8 +121,8 @@ function MobilityLeftPanel({ tab }) {
 
       {/* ── Auto ── */}
       {tab === 'auto' && (
-        <>
-          <div style={{ marginBottom: 20 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
             {/* Two-column legend: Road Network | Car Parking */}
             <div style={{ display: 'flex', gap: 16 }}>
               <div style={{ flex: 1 }}>
@@ -157,7 +157,6 @@ function MobilityLeftPanel({ tab }) {
                 </SymbolRow>
               </div>
             </div>
-
             <div style={{ marginTop: 14 }}>
               <div style={LB}>Traffic Activity</div>
               <SymbolRow label="Low ↔ High — glow width varies">
@@ -168,8 +167,7 @@ function MobilityLeftPanel({ tab }) {
               </SymbolRow>
             </div>
           </div>
-
-          <div style={{ borderTop: '1px solid #E8E8E8', paddingTop: 16, marginTop: 'auto' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
             <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
               Wolfsburg is a car-oriented city with a high modal share of private automobile use.
               Despite its spatially fragmented structure — a monocentric industrial core surrounded
@@ -178,13 +176,13 @@ function MobilityLeftPanel({ tab }) {
               reproducing a classic hub-and-spoke pattern characteristic of company towns.
             </p>
           </div>
-        </>
+        </div>
       )}
 
       {/* ── Public ── */}
       {tab === 'public' && (
-        <>
-          <div style={{ marginBottom: 20 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
             {/* Two-column: Bus Routes | Bus Stops */}
             <div style={{ display: 'flex', gap: 16 }}>
               <div style={{ flex: 1 }}>
@@ -223,8 +221,7 @@ function MobilityLeftPanel({ tab }) {
               </div>
             </div>
           </div>
-
-          <div style={{ borderTop: '1px solid #E8E8E8', paddingTop: 16, marginTop: 'auto' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
             <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
               Despite its car-centric spatial structure, Wolfsburg maintains a functional public
               transport network that connects peripheral residential districts to the urban core.
@@ -234,13 +231,13 @@ function MobilityLeftPanel({ tab }) {
               reinforcing the monocentric character of the city's transport demand.
             </p>
           </div>
-        </>
+        </div>
       )}
 
       {/* ── Cycling ── */}
       {tab === 'cycling' && (
-        <>
-          <div style={{ marginBottom: 20 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
             <div style={LB}>Cycling Infrastructure</div>
             <SymbolRow label="Cycling route">
               <svg width="28" height="14">
@@ -255,8 +252,7 @@ function MobilityLeftPanel({ tab }) {
               </svg>
             </SymbolRow>
           </div>
-
-          <div style={{ borderTop: '1px solid #E8E8E8', paddingTop: 16, marginTop: 'auto' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
             <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
               The cycle network shown represents the <em>planned</em> cycling infrastructure
               sourced from the Wolfsburg Geoportal. The existing network currently covers
@@ -267,19 +263,18 @@ function MobilityLeftPanel({ tab }) {
               was used as the analytical baseline.
             </p>
           </div>
-        </>
+        </div>
       )}
 
       {/* ── Activity Map ── */}
       {tab === 'activity' && (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
             <div style={LB}>Transport Activity</div>
             <p style={{ ...BD, fontSize: 12, marginBottom: 16 }}>
               Proportional symbol grid (500 m cells). Circle size encodes combined transport
               intensity — roads, bus stops, parkings, cycling infrastructure.
             </p>
-            {/* Size + colour legend */}
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 16 }}>
               {[{ r: 4, label: 'Low', color: '#FF9E3D' }, { r: 8, label: 'Mid', color: '#FF5C00' }, { r: 14, label: 'High', color: '#BF00FF' }].map(({ r, label, color }) => (
                 <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -290,10 +285,9 @@ function MobilityLeftPanel({ tab }) {
                 </div>
               ))}
             </div>
-            <div style={{ height: 6, borderRadius: 3, background: 'linear-gradient(to right, #FF9E3D, #FF5C00, #BF00FF)', marginBottom: 16 }} />
+            <div style={{ height: 6, borderRadius: 3, background: 'linear-gradient(to right, #FF9E3D, #FF5C00, #BF00FF)', marginBottom: 0 }} />
           </div>
-
-          <div style={{ borderTop: '1px solid #E8E8E8', paddingTop: 16, marginTop: 'auto' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
             <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
               The transport activity map reveals Wolfsburg's satellite urban structure: a dominant
               core concentrating the majority of transport infrastructure and activity, surrounded
@@ -327,47 +321,73 @@ function LivabilityLeftPanel({ tab }) {
       </div>
 
       {tab === 'livability' && (
-        <div>
-          <div style={LB}>Facility Density</div>
-          <p style={{ ...BD, fontSize: 12, marginBottom: 16 }}>
-            Proportional symbol grid (250 m cells). Circle size encodes concentration
-            of commercial venues, facilities and historic sites.
-          </p>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 16 }}>
-            {[{ r: 4, label: 'Low', color: '#90D5FF' }, { r: 8, label: 'Mid', color: '#10069F' }, { r: 14, label: 'High', color: '#131936' }].map(({ r, label, color }) => (
-              <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <svg width={r * 2 + 4} height={r * 2 + 4}>
-                  <circle cx={r + 2} cy={r + 2} r={r} fill={color} />
-                </svg>
-                <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
-              </div>
-            ))}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <div style={LB}>Facility Density</div>
+            <p style={{ ...BD, fontSize: 12, marginBottom: 16 }}>
+              Proportional symbol grid (250 m cells). Circle size encodes concentration
+              of commercial venues, facilities and historic sites.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 16 }}>
+              {[{ r: 4, label: 'Low', color: '#90D5FF' }, { r: 8, label: 'Mid', color: '#10069F' }, { r: 14, label: 'High', color: '#131936' }].map(({ r, label, color }) => (
+                <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <svg width={r * 2 + 4} height={r * 2 + 4}>
+                    <circle cx={r + 2} cy={r + 2} r={r} fill={color} />
+                  </svg>
+                  <span style={{ fontFamily: F, fontSize: 10, color: '#aaa' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: 'linear-gradient(to right, #90D5FF, #10069F, #131936)', marginBottom: 0 }} />
           </div>
-          <div style={{ height: 6, borderRadius: 3, background: 'linear-gradient(to right, #90D5FF, #10069F, #131936)', marginBottom: 10 }} />
-          <div style={{ fontFamily: F, fontSize: 11, color: '#bbb', lineHeight: 1.6 }}>
-            Sources: venues registry · OSM facilities · historic sites
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              The majority of urban civic and commercial facilities are concentrated in the central
+              districts — Stadtmitte, Schillerteich, and Laagberg — which form the functional core
+              of the city. Peripheral settlements such as Vorsfelde, Fallersleben, Hehlingen, and
+              Nordsteimke exhibit significantly lower facility density. This spatial imbalance not
+              only reflects the historical planning logic of a company town, but also compels
+              residents of outlying districts to rely on private automobiles for everyday activities,
+              reinforcing car dependency at a structural level.
+            </p>
           </div>
         </div>
       )}
 
       {tab === 'landuse' && (
-        <div>
-          <div style={LB}>Land Use</div>
-          {Object.entries(LANDUSE_COLORS).map(([cat, color]) => {
-            const labels = {
-              forest: 'Forest / Wood', meadow: 'Meadow / Grassland', farmland: 'Farmland / Fields',
-              water: 'Water', park: 'Park / Garden', residential: 'Residential',
-              commercial: 'Commercial / Retail', industrial: 'Industrial',
-              education: 'Education', administrative: 'Administrative',
-              institutional: 'Hospital / Cemetery', parking: 'Parking', railway: 'Railway',
-            }
-            return (
-              <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <div style={{ width: 14, height: 14, borderRadius: 2, background: color, flexShrink: 0 }} />
-                <span style={{ fontFamily: F, fontSize: 11, color: '#444' }}>{labels[cat] || cat}</span>
-              </div>
-            )
-          })}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <div style={LB}>Land Use</div>
+            {/* Three-column layout */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px 8px', marginBottom: 8 }}>
+              {Object.entries(LANDUSE_COLORS).map(([cat, color]) => {
+                const labels = {
+                  forest: 'Forest', meadow: 'Meadow', farmland: 'Farmland',
+                  water: 'Water', park: 'Park', residential: 'Residential',
+                  commercial: 'Commercial', industrial: 'Industrial',
+                  education: 'Education', administrative: 'Admin.',
+                  institutional: 'Hospital', parking: 'Parking', railway: 'Railway',
+                }
+                return (
+                  <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 12, height: 12, borderRadius: 2, background: color, flexShrink: 0 }} />
+                    <span style={{ fontFamily: F, fontSize: 10, color: '#444', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{labels[cat] || cat}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              Wolfsburg's land use structure reflects its identity as a satellite city shaped by
+              industrial planning. Large agricultural and forest zones — Farmland, Meadow, and
+              Forest — fragment the urban fabric and physically separate residential districts from
+              one another. The commercial and civic core remains concentrated in the city centre,
+              while industrial land — dominated by the Volkswagenwerk — occupies a significant
+              share of the built environment. This land use pattern reinforces spatial segregation
+              and reduces the conditions for walkable, mixed-use urban life outside the centre.
+            </p>
+          </div>
         </div>
       )}
 
@@ -381,31 +401,47 @@ function LivabilityLeftPanel({ tab }) {
       )}
 
       {tab === 'activity' && (
-        <div>
-          <div style={LB}>Activity Pulse</div>
-          <p style={{ ...BD, fontSize: 12, marginBottom: 14 }}>
-            96 registered venues. Ring count (1–5) encodes real-time activity intensity
-            based on day-of-week schedule and peak hours from the venue registry.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-            {[1,2,3,4,5].map(n => (
-              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <svg width={34} height={34}>
-                  {Array.from({ length: n }).map((_, i) => {
-                    const radii = [7, 11, 16, 22, 30]
-                    const r = radii[i] ?? 30
-                    return <circle key={i} cx={17} cy={17} r={r} fill="rgba(255,153,204,0.06)" stroke="#FF99CC" strokeWidth={1.5} />
-                  })}
-                  <circle cx={17} cy={17} r={3.5} fill="#10069F" />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <div style={LB}>Venue Activity</div>
+            <p style={{ ...BD, fontSize: 12, marginBottom: 14 }}>
+              Each registered venue is shown as a point. If the venue is open at the selected
+              time, a proportional halo indicates activity intensity — derived from the venue
+              registry opening hours and peak-hour data.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { r: 5, label: 'Facility location', fill: '#10069F', stroke: 'none', sw: 0, dot: false },
+                { r: 10, label: 'Low activity', fill: 'rgba(16,6,159,0.12)', stroke: '#10069F', sw: 1.5, dot: true },
+                { r: 16, label: 'Moderate activity', fill: 'rgba(16,6,159,0.12)', stroke: '#10069F', sw: 1.5, dot: true },
+                { r: 22, label: 'High / peak activity', fill: 'rgba(16,6,159,0.12)', stroke: '#10069F', sw: 1.5, dot: true },
+              ].map(({ r, label, fill, stroke, sw, dot }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <svg width={r * 2 + 4} height={r * 2 + 4} style={{ flexShrink: 0 }}>
+                    <circle cx={r + 2} cy={r + 2} r={r} fill={fill} stroke={stroke} strokeWidth={sw} />
+                    {dot && <circle cx={r + 2} cy={r + 2} r={3} fill="#10069F" />}
+                  </svg>
+                  <span style={{ fontFamily: F, fontSize: 11, color: '#444' }}>{label}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <svg width={14} height={14} style={{ flexShrink: 0 }}>
+                  <circle cx={7} cy={7} r={4} fill="#10069F" opacity={0.4} />
                 </svg>
-                <span style={{ fontFamily: F, fontSize: 11, color: '#444' }}>
-                  {n === 1 ? 'Closed / very low' : n === 2 ? 'Low activity' : n === 3 ? 'Moderate' : n === 4 ? 'High' : 'Peak / Rush hour'}
-                </span>
+                <span style={{ fontFamily: F, fontSize: 11, color: '#888' }}>Closed — no halo</span>
               </div>
-            ))}
+            </div>
           </div>
-          <div style={{ fontFamily: F, fontSize: 11, color: '#bbb', lineHeight: 1.6 }}>
-            Use the day + time slider on the map<br />to explore how activity shifts across<br />the week.
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
+            <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
+              Activity intensity at registered venues confirms the centralised structure of
+              Wolfsburg's urban life. Peak activity concentrates in the city centre and around
+              major commercial destinations, while peripheral districts show sparse and low-intensity
+              patterns. This reflects both the limited provision of local facilities in outlying
+              areas and the dependence of residents on centralised services, reinforcing the
+              city's monocentric character and the role of the automobile as the primary enabler
+              of daily mobility.
+            </p>
           </div>
         </div>
       )}
