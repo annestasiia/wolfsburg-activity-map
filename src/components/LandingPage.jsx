@@ -873,7 +873,7 @@ export default function LandingPage() {
           </h1>
           <div style={{ width: 48, height: 2, background: '#111', marginBottom: 28 }} />
           <p style={{ fontFamily: F, fontSize: 20, color: '#444', lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
-            //integrated multimodal mobility infrastructure
+            //analysis part of the stadt.hub project
           </p>
         </div>
         <div style={{ fontFamily: F, fontSize: 15, fontWeight: 600, color: '#111', letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 56 }}>
@@ -892,7 +892,7 @@ export default function LandingPage() {
             rel="noopener noreferrer"
             style={{ display: 'block', textDecoration: 'none', position: 'relative', flexShrink: 0 }}
           >
-            <div style={{ position: 'relative', width: 494, borderRadius: 4, overflow: 'hidden', background: '#E8E8E8', border: '1px solid #D8D8D8' }}>
+            <div style={{ position: 'relative', width: 420, borderRadius: 4, overflow: 'hidden', background: '#E8E8E8', border: '1px solid #D8D8D8' }}>
               <video
                 src={`${import.meta.env.BASE_URL}Video/presentation.mp4`}
                 autoPlay loop muted playsInline preload="auto"
@@ -929,7 +929,7 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 48 }}>
           <div>
             <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>About the Project</div>
-            <p style={{ ...BD, marginBottom: 18 }}>
+            <p style={{ ...BD, fontSize: 20, color: '#444', marginBottom: 18 }}>
               Cars sit unused 90% of the time. What if no one owned one at all?
               This project reimagines Wolfsburg — one of Europe's most car-dependent cities — as a place
               where all mobility is shared, electric, and autonomous: on-demand, fleet-managed,
@@ -938,7 +938,7 @@ export default function LandingPage() {
           </div>
           <div>
             <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>Analysis</div>
-            <p style={{ ...BD, marginBottom: 18 }}>
+            <p style={{ ...BD, fontSize: 20, color: '#444', marginBottom: 18 }}>
               To adapt the urban environment to this new mobility scenario, three layers of spatial
               analysis were conducted — Mobility, Livability, and Centrality — feeding a hub placement
               model that identifies and ranks existing parking structures for conversion into
@@ -947,7 +947,7 @@ export default function LandingPage() {
           </div>
           <div>
             <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>Result</div>
-            <p style={BD}>
+            <p style={{ ...BD, fontSize: 20, color: '#444' }}>
               A three-tier hub network (L · M · S) replaces private vehicles with a shared fleet
               of autonomous vehicles and e-bikes. The analysis covers the entire city; urban design
               interventions are focused on the nine central districts.
