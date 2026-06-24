@@ -1043,14 +1043,15 @@ function HubAreaTable() {
 
 // ─── PART 5 COST COMPARISON ──────────────────────────────────────────────────
 const COST_ROWS = [
-  { item: 'Vehicle acquisition / financing', private: 350, shared: 0,   note: 'Depreciation on new VW Golf (~€30k / 7 yr) or lease' },
-  { item: 'Insurance (Vollkasko)',           private: 95,  shared: 0,   note: 'Full comprehensive, Wolfsburg risk zone' },
-  { item: 'Fuel / energy',                   private: 130, shared: 0,   note: 'avg 1,000 km/month, €0.175/km petrol incl. road losses' },
-  { item: 'Maintenance, tyres, repairs',     private: 75,  shared: 0,   note: 'ADAC average, amortised across ownership period' },
-  { item: 'Parking (resident permit + ad-hoc)', private: 55, shared: 0, note: 'City centre resident permit + occasional paid parking' },
+  { item: 'Vehicle acquisition / financing', private: 380, shared: 0,   note: 'Depreciation on new VW Golf (~€30k / 7 yr) or lease' },
+  { item: 'Insurance (Vollkasko)',           private: 100, shared: 0,   note: 'Full comprehensive, Wolfsburg risk zone' },
+  { item: 'Fuel (1,500 km/month, petrol)',   private: 195, shared: 0,   note: 'Daily driver avg — €0.13/km incl. road losses' },
+  { item: 'Maintenance, tyres, repairs',     private: 95,  shared: 0,   note: 'ADAC average, higher for daily use — amortised' },
+  { item: 'Parking (permit + daily paid)',   private: 75,  shared: 0,   note: 'Resident permit + frequent city-centre parking' },
   { item: 'Annual fees (TÜV, KFZ-Steuer)',   private: 22,  shared: 0,   note: '€105 tax + €155 TÜV biennial, annualised' },
-  { item: 'Autonomous shuttle / pod rides',  private: 0,   shared: 62,  note: '25 trips/month × €2.50 avg (MOIA Hamburg comparable)' },
-  { item: 'Car-share EV (occasional use)',   private: 0,   shared: 27,  note: '2 × 45 min × €0.30/min — longer trips, cargo runs' },
+  { item: 'Autonomous shuttle / pod',        private: 0,   shared: 70,  note: '20 trips/month × €3.50 avg (MOIA Hamburg comparable)' },
+  { item: 'Car-share EV (personal trips)',   private: 0,   shared: 90,  note: '10 trips × 30 min × €0.30/min — longer/cargo runs' },
+  { item: 'Autonomous bus',                  private: 0,   shared: 25,  note: '10 trips/month × €2.50' },
   { item: 'E-bike access',                   private: 0,   shared: 5,   note: 'Low-cost subscription or free at hub S' },
 ]
 const COST_PRIVATE_TOTAL = COST_ROWS.reduce((s, r) => s + r.private, 0)
@@ -1101,7 +1102,7 @@ function CostComparison() {
       </div>
 
       <div style={{ padding: '14px 18px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 0, fontSize: 13, fontFamily: SANS, color: C.text3, lineHeight: 1.7 }}>
-        <strong style={{ color: C.text2 }}>Important caveats:</strong> This comparison assumes a <em>frequent urban user</em> (~25 shared trips/month within the Wolfsburg zone). Private car costs exclude the psychological cost of ownership and the time spent driving, parking and maintaining a vehicle. Shared mobility costs exclude the occasional convenience premium for spontaneous longer trips. Rural or commuting households outside the zone may face higher shared-mobility costs until network coverage expands.
+        <strong style={{ color: C.text2 }}>Important caveats:</strong> This comparison assumes a <em>daily car user</em> — ~1,500 km/month, driving every day, with 10 bus trips/month on top. Private car costs follow ADAC Autokostenrechner 2024 (VW Golf 1.5 TSI). Shared mobility figures use MOIA Hamburg per-ride pricing and Share Now per-minute rates. The shared scenario covers the same mobility needs via autonomous shuttle/pod (short trips), car-share EV (longer/personal trips), and bus. Costs exclude the time value of driving, parking search, and vehicle maintenance administration.
       </div>
     </div>
   )
@@ -1404,8 +1405,9 @@ export default function DataPanel() {
             <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 5 · Economics</div>
             <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Shared vs. Private Car</h2>
             <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
-              A direct cost comparison for a typical Wolfsburg resident making ~25 urban
-              trips per month. All private-car figures follow <strong style={{ color: C.text1 }}>ADAC Autokostenrechner 2024</strong> (VW Golf 1.5 TSI, new).
+              A direct cost comparison for a daily car user — driving every day (~1,500 km/month),
+              with 10 bus trips per month on top. Private-car figures follow{' '}
+              <strong style={{ color: C.text1 }}>ADAC Autokostenrechner 2024</strong> (VW Golf 1.5 TSI, new).
               Shared-mobility costs are benchmarked from <strong style={{ color: C.text1 }}>MOIA Hamburg</strong> per-trip pricing
               and <strong style={{ color: C.text1 }}>Share Now</strong> per-minute rates.
             </p>
