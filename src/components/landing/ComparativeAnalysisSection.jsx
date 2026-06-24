@@ -20,12 +20,12 @@ const BLANK_STYLE = {
 const HUB_COLOR      = '#10069F'
 const CAR_COLOR      = '#10069F'
 const BUS_COLOR      = '#C90016'
-const BIKE_COLOR     = '#1A7A00'   // green for bike parking
-const COV_L_COLOR    = '#FF3503'
-const COV_M_COLOR    = '#FFD200'
-const COV_S_COLOR    = '#C90016'
-const ROAD_GREY      = '#C8C8CC'
-const CYCLING_GREY   = '#B0B0B8'
+const BIKE_COLOR     = '#1A7A00'
+const COV_L_COLOR    = '#FFD200'
+const COV_M_COLOR    = '#2D68C4'
+const COV_S_COLOR    = '#FA2A55'
+const ROAD_GREY      = '#AAAAAA'
+const CYCLING_GREY   = '#999999'
 
 // Road types to show (hide service, track, path, footway)
 const ROAD_TYPES = ['motorway','motorway_link','trunk','trunk_link',
@@ -266,12 +266,12 @@ function IntermodalMap({ id, side, layers, cityGeoJSON, districtBoundaries, onMo
       map.addLayer({ id: 'hub-tri-layer', type: 'line', source: 'hub-tri',
         paint: { 'line-color': HUB_COLOR, 'line-width': 1.0, 'line-opacity': 1 } })
 
-      // Coverage circles
+      // Coverage circles — 80% transparent fill (opacity 0.2), solid stroke
       const covColor = ['match', ['get', 'tier'], 'l', COV_L_COLOR, 'm', COV_M_COLOR, COV_S_COLOR]
       map.addLayer({ id: 'hub-cov-fill', type: 'fill', source: 'hub-cov',
-        paint: { 'fill-color': covColor, 'fill-opacity': 0.07 } })
+        paint: { 'fill-color': covColor, 'fill-opacity': 0.2 } })
       map.addLayer({ id: 'hub-cov-stroke', type: 'line', source: 'hub-cov',
-        paint: { 'line-color': covColor, 'line-width': 0.8, 'line-opacity': 1, 'line-dasharray': [3, 4] } })
+        paint: { 'line-color': covColor, 'line-width': 1.2, 'line-opacity': 1 } })
 
       // Roads — #10069F, full opacity, thicker
       map.addLayer({ id: 'roads-layer', type: 'line', source: 'roads',
@@ -330,12 +330,17 @@ function IntermodalMap({ id, side, layers, cityGeoJSON, districtBoundaries, onMo
     map.getSource('dist-labels')?.setData(buildCentroids(districtBoundaries))
   }, [ready, districtBoundaries])
 
-  // Road + cycling data (both maps)
+  // Road data
   useEffect(() => {
     const map = mapRef.current; if (!map || !ready) return
     map.getSource('roads')?.setData(layers.roads || EMPTY)
-    map.getSource('cycling')?.setData(layers.cycling || EMPTY)
-  }, [ready, layers.roads, layers.cycling])
+  }, [ready, layers.roads])
+
+  // Cycling data — separate effect so it fires independently when data arrives
+  useEffect(() => {
+    const map = mapRef.current; if (!map || !ready) return
+    if (layers.cycling) map.getSource('cycling')?.setData(layers.cycling)
+  }, [ready, layers.cycling])
 
   // Before-specific point data
   useEffect(() => {
@@ -386,14 +391,27 @@ function LineSvg({ color, width = 1.5, dash }) {
 }
 
 // ── Main section ──────────────────────────────────────────────────────────────
+function mergeCycling(a, b) {
+  const features = [
+    ...(a?.features || []),
+    ...(b?.features || []),
+  ]
+  return features.length ? { type: 'FeatureCollection', features } : null
+}
+
 export default function ComparativeAnalysisSection() {
   const {
-    roads, localCycling,
+    roads, localCycling, localCyclingOfficial,
     localBusStops, localBikeParkings, localCarParkings,
     hubLMResults, hubSBusOnly,
     landingCityGeoJSON, setLandingCityGeoJSON,
     districtBoundaries,
   } = useAppStore()
+
+  const cyclingData = useMemo(
+    () => mergeCycling(localCycling, localCyclingOfficial),
+    [localCycling, localCyclingOfficial],
+  )
 
   const syncRef = useRef({})
 
@@ -434,19 +452,19 @@ export default function ComparativeAnalysisSection() {
 
   const beforeLayers = useMemo(() => ({
     roads,
-    cycling:  localCycling,
+    cycling:  cyclingData,
     carPark:  localCarParkings,
     busStops: localBusStops,
     bikePark: localBikeParkings,
-  }), [roads, localCycling, localCarParkings, localBusStops, localBikeParkings])
+  }), [roads, cyclingData, localCarParkings, localBusStops, localBikeParkings])
 
   const afterLayers = useMemo(() => ({
     roads,
-    cycling:  localCycling,
+    cycling:  cyclingData,
     hubTri:   hubGeo.tri,
     hubDots:  hubGeo.dots,
     hubCov:   hubGeo.cov,
-  }), [roads, localCycling, hubGeo])
+  }), [roads, cyclingData, hubGeo])
 
   const hasHubs = (hubLMResults?.hubL?.hubs?.length || 0) + (hubSBusOnly?.length || 0) > 0
 
@@ -540,13 +558,13 @@ export default function ComparativeAnalysisSection() {
               <CircleSvg r={4} fill={HUB_COLOR} stroke="#fff" strokeW={0.8} />
             </LegendRow>
             <LegendRow label="Hub L coverage">
-              <CircleSvg r={7} fill={COV_L_COLOR} stroke={COV_L_COLOR} strokeW={1} opacity={0.2} />
+              <CircleSvg r={7} fill={COV_L_COLOR} stroke={COV_L_COLOR} strokeW={1.5} opacity={0.2} />
             </LegendRow>
             <LegendRow label="Hub M coverage">
-              <CircleSvg r={5} fill={COV_M_COLOR} stroke={COV_M_COLOR} strokeW={1} opacity={0.2} />
+              <CircleSvg r={5} fill={COV_M_COLOR} stroke={COV_M_COLOR} strokeW={1.5} opacity={0.2} />
             </LegendRow>
             <LegendRow label="Hub S coverage">
-              <CircleSvg r={4} fill={COV_S_COLOR} stroke={COV_S_COLOR} strokeW={1} opacity={0.2} />
+              <CircleSvg r={4} fill={COV_S_COLOR} stroke={COV_S_COLOR} strokeW={1.5} opacity={0.2} />
             </LegendRow>
             <LegendRow label="Hub connection network">
               <LineSvg color={HUB_COLOR} width={1.2} />
