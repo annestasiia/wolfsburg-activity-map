@@ -21,9 +21,9 @@ const HUB_COLOR      = '#10069F'
 const CAR_COLOR      = '#10069F'
 const BUS_COLOR      = '#C90016'
 const BIKE_COLOR     = '#1A7A00'
-const COV_L_COLOR    = '#FFD200'
-const COV_M_COLOR    = '#2D68C4'
-const COV_S_COLOR    = '#FA2A55'
+const COV_L_COLOR    = '#FF3503'
+const COV_M_COLOR    = '#FFD200'
+const COV_S_COLOR    = '#C90016'
 const ROAD_GREY      = '#AAAAAA'
 const CYCLING_GREY   = '#999999'
 
@@ -247,19 +247,19 @@ function IntermodalMap({ id, side, layers, cityGeoJSON, districtBoundaries, onMo
       map.addLayer({ id: 'cycling-layer', type: 'line', source: 'cycling',
         paint: { 'line-color': CYCLING_GREY, 'line-width': 1.2, 'line-opacity': 1 } })
 
-      // Point layers — ×3 radii, no opacity
-      // Car parking — #10069F, 300m
+      // Point layers — ×3 radii −20%, no opacity
+      // Car parking — #10069F, 240m
       map.addLayer({ id: 'car-park-layer', type: 'circle', source: 'car-parks',
         paint: { 'circle-color': CAR_COLOR, 'circle-opacity': 1, 'circle-stroke-width': 0,
-          'circle-radius': radExpr(300) } })
-      // Bus stops — #C90016, 210m
+          'circle-radius': radExpr(240) } })
+      // Bus stops — #C90016, 168m
       map.addLayer({ id: 'bus-stop-layer', type: 'circle', source: 'bus-stops',
         paint: { 'circle-color': BUS_COLOR, 'circle-opacity': 1, 'circle-stroke-width': 0,
-          'circle-radius': radExpr(210) } })
-      // Bike parking — green, 150m
+          'circle-radius': radExpr(168) } })
+      // Bike parking — green, 120m
       map.addLayer({ id: 'bike-park-layer', type: 'circle', source: 'bike-parks',
         paint: { 'circle-color': BIKE_COLOR, 'circle-opacity': 1, 'circle-stroke-width': 0,
-          'circle-radius': radExpr(150) } })
+          'circle-radius': radExpr(120) } })
 
     } else {
       // Triangulation network — full opacity, thicker
