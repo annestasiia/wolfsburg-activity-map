@@ -146,49 +146,37 @@ const TIER_LABEL = { l: 'Hub L', m: 'Hub M', s: 'Hub S' }
 const TIER_DESC  = { l: 'Fleet depot + fast charging', m: 'Intermodal transfer node', s: 'Bus/bike interchange' }
 const fmtArea = n => n >= 10000 ? `${(n / 10000).toFixed(2)} ha` : `${Math.round(n)} m²`
 
-const MAX_BAR_H = 72  // px — tallest bar (Hub L)
-const BAR_W     = 7   // px — bar width
+const MAX_BAR_H = 100  // px — tallest bar (Hub L), elongated
+const BAR_W     = 5    // px — narrow column
 
 function makeHubInfoEl(tier, hub, hubData, maxTotal) {
   const dotSize = { l: 9, m: 7, s: 5 }[tier]
   const total   = hubData?._total || 0
-  const barH    = maxTotal > 0 ? Math.max(6, Math.round((total / maxTotal) * MAX_BAR_H)) : 6
-  const areaPart  = hub?.area > 0 ? fmtArea(hub.area) : ''
-  const totalPart = total > 0 ? `×${total}` : ''
+  const barH    = maxTotal > 0 ? Math.max(8, Math.round((total / maxTotal) * MAX_BAR_H)) : 8
 
   const el = document.createElement('div')
-  el.style.cssText = `display:flex;flex-direction:column;align-items:center;pointer-events:none;`
+  el.style.cssText = `display:flex;flex-direction:column;align-items:flex-start;pointer-events:none;`
 
-  // Row: black bar on the left, label+stats on the right, aligned to bottom
-  const row = document.createElement('div')
-  row.style.cssText = `display:flex;align-items:flex-end;gap:5px;margin-bottom:0;`
+  // Bar with label absolutely positioned to its right
+  const barWrap = document.createElement('div')
+  barWrap.style.cssText = `position:relative;width:${BAR_W}px;height:${barH}px;`
 
   const bar = document.createElement('div')
-  bar.style.cssText = `width:${BAR_W}px;height:${barH}px;background:#111;flex-shrink:0;`
+  bar.style.cssText = `width:100%;height:100%;background:#111;`
 
-  const lblCol = document.createElement('div')
-  lblCol.style.cssText = `display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:1px;`
+  // Label sits to the right, bottom-aligned with bar
+  const lbl = document.createElement('div')
+  lbl.style.cssText = `position:absolute;left:${BAR_W + 5}px;bottom:0;font-family:${F};font-size:8px;font-weight:700;color:#111;white-space:nowrap;line-height:1;`
+  lbl.textContent = TIER_LABEL[tier].toUpperCase()
 
-  const tierName = document.createElement('div')
-  tierName.style.cssText = `font-family:${F};font-size:8px;font-weight:700;color:#111;white-space:nowrap;line-height:1.4;`
-  tierName.textContent = TIER_LABEL[tier].toUpperCase()
+  barWrap.appendChild(bar)
+  barWrap.appendChild(lbl)
+  el.appendChild(barWrap)
 
-  const stats = document.createElement('div')
-  stats.style.cssText = `font-family:${F};font-size:7px;color:#555;white-space:nowrap;line-height:1.4;`
-  stats.textContent = [areaPart, totalPart].filter(Boolean).join(' · ')
-
-  lblCol.appendChild(tierName)
-  if (areaPart || totalPart) lblCol.appendChild(stats)
-  row.appendChild(bar)
-  row.appendChild(lblCol)
-  el.appendChild(row)
-
-  // Stem + dot
-  const stem = document.createElement('div')
-  stem.style.cssText = 'width:1px;height:14px;background:#aaa;'
+  // Dot sits directly below bar — bar grows upward from the dot
   const dot = document.createElement('div')
-  dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:#111;flex-shrink:0;`
-  el.appendChild(stem)
+  const ml = Math.round((BAR_W - dotSize) / 2)
+  dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:#111;flex-shrink:0;margin-left:${ml}px;`
   el.appendChild(dot)
   return el
 }
