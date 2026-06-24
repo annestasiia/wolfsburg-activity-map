@@ -451,9 +451,9 @@ function LivabilityLeftPanel({ tab }) {
 // ── Hub left panel ─────────────────────────────────────────────────────────────
 
 const HUB_TIERS = [
-  { color: '#1D1D1F', label: 'Hub L', desc: 'Large intermodal terminal · multi-storey car park · autonomous shuttle depot · 4 km catchment' },
-  { color: '#01796F', label: 'Hub M', desc: 'District interchange · underground parking · e-bike + shuttle · 2 km catchment' },
-  { color: '#3EA055', label: 'Hub S', desc: 'Last-mile node · bus interchange · e-bike + shared pod · 400 m catchment' },
+  { color: '#1D1D1F', letter: 'L', label: 'Hub L', desc: 'Large intermodal terminal · multi-storey car park · autonomous shuttle depot · 4 km catchment' },
+  { color: '#01796F', letter: 'M', label: 'Hub M', desc: 'District interchange · underground parking · e-bike + shuttle · 2 km catchment' },
+  { color: '#3EA055', letter: 'S', label: 'Hub S', desc: 'Last-mile node · bus interchange · e-bike + shared pod · 400 m catchment' },
 ]
 
 function HubLeftPanel({ tab, netTab }) {
@@ -478,9 +478,14 @@ function HubLeftPanel({ tab, netTab }) {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1 }}>
             <div style={LB}>Hub tiers</div>
-            {HUB_TIERS.map(({ color, label, desc }) => (
+            {HUB_TIERS.map(({ color, letter, label, desc }) => (
               <div key={label} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 2 }} />
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ fontFamily: F, fontSize: 9, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{letter}</span>
+                </div>
                 <div>
                   <span style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: '#111' }}>{label}</span>
                   <span style={{ fontFamily: F, fontSize: 11, color: '#888', marginLeft: 6 }}>{desc}</span>
