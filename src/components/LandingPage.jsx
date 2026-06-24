@@ -795,8 +795,11 @@ const FURTHER_LINKS = [
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+const HERO_TITLE = '<STADT.HUB>'
+
 export default function LandingPage() {
   const { setActiveSection, setActiveMode, setShowLanding, setNavOpen, setLandingSectionMode, setFromLanding, landingScrollTarget, setLandingScrollTarget } = useAppStore()
+  const [typedTitle, setTypedTitle] = useState('')
   const [mobilityTab, setMobilityTab] = useState('activity')
   const [livabilityTab, setLivabilityTab] = useState('livability')
   const [centralityTab, setCentralityTab] = useState('centrality')
@@ -807,6 +810,16 @@ export default function LandingPage() {
   React.useEffect(() => {
     setNavOpen(false)
     setLandingSectionMode('geo', 'mobility')
+  }, [])
+
+  React.useEffect(() => {
+    let i = 0
+    const timer = setInterval(() => {
+      i++
+      setTypedTitle(HERO_TITLE.slice(0, i))
+      if (i >= HERO_TITLE.length) clearInterval(timer)
+    }, 90)
+    return () => clearInterval(timer)
   }, [])
 
   React.useEffect(() => {
@@ -842,13 +855,17 @@ export default function LandingPage() {
       }}>
         <div>
           <div style={{ ...EY, marginBottom: 36 }}>Research · Wolfsburg · 2026</div>
+          <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
           <h1 style={{
             fontFamily: F, fontSize: 'clamp(72px, 10vw, 128px)',
             fontWeight: 700, color: '#111',
             lineHeight: 0.90, letterSpacing: '-0.05em',
             margin: '0 0 32px',
           }}>
-            {'<'}stadt.hub{'>'}
+            {typedTitle}
+            {typedTitle.length < HERO_TITLE.length && (
+              <span style={{ animation: 'blink 0.7s step-end infinite', marginLeft: 2 }}>|</span>
+            )}
           </h1>
           <div style={{ width: 48, height: 2, background: '#111', marginBottom: 28 }} />
           <p style={{ fontFamily: F, fontSize: 20, color: '#444', lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
