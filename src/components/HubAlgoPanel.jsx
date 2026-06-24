@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react'
+import { useAppStore } from '../store/appStore'
 
 const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 const C = { bg: '#FFFFFF', card: '#FFFFFF', border: '#E8E8E8', text1: '#111111', text2: '#444444', text3: '#888888' }
@@ -151,6 +152,7 @@ function ScoreGrid({ items }) {
 }
 
 export default function HubAlgoPanel() {
+  const { fromLanding } = useAppStore()
   const scrollRef = useRef(null)
   const [progress, setProgress] = useState(0)
 
@@ -180,7 +182,7 @@ export default function HubAlgoPanel() {
   }, [])
 
   return (
-    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 'var(--nav-w)', right: 0, zIndex: 10, background: C.bg, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: fromLanding ? 0 : 'var(--nav-w)', right: 0, zIndex: 10, background: C.bg, display: 'flex', flexDirection: 'column' }}>
       <style>{CSS_ANIM}</style>
 
       {/* Progress bar */}

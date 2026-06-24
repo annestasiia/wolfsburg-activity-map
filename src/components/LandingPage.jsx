@@ -791,23 +791,32 @@ const FURTHER_LINKS = [
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  const { setActiveSection, setActiveMode, setShowLanding, setNavOpen, setLandingSectionMode } = useAppStore()
+  const { setActiveSection, setActiveMode, setShowLanding, setNavOpen, setLandingSectionMode, setFromLanding, landingScrollTarget, setLandingScrollTarget } = useAppStore()
   const [mobilityTab, setMobilityTab] = useState('activity')
   const [livabilityTab, setLivabilityTab] = useState('livability')
   const [centralityTab, setCentralityTab] = useState('centrality')
   const [hubTab, setHubTab] = useState('placement')
   const [hubNetTab, setHubNetTab] = useState('hub-net')
+  const pageRef = React.useRef(null)
 
   React.useEffect(() => {
     setNavOpen(false)
     setLandingSectionMode('geo', 'mobility')
   }, [])
 
+  React.useEffect(() => {
+    if (!landingScrollTarget) return
+    const el = document.getElementById(landingScrollTarget)
+    if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
+    setLandingScrollTarget(null)
+  }, [landingScrollTarget])
+
   const navigateTo = (id, mode, noMenu = false) => {
     setShowLanding(false)
     setNavOpen(!noMenu)
     setActiveSection(id)
     if (mode) setActiveMode(mode)
+    if (noMenu) setFromLanding(true)
   }
 
   return (
@@ -924,7 +933,7 @@ export default function LandingPage() {
       </div>
 
       {/* ── Further Information — full width ──────────────────────────────── */}
-      <section style={{ padding: '72px 72px 96px', borderTop: '2px solid #111' }}>
+      <section id="further-info" style={{ padding: '72px 72px 96px', borderTop: '2px solid #111' }}>
         <div style={EY}>Further Information</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
           <div>

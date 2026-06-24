@@ -32,6 +32,35 @@ import buildingsData from './data/buildings.json'
 
 const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif"
 
+function BackButton() {
+  const { setShowLanding, setFromLanding, setLandingScrollTarget } = useAppStore()
+  return (
+    <div style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: 1, zIndex: 401, background: '#E8E8E8' }}>
+      <button
+        onClick={() => {
+          setFromLanding(false)
+          setLandingScrollTarget('further-info')
+          setShowLanding(true)
+        }}
+        style={{
+          position: 'absolute', top: 28, left: 0,
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '8px 16px 8px 12px',
+          background: '#FFFFFF',
+          border: '1px solid #E8E8E8', borderLeft: 'none',
+          borderRadius: '0 4px 4px 0',
+          cursor: 'pointer',
+          fontFamily: SANS, fontSize: 12, color: '#555',
+          letterSpacing: '0.04em', textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        ← Back
+      </button>
+    </div>
+  )
+}
+
 function SimulationPlaceholder() {
   return (
     <div style={{ position: 'absolute', top: 0, bottom: 0, left: 'var(--nav-w)', right: 0, zIndex: 10, background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -50,7 +79,7 @@ export default function App() {
     activeSection, activeMode, setSelectedFacilityVenueId,
     setLocalBusStops, setLocalCarParkings, setLocalBikeParkings,
     setLocalFacilities, setLocalHistoric, setLocalParksForests, setLocalCycling, setLocalCyclingOfficial, setLocalBusRoutes, setLocalLandUse, setLocalCentrality,
-    showLanding,
+    showLanding, fromLanding,
   } = useAppStore()
   const [selectedVenue, setSelectedVenue] = useState(null)
 
@@ -150,7 +179,7 @@ export default function App() {
       </main>
 
       <BottomBar />
-      <RightNav />
+      {fromLanding ? <BackButton /> : <RightNav />}
     </div>
   )
 }

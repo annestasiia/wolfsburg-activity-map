@@ -31,6 +31,15 @@ export const useAppStore = create((set) => ({
   // Lightweight mode setter for landing scroll — no state resets
   setLandingSectionMode: (section, mode) => set({ activeSection: section, activeMode: mode }),
 
+  // fromLanding=true means the user arrived via a "noMenu" link from the landing page
+  // → show only back button, panels use full width (left: 0)
+  fromLanding: false,
+  setFromLanding: (v) => set({ fromLanding: v }),
+
+  // When set, LandingPage scrolls to this element id on mount then clears
+  landingScrollTarget: null,
+  setLandingScrollTarget: (v) => set({ landingScrollTarget: v }),
+
   // ── Navigation sidebar ───────────────────────────────────────────────────
   navOpen: true,
   setNavOpen: (v) => set({ navOpen: v }),

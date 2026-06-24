@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { FONT, SERIF, C, TERRA, CATS, CAT_COLOR, ELEMENTS, HubIcon } from '../data/hubElements.jsx'
 import HubScene from './hub/HubScene.jsx'
+import { useAppStore } from '../store/appStore'
 
 // ── Element Circle ──────────────────────────────────────────────────────────
 function ElementCircle({ el }) {
@@ -295,6 +296,7 @@ function HubTypologiesSection() {
 
 // ── Main Panel ──────────────────────────────────────────────────────────────
 export default function UrbanDesignPanel() {
+  const { fromLanding } = useAppStore()
   const [tab, setTab] = useState('elements')
   const [progress, setProgress] = useState(0)
   const scrollRef = React.useRef(null)
@@ -320,7 +322,7 @@ export default function UrbanDesignPanel() {
   const contentMax = tab === 'typologies' ? 1180 : 800
 
   return (
-    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 'var(--nav-w)', right: 0, zIndex: 10, background: C.bg, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: fromLanding ? 0 : 'var(--nav-w)', right: 0, zIndex: 10, background: C.bg, display: 'flex', flexDirection: 'column' }}>
       {/* Progress bar */}
       <div style={{ height: 3, background: C.border, flexShrink: 0 }}>
         <div style={{ height: '100%', background: TERRA, width: `${progress * 100}%`, transition: 'width 80ms linear' }} />

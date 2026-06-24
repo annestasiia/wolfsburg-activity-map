@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useAppStore } from '../store/appStore'
 
 // ─── BASELINE ─────────────────────────────────────────────────────────────────
 const DISTRICT_POP = {
@@ -1146,6 +1147,7 @@ const NAV = [
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function DataPanel() {
+  const { fromLanding } = useAppStore()
   const [activeNav, setActiveNav] = useState('#overview')
   const scrollRef = useRef(null)
   const [progress, setProgress] = useState(0)
@@ -1176,7 +1178,7 @@ export default function DataPanel() {
   }, [])
 
   return (
-    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 'var(--nav-w)', right: 0, display: 'flex', background: C.bg, zIndex: 10, overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: fromLanding ? 0 : 'var(--nav-w)', right: 0, display: 'flex', background: C.bg, zIndex: 10, overflow: 'hidden' }}>
       <style>{CSS_ANIM}</style>
 
       {/* Left nav */}
