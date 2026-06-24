@@ -812,7 +812,7 @@ export default function LandingPage() {
     setLandingSectionMode('geo', 'mobility')
   }, [])
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     let i = 0
     const timer = setInterval(() => {
       i++
