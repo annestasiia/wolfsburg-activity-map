@@ -870,28 +870,29 @@ export default function LandingPage() {
             href="#"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ display: 'block', textDecoration: 'none', position: 'relative' }}
+            style={{ display: 'block', textDecoration: 'none', position: 'relative', flexShrink: 0 }}
           >
-            <video
-              src="/Video/presentation.mp4"
-              autoPlay loop muted playsInline
-              style={{
-                display: 'block', width: 300, borderRadius: 4,
-                border: '1px solid #E8E8E8',
-                objectFit: 'cover',
-              }}
-            />
             <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0,
-              padding: '8px 12px',
-              background: 'rgba(0,0,0,0.55)',
-              borderRadius: '0 0 4px 4px',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              position: 'relative', width: 300, height: 420,
+              background: '#E8E8E8', borderRadius: 4,
+              border: '1px solid #D8D8D8', overflow: 'hidden',
             }}>
-              <span style={{ fontFamily: F, fontSize: 11, color: '#fff', fontWeight: 600, letterSpacing: '0.04em' }}>
-                Project Presentation
-              </span>
-              <span style={{ fontFamily: F, fontSize: 13, color: '#fff' }}>↗</span>
+              <video
+                src="/Video/presentation.mp4"
+                autoPlay loop muted playsInline
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                padding: '8px 12px',
+                background: 'rgba(0,0,0,0.55)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              }}>
+                <span style={{ fontFamily: F, fontSize: 11, color: '#fff', fontWeight: 600, letterSpacing: '0.04em' }}>
+                  Project Presentation
+                </span>
+                <span style={{ fontFamily: F, fontSize: 13, color: '#fff' }}>↗</span>
+              </div>
             </div>
           </a>
 
