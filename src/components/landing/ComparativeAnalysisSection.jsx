@@ -266,12 +266,10 @@ function IntermodalMap({ id, side, layers, cityGeoJSON, districtBoundaries, onMo
       map.addLayer({ id: 'hub-tri-layer', type: 'line', source: 'hub-tri',
         paint: { 'line-color': HUB_COLOR, 'line-width': 1.0, 'line-opacity': 1 } })
 
-      // Coverage circles — 80% transparent fill (opacity 0.2), solid stroke
+      // Coverage circles — solid fill, no stroke
       const covColor = ['match', ['get', 'tier'], 'l', COV_L_COLOR, 'm', COV_M_COLOR, COV_S_COLOR]
       map.addLayer({ id: 'hub-cov-fill', type: 'fill', source: 'hub-cov',
-        paint: { 'fill-color': covColor, 'fill-opacity': 0.2 } })
-      map.addLayer({ id: 'hub-cov-stroke', type: 'line', source: 'hub-cov',
-        paint: { 'line-color': covColor, 'line-width': 1.2, 'line-opacity': 1 } })
+        paint: { 'fill-color': covColor, 'fill-opacity': 1 } })
 
       // Roads — #10069F, full opacity, thicker
       map.addLayer({ id: 'roads-layer', type: 'line', source: 'roads',
