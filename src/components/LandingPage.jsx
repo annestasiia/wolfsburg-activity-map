@@ -862,23 +862,25 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 48 }}>
           <div>
             <p style={{ ...BD, marginBottom: 18 }}>
-              A city where no one owns a private car. All mobility is shared, electric, and autonomous —
-              on-demand, fleet-managed, and accessible to every resident.
-              Wolfsburg, Germany's most car-dependent city per capita, is the test case.
+              Cars sit unused 90% of the time. What if no one owned one at all?
+              This project reimagines Wolfsburg — one of Europe's most car-dependent cities — as a place
+              where all mobility is shared, electric, and autonomous: on-demand, fleet-managed,
+              and accessible to every resident.
             </p>
           </div>
           <div>
             <p style={{ ...BD, marginBottom: 18 }}>
-              Three layers of spatial analysis — Mobility, Livability, and Potential — feed a hub
-              placement model that identifies and ranks existing parking structures
-              for conversion into shared mobility infrastructure.
+              To adapt the urban environment to this new mobility scenario, three layers of spatial
+              analysis were conducted — Mobility, Livability, and Centrality — feeding a hub placement
+              model that identifies and ranks existing parking structures for conversion into
+              shared mobility infrastructure.
             </p>
           </div>
           <div>
             <p style={BD}>
-              The result: a three-tier hub network (L, M, S) replacing 49,648 private vehicles per day
-              with a shared autonomous fleet of approximately 630 vehicles and bikes. The project covers
-              the entire city, with urban design interventions focused on the central 4 km² zone.
+              A three-tier hub network (L · M · S) replaces private vehicles with a shared fleet
+              of autonomous vehicles and e-bikes. The analysis covers the entire city; urban design
+              interventions are focused on the nine central districts.
             </p>
           </div>
         </div>
