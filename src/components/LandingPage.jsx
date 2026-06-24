@@ -872,15 +872,11 @@ export default function LandingPage() {
             rel="noopener noreferrer"
             style={{ display: 'block', textDecoration: 'none', position: 'relative', flexShrink: 0 }}
           >
-            <div style={{
-              position: 'relative', width: 300, height: 420,
-              background: '#E8E8E8', borderRadius: 4,
-              border: '1px solid #D8D8D8', overflow: 'hidden',
-            }}>
+            <div style={{ position: 'relative', width: 380, borderRadius: 4, overflow: 'hidden', background: '#E8E8E8', border: '1px solid #D8D8D8' }}>
               <video
                 src="/Video/presentation.mp4"
                 autoPlay loop muted playsInline
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{ display: 'block', width: '100%', height: 'auto' }}
               />
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
