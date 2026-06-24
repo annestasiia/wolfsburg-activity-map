@@ -875,7 +875,7 @@ export default function LandingPage() {
             <div style={{ position: 'relative', width: 494, borderRadius: 4, overflow: 'hidden', background: '#E8E8E8', border: '1px solid #D8D8D8' }}>
               <video
                 src={`${import.meta.env.BASE_URL}Video/presentation.mp4`}
-                autoPlay loop muted playsInline
+                autoPlay loop muted playsInline preload="auto"
                 style={{ display: 'block', width: '100%', height: 'auto' }}
               />
               <div style={{
