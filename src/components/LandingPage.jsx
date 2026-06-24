@@ -866,6 +866,7 @@ export default function LandingPage() {
         <div style={EY}>About the Project</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 48 }}>
           <div>
+            <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>About the Project</div>
             <p style={{ ...BD, marginBottom: 18 }}>
               Cars sit unused 90% of the time. What if no one owned one at all?
               This project reimagines Wolfsburg — one of Europe's most car-dependent cities — as a place
@@ -874,6 +875,7 @@ export default function LandingPage() {
             </p>
           </div>
           <div>
+            <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>Analysis</div>
             <p style={{ ...BD, marginBottom: 18 }}>
               To adapt the urban environment to this new mobility scenario, three layers of spatial
               analysis were conducted — Mobility, Livability, and Centrality — feeding a hub placement
@@ -882,6 +884,7 @@ export default function LandingPage() {
             </p>
           </div>
           <div>
+            <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>Result</div>
             <p style={BD}>
               A three-tier hub network (L · M · S) replaces private vehicles with a shared fleet
               of autonomous vehicles and e-bikes. The analysis covers the entire city; urban design
