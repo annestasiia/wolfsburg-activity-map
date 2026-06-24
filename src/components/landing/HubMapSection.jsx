@@ -329,7 +329,7 @@ export default function HubMapSection({ tab = 'placement', onTabChange, netTab =
 
       // Hub dots — below city mask so dots outside city boundary are clipped
       map.addSource('pl-dots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      for (const [tier, color, r] of [['l', TC.l, 8], ['m', TC.m, 6], ['s', TC.s, 4]])
+      for (const [tier, color, r] of [['l', TC.l, 12], ['m', TC.m, 9], ['s', TC.s, 6]])
         map.addLayer({ id: `pl-dot-${tier}`, type: 'circle', source: 'pl-dots',
           filter: ['==', ['get', 'tier'], tier], layout: { visibility: 'none' },
           paint: { 'circle-color': color, 'circle-radius': r, 'circle-opacity': 1, 'circle-stroke-width': 0 } })
@@ -340,7 +340,7 @@ export default function HubMapSection({ tab = 'placement', onTabChange, netTab =
         paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } })
 
       // Hub dot letters — above city mask so they're always visible
-      for (const [tier, letter, fs] of [['l', 'L', 7], ['m', 'M', 6], ['s', 'S', 5]])
+      for (const [tier, letter, fs] of [['l', 'L', 10], ['m', 'M', 9], ['s', 'S', 7]])
         map.addLayer({ id: `pl-lbl-${tier}`, type: 'symbol', source: 'pl-dots',
           filter: ['==', ['get', 'tier'], tier], layout: { visibility: 'none',
             'text-field': letter, 'text-font': ['Noto Sans Bold'],
