@@ -929,7 +929,7 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 48 }}>
           <div>
             <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>About the Project</div>
-            <p style={{ ...BD, fontSize: 20, color: '#444', marginBottom: 18 }}>
+            <p style={{ ...BD, fontSize: 14, color: '#444', marginBottom: 18 }}>
               Cars sit unused 90% of the time. What if no one owned one at all?
               This project reimagines Wolfsburg — one of Europe's most car-dependent cities — as a place
               where all mobility is shared, electric, and autonomous: on-demand, fleet-managed,
@@ -938,7 +938,7 @@ export default function LandingPage() {
           </div>
           <div>
             <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>Analysis</div>
-            <p style={{ ...BD, fontSize: 20, color: '#444', marginBottom: 18 }}>
+            <p style={{ ...BD, fontSize: 14, color: '#444', marginBottom: 18 }}>
               To adapt the urban environment to this new mobility scenario, three layers of spatial
               analysis were conducted — Mobility, Livability, and Centrality — feeding a hub placement
               model that identifies and ranks existing parking structures for conversion into
@@ -947,7 +947,7 @@ export default function LandingPage() {
           </div>
           <div>
             <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>Result</div>
-            <p style={{ ...BD, fontSize: 20, color: '#444' }}>
+            <p style={{ ...BD, fontSize: 14, color: '#444' }}>
               A three-tier hub network (L · M · S) replaces private vehicles with a shared fleet
               of autonomous vehicles and e-bikes. The analysis covers the entire city; urban design
               interventions are focused on the nine central districts.
