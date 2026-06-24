@@ -172,12 +172,6 @@ function makeHubInfoEl(tier, hub, hubData, maxTotal) {
   barWrap.appendChild(bar)
   barWrap.appendChild(lbl)
   el.appendChild(barWrap)
-
-  // Dot sits directly below bar — bar grows upward from the dot
-  const dot = document.createElement('div')
-  const ml = Math.round((BAR_W - dotSize) / 2)
-  dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:#111;flex-shrink:0;margin-left:${ml}px;`
-  el.appendChild(dot)
   return el
 }
 

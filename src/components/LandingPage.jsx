@@ -524,7 +524,26 @@ function HubLeftPanel({ tab, netTab }) {
               <div style={{ fontFamily: F, fontSize: 10, color: '#888', marginTop: 2 }}>trips / hour · 130,000 residents</div>
             </div>
           </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', borderTop: '1px solid #E8E8E8', paddingTop: 16, gap: 16 }}>
+            {/* Fleet bar legend */}
+            <div>
+              <div style={{ fontFamily: F, fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
+                Legend
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', flexShrink: 0 }}>
+                  {[{ h: 28, lbl: 'S' }, { h: 56, lbl: 'M' }, { h: 84, lbl: 'L' }].map(({ h, lbl }) => (
+                    <div key={lbl} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <div style={{ width: 5, height: h, background: '#111' }} />
+                      <span style={{ fontFamily: F, fontSize: 7, fontWeight: 700, color: '#111' }}>{lbl}</span>
+                    </div>
+                  ))}
+                </div>
+                <span style={{ fontFamily: F, fontSize: 10, color: '#666', lineHeight: 1.5 }}>
+                  Fleet volume per hub,<br />proportional to tier capacity
+                </span>
+              </div>
+            </div>
             <p style={{ fontFamily: F, fontSize: 11, color: '#555', lineHeight: 1.7, margin: 0 }}>
               Strategic hub placement transforms urban mobility by creating accessible
               interchange points distributed across the city's spatial gradient. Residents
