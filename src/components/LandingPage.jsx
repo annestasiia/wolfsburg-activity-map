@@ -800,6 +800,7 @@ const HERO_TITLE = '<STADT.HUB>'
 export default function LandingPage() {
   const { setActiveSection, setActiveMode, setShowLanding, setNavOpen, setLandingSectionMode, setFromLanding, landingScrollTarget, setLandingScrollTarget } = useAppStore()
   const [typedTitle, setTypedTitle] = useState('')
+  const [mapsReady, setMapsReady] = useState(false)
   const [mobilityTab, setMobilityTab] = useState('activity')
   const [livabilityTab, setLivabilityTab] = useState('livability')
   const [centralityTab, setCentralityTab] = useState('centrality')
@@ -819,7 +820,8 @@ export default function LandingPage() {
       setTypedTitle(HERO_TITLE.slice(0, i))
       if (i >= HERO_TITLE.length) clearInterval(timer)
     }, 90)
-    return () => clearInterval(timer)
+    const mapsTimer = setTimeout(() => setMapsReady(true), 800)
+    return () => { clearInterval(timer); clearTimeout(mapsTimer) }
   }, [])
 
   React.useEffect(() => {
@@ -955,48 +957,50 @@ export default function LandingPage() {
       {/* ── Analysis sections ─────────────────────────────────────────────── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '24px 0' }}>
 
-        {/* Mobility — 40/60 with special left panel */}
-        <section style={{ display: 'flex', height: '100vh', border: '1px solid #E8E8E8', overflow: 'hidden' }}>
-          <div style={{ width: '40%', flexShrink: 0, borderRight: '1px solid #E8E8E8', overflow: 'hidden' }}>
-            <MobilityLeftPanel tab={mobilityTab} />
-          </div>
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-            <MobilityMapSection tab={mobilityTab} onTabChange={setMobilityTab} />
-          </div>
-        </section>
+        {mapsReady && <>
+          {/* Mobility — 40/60 with special left panel */}
+          <section style={{ display: 'flex', height: '100vh', border: '1px solid #E8E8E8', overflow: 'hidden' }}>
+            <div style={{ width: '40%', flexShrink: 0, borderRight: '1px solid #E8E8E8', overflow: 'hidden' }}>
+              <MobilityLeftPanel tab={mobilityTab} />
+            </div>
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <MobilityMapSection tab={mobilityTab} onTabChange={setMobilityTab} />
+            </div>
+          </section>
 
-        {/* Livability — 40/60 with tabs */}
-        <section style={{ display: 'flex', height: '100vh', border: '1px solid #E8E8E8', overflow: 'hidden' }}>
-          <div style={{ width: '40%', flexShrink: 0, borderRight: '1px solid #E8E8E8', overflow: 'hidden' }}>
-            <LivabilityLeftPanel tab={livabilityTab} />
-          </div>
-          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-            <LivabilityMapSection tab={livabilityTab} onTabChange={setLivabilityTab} />
-          </div>
-        </section>
+          {/* Livability — 40/60 with tabs */}
+          <section style={{ display: 'flex', height: '100vh', border: '1px solid #E8E8E8', overflow: 'hidden' }}>
+            <div style={{ width: '40%', flexShrink: 0, borderRight: '1px solid #E8E8E8', overflow: 'hidden' }}>
+              <LivabilityLeftPanel tab={livabilityTab} />
+            </div>
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <LivabilityMapSection tab={livabilityTab} onTabChange={setLivabilityTab} />
+            </div>
+          </section>
 
-        {/* Centralities — 40/60 with tabs */}
-        <section style={{ display:'flex', height:'100vh', border:'1px solid #E8E8E8', overflow:'hidden' }}>
-          <div style={{ width:'40%', flexShrink:0, borderRight:'1px solid #E8E8E8', overflow:'hidden' }}>
-            <CentralityLeftPanel tab={centralityTab} />
-          </div>
-          <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
-            <CentralityMapSection tab={centralityTab} onTabChange={setCentralityTab} />
-          </div>
-        </section>
+          {/* Centralities — 40/60 with tabs */}
+          <section style={{ display:'flex', height:'100vh', border:'1px solid #E8E8E8', overflow:'hidden' }}>
+            <div style={{ width:'40%', flexShrink:0, borderRight:'1px solid #E8E8E8', overflow:'hidden' }}>
+              <CentralityLeftPanel tab={centralityTab} />
+            </div>
+            <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+              <CentralityMapSection tab={centralityTab} onTabChange={setCentralityTab} />
+            </div>
+          </section>
 
-        {/* Hub — 40/60 with tabs */}
-        <section style={{ display:'flex', height:'100vh', border:'1px solid #E8E8E8', overflow:'hidden' }}>
-          <div style={{ width:'40%', flexShrink:0, borderRight:'1px solid #E8E8E8', overflow:'hidden' }}>
-            <HubLeftPanel tab={hubTab} netTab={hubNetTab} />
-          </div>
-          <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
-            <HubMapSection tab={hubTab} onTabChange={setHubTab} netTab={hubNetTab} onNetTabChange={setHubNetTab} />
-          </div>
-        </section>
+          {/* Hub — 40/60 with tabs */}
+          <section style={{ display:'flex', height:'100vh', border:'1px solid #E8E8E8', overflow:'hidden' }}>
+            <div style={{ width:'40%', flexShrink:0, borderRight:'1px solid #E8E8E8', overflow:'hidden' }}>
+              <HubLeftPanel tab={hubTab} netTab={hubNetTab} />
+            </div>
+            <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+              <HubMapSection tab={hubTab} onTabChange={setHubTab} netTab={hubNetTab} onNetTabChange={setHubNetTab} />
+            </div>
+          </section>
 
-        {/* Comparative Analysis — full width, two side-by-side maps */}
-        <ComparativeAnalysisSection />
+          {/* Comparative Analysis — full width, two side-by-side maps */}
+          <ComparativeAnalysisSection />
+        </>}
 
       </div>
 
