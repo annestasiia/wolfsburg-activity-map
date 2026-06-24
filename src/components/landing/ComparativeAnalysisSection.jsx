@@ -23,7 +23,7 @@ const BUS_COLOR      = '#C90016'
 const BIKE_COLOR     = '#1A7A00'
 const COV_L_COLOR    = '#FF3503'
 const COV_M_COLOR    = '#FFD200'
-const COV_S_COLOR    = '#C90016'
+const COV_S_COLOR    = '#00DFFF'
 const ROAD_GREY      = '#AAAAAA'
 const CYCLING_GREY   = '#999999'
 
