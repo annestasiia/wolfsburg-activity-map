@@ -146,34 +146,46 @@ const TIER_LABEL = { l: 'Hub L', m: 'Hub M', s: 'Hub S' }
 const TIER_DESC  = { l: 'Fleet depot + fast charging', m: 'Intermodal transfer node', s: 'Bus/bike interchange' }
 const fmtArea = n => n >= 10000 ? `${(n / 10000).toFixed(2)} ha` : `${Math.round(n)} m²`
 
-function makeHubInfoEl(tier, hub, hubData) {
-  const color   = TC[tier]
+const MAX_BAR_H = 72  // px — tallest bar (Hub L)
+const BAR_W     = 7   // px — bar width
+
+function makeHubInfoEl(tier, hub, hubData, maxTotal) {
   const dotSize = { l: 9, m: 7, s: 5 }[tier]
-  const status  = hub?.status || (tier === 's' ? 'existing' : 'proposed')
+  const total   = hubData?._total || 0
+  const barH    = maxTotal > 0 ? Math.max(6, Math.round((total / maxTotal) * MAX_BAR_H)) : 6
+  const areaPart  = hub?.area > 0 ? fmtArea(hub.area) : ''
+  const totalPart = total > 0 ? `×${total}` : ''
 
   const el = document.createElement('div')
   el.style.cssText = `display:flex;flex-direction:column;align-items:center;pointer-events:none;`
 
-  // Plain text label — no background, compact, anchored above the dot
-  const fleetModes = Object.entries(hubData || {}).filter(([k, v]) => k !== '_total' && v > 0)
-  const lbl = document.createElement('div')
-  lbl.style.cssText = `font-family:${F};font-size:7.5px;color:#111;text-align:center;white-space:nowrap;margin-bottom:2px;line-height:1.5;`
+  // Row: black bar on the left, label+stats on the right, aligned to bottom
+  const row = document.createElement('div')
+  row.style.cssText = `display:flex;align-items:flex-end;gap:5px;margin-bottom:0;`
 
-  const namePart = hub?.name || hub?.labelBus || ''
-  const areaPart = hub?.area > 0 ? ` · ${fmtArea(hub.area)}` : ''
-  const fleetPart = fleetModes.map(([k, v]) => `${MODE_META[k]?.label||k} ×${v}`).join(' · ')
-  const totalPart = hubData?._total ? ` · total ×${hubData._total}` : ''
+  const bar = document.createElement('div')
+  bar.style.cssText = `width:${BAR_W}px;height:${barH}px;background:#111;flex-shrink:0;`
 
-  lbl.innerHTML = [
-    `<b>${TIER_LABEL[tier]}</b>${namePart ? ` · ${namePart}` : ''} · ${status}${areaPart}`,
-    fleetPart + totalPart,
-  ].filter(Boolean).join('<br>')
+  const lblCol = document.createElement('div')
+  lblCol.style.cssText = `display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:1px;`
 
-  el.appendChild(lbl)
+  const tierName = document.createElement('div')
+  tierName.style.cssText = `font-family:${F};font-size:8px;font-weight:700;color:#111;white-space:nowrap;line-height:1.4;`
+  tierName.textContent = TIER_LABEL[tier].toUpperCase()
+
+  const stats = document.createElement('div')
+  stats.style.cssText = `font-family:${F};font-size:7px;color:#555;white-space:nowrap;line-height:1.4;`
+  stats.textContent = [areaPart, totalPart].filter(Boolean).join(' · ')
+
+  lblCol.appendChild(tierName)
+  if (areaPart || totalPart) lblCol.appendChild(stats)
+  row.appendChild(bar)
+  row.appendChild(lblCol)
+  el.appendChild(row)
 
   // Stem + dot
   const stem = document.createElement('div')
-  stem.style.cssText = 'width:1px;height:5px;background:#aaa;'
+  stem.style.cssText = 'width:1px;height:14px;background:#aaa;'
   const dot = document.createElement('div')
   dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:#111;flex-shrink:0;`
   el.appendChild(stem)
@@ -498,11 +510,16 @@ export default function HubMapSection({ tab = 'placement', onTabChange, netTab =
     map.getSource('fleet-cov-s')?.setData(makeCirclesFC(sHubs, 500, 'lng', 'lat'))
 
     const fp = computeFleetPerHub(lHubs.length, mHubs.length, sHubs.length)
+    const maxTotal = Math.max(
+      fp?.hub_l?._total || 0,
+      fp?.hub_m?._total || 0,
+      fp?.hub_s?._total || 0,
+    )
     const markers = []
 
     const addLabels = (hubs, tier, lk = 'lon', lak = 'lat') => {
       for (const hub of hubs) {
-        const el = makeHubInfoEl(tier, hub, fp?.[`hub_${tier}`])
+        const el = makeHubInfoEl(tier, hub, fp?.[`hub_${tier}`], maxTotal)
         markers.push(new maplibregl.Marker({ element: el, anchor: 'bottom' })
           .setLngLat([hub[lk] ?? hub.lng, hub[lak] ?? hub.lat]).addTo(map))
       }
