@@ -339,6 +339,14 @@ export default function HubMapSection({ tab = 'placement', onTabChange, netTab =
       map.addLayer({ id: 'city-mask-fill', type: 'fill', source: 'city-mask',
         paint: { 'fill-color': '#ffffff', 'fill-opacity': 1 } })
 
+      // Hub dot letters — above city mask so they're always visible
+      for (const [tier, letter, fs] of [['l', 'L', 7], ['m', 'M', 6], ['s', 'S', 5]])
+        map.addLayer({ id: `pl-lbl-${tier}`, type: 'symbol', source: 'pl-dots',
+          filter: ['==', ['get', 'tier'], tier], layout: { visibility: 'none',
+            'text-field': letter, 'text-font': ['Noto Sans Bold'],
+            'text-size': fs, 'text-anchor': 'center', 'text-allow-overlap': true,
+          }, paint: { 'text-color': '#ffffff', 'text-opacity': 1 } })
+
       // Above mask
       map.addSource('ef-hub-l', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       map.addLayer({ id: 'ef-hub-l-layer', type: 'circle', source: 'ef-hub-l', layout: { visibility: 'none' },
@@ -442,6 +450,7 @@ export default function HubMapSection({ tab = 'placement', onTabChange, netTab =
 
     // Placement hub dots
     show('pl-dot-l', isPl && hubLMShowL); show('pl-dot-m', isPl && hubLMShowM); show('pl-dot-s', isPl && hubLMShowS)
+    show('pl-lbl-l', isPl && hubLMShowL); show('pl-lbl-m', isPl && hubLMShowM); show('pl-lbl-s', isPl && hubLMShowS)
 
     // Fleet circles (fleet markers are HTML — managed separately)
     show('fleet-cov-l-fill', isFl); show('fleet-cov-l-line', isFl)

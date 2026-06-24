@@ -863,7 +863,6 @@ export default function LandingPage() {
 
       {/* ── Project description — full width ──────────────────────────────── */}
       <section style={{ padding: '80px 72px', borderBottom: '1px solid #E8E8E8' }}>
-        <div style={EY}>About the Project</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 48 }}>
           <div>
             <div style={{ fontFamily: F, fontSize: 16, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>About the Project</div>
