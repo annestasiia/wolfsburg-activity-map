@@ -843,16 +843,15 @@ export default function LandingPage() {
         <div>
           <div style={{ ...EY, marginBottom: 36 }}>Research · Wolfsburg · 2026</div>
           <h1 style={{
-            fontFamily: "'Courier New', Courier, monospace",
-            fontSize: 'clamp(56px, 8vw, 108px)',
+            fontFamily: F, fontSize: 'clamp(72px, 10vw, 128px)',
             fontWeight: 700, color: '#111',
-            lineHeight: 0.95, letterSpacing: '-0.03em',
+            lineHeight: 0.90, letterSpacing: '-0.05em',
             margin: '0 0 32px',
           }}>
             {'<'}stadt.hub{'>'}
           </h1>
           <div style={{ width: 48, height: 2, background: '#111', marginBottom: 28 }} />
-          <p style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: 15, color: '#888', lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
+          <p style={{ fontFamily: F, fontSize: 20, color: '#444', lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
             //autonomous mobility solution for the city of Wolfsburg.<br />
             integrated multimodal mobility infrastructure
           </p>
