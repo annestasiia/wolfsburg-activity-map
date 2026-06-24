@@ -818,10 +818,12 @@ export default function LandingPage() {
     const timer = setInterval(() => {
       i++
       setTypedTitle(HERO_TITLE.slice(0, i))
-      if (i >= HERO_TITLE.length) clearInterval(timer)
+      if (i >= HERO_TITLE.length) {
+        clearInterval(timer)
+        setMapsReady(true)
+      }
     }, 90)
-    const mapsTimer = setTimeout(() => setMapsReady(true), 800)
-    return () => { clearInterval(timer); clearTimeout(mapsTimer) }
+    return () => clearInterval(timer)
   }, [])
 
   React.useEffect(() => {
