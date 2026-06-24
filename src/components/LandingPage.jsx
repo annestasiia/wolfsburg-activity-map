@@ -856,7 +856,7 @@ export default function LandingPage() {
             Integrated multimodal mobility infrastructure.
           </p>
         </div>
-        <div style={{ fontFamily: F, fontSize: 11, color: '#ccc', letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 56 }}>
+        <div style={{ fontFamily: F, fontSize: 15, fontWeight: 600, color: '#111', letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 56 }}>
           Scroll to explore ↓
         </div>
 
@@ -872,7 +872,7 @@ export default function LandingPage() {
             rel="noopener noreferrer"
             style={{ display: 'block', textDecoration: 'none', position: 'relative', flexShrink: 0 }}
           >
-            <div style={{ position: 'relative', width: 380, borderRadius: 4, overflow: 'hidden', background: '#E8E8E8', border: '1px solid #D8D8D8' }}>
+            <div style={{ position: 'relative', width: 494, borderRadius: 4, overflow: 'hidden', background: '#E8E8E8', border: '1px solid #D8D8D8' }}>
               <video
                 src={`${import.meta.env.BASE_URL}Video/presentation.mp4`}
                 autoPlay loop muted playsInline
