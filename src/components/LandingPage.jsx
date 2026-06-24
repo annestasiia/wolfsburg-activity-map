@@ -852,8 +852,7 @@ export default function LandingPage() {
           </h1>
           <div style={{ width: 48, height: 2, background: '#111', marginBottom: 28 }} />
           <p style={{ fontFamily: F, fontSize: 20, color: '#444', lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
-            //autonomous mobility solution for the city of Wolfsburg.<br />
-            integrated multimodal mobility infrastructure
+            //integrated multimodal mobility infrastructure
           </p>
         </div>
         <div style={{ fontFamily: F, fontSize: 15, fontWeight: 600, color: '#111', letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 56 }}>
