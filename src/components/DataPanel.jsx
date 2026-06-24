@@ -648,12 +648,12 @@ function FleetTable() {
 // ─── PART 3 CHARTS ────────────────────────────────────────────────────────────
 function HubSummaryGrid() {
   const cards = [
-    { label: 'Hub L', value: String(hub_l_count), sub: 'large interchange hubs', color: HUB_COLORS_UI.hub_l },
-    { label: 'Hub M', value: String(hub_m_count), sub: 'district mobility hubs', color: HUB_COLORS_UI.hub_m },
-    { label: 'Hub S', value: String(hub_s_count), sub: 'neighbourhood micro-hubs', color: HUB_COLORS_UI.hub_s },
-    { label: 'Total Charging', value: fmt(hub_total_charging), sub: 'charging points (all hubs)', color: '#2980B9' },
-    { label: 'Hub Footprint', value: fmt(hub_total_footprint), sub: `m²  (${hub_footprint_pct}% of zone)`, color: '#E67E22' },
-    { label: 'Total Fleet', value: fmt(total_fleet), sub: 'vehicles + bikes', color: '#8E44AD' },
+    { label: 'Hub L — total area', value: `${fmt(Math.round(S_hub_area.hub_l * HUB_COUNTS.hub_l))} m²`, sub: 'multi-level parking garages (repurposed)', color: HUB_COLORS_UI.hub_l },
+    { label: 'Hub M — total area', value: `${fmt(Math.round(S_hub_area.hub_m * HUB_COUNTS.hub_m))} m²`, sub: 'underground parking (repurposed)', color: HUB_COLORS_UI.hub_m },
+    { label: 'Hub S — total area', value: `${fmt(Math.round(S_hub_area.hub_s * HUB_COUNTS.hub_s))} m²`, sub: 'on-street docking points', color: HUB_COLORS_UI.hub_s },
+    { label: 'Combined footprint', value: `${fmt(area_total_all_hubs)} m²`, sub: `${area_pct_of_zone}% of zone · ${(area_total_all_hubs / 10000).toFixed(2)} ha`, color: '#E67E22' },
+    { label: 'Total fleet', value: fmt(total_fleet), sub: 'vehicles + bikes (all tiers)', color: '#8E44AD' },
+    { label: 'Fleet replacement', value: `1 : ${replacement_ratio}`, sub: `replaces ${fmt(CARS_REPLACED)} private cars/day`, color: '#0A7E45' },
   ]
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -679,8 +679,7 @@ function HubHeatmap() {
             <th style={{ width: 120, textAlign: 'left', fontFamily: SANS, fontSize: 13, color: C.text3, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '0 8px 10px' }} />
             {TIERS.map(t => (
               <th key={t} style={{ textAlign: 'center', fontFamily: SANS, fontSize: 13, fontWeight: 700, color: HUB_COLORS_UI[t], padding: '0 0 10px', letterSpacing: '-0.01em' }}>
-                {HUB_LABELS_UI[t]}<br />
-                <span style={{ fontWeight: 400, color: C.text3, fontSize: 13 }}>{HUB_COUNTS[t]} hubs</span>
+                {HUB_LABELS_UI[t]}
               </th>
             ))}
           </tr>
@@ -741,7 +740,7 @@ function HubBars() {
             </div>
             <div style={{ marginTop: 8, textAlign: 'center' }}>
               <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: HUB_COLORS_UI[tier] }}>{HUB_LABELS_UI[tier]}</div>
-              <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{HUB_COUNTS[tier]} hubs · {fmt(total)} total</div>
+              <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{fmt(total)} total fleet</div>
             </div>
           </div>
         )
@@ -764,9 +763,14 @@ const HUB_CARD_MODES = {
   hub_s: ['e_bike', 'autonomous_pod'],
 }
 const HUB_CARD_DESC = {
-  hub_l: 'Large interchange · parking garage / transit node',
-  hub_m: 'District hub · street-level, covered',
+  hub_l: 'Large interchange · multi-level parking garage',
+  hub_m: 'District hub · underground parking',
   hub_s: 'Micro-hub · on-street docking point',
+}
+const HUB_CARD_SUSTAINABILITY = {
+  hub_l: 'Adaptive reuse of existing multi-storey car parks — no new land required, structure repurposed as EV depot + transit node.',
+  hub_m: 'Underground parking converted to shared-fleet depot — recovers street-level space, retains structural shell.',
+  hub_s: 'Replaces on-street car parking bays — minimal construction, embedded in existing pavement.',
 }
 
 function HubCards() {
@@ -774,6 +778,8 @@ function HubCards() {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
       {TIERS.map(tier => {
         const color = HUB_COLORS_UI[tier]
+        const modes = Object.keys(MODE_META)
+        const tierTotal = modes.reduce((s, m) => s + (fleet_at_tier[tier][m] || 0), 0)
         return (
           <div key={tier} style={{ background: C.card, borderRadius: 0, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
             <div style={{ padding: '18px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
@@ -781,29 +787,30 @@ function HubCards() {
                 <div style={{ width: 12, height: 12, borderRadius: '50%', background: color }} />
                 <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 400, color: C.text1 }}>{HUB_LABELS_UI[tier]}</span>
               </div>
-              <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 5 }}>{HUB_COUNTS[tier]} hubs · {HUB_CARD_DESC[tier]}</div>
+              <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, marginTop: 5 }}>{HUB_CARD_DESC[tier]}</div>
             </div>
             <div style={{ padding: '14px 20px' }}>
+              <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text3, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>Approximate vehicle mix</div>
               {HUB_CARD_MODES[tier].map(mode => {
-                const qty = fleet_per_hub[tier][mode] || 0
-                if (qty === 0) return null
+                const total = fleet_at_tier[tier][mode] || 0
+                if (total === 0) return null
                 return (
                   <div key={mode} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: `1px solid ${C.border}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                       <div style={{ width: 7, height: 7, borderRadius: '50%', background: MODE_META[mode].color }} />
                       <span style={{ fontFamily: SANS, fontSize: 13, color: C.text2 }}>{MODE_META[mode].label}</span>
                     </div>
-                    <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1 }}>{qty}</span>
+                    <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1 }}>{fmt(total)}</span>
                   </div>
                 )
               })}
-              <div style={{ marginTop: 12 }}>
-                {[['Charging points', hub_charging_per[tier]], ['Footprint', `${hub_footprint_per[tier].toLocaleString('de-DE')} m²`]].map(([label, value]) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                    <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{label}</span>
-                    <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text1 }}>{value}</span>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0 6px', borderTop: `2px solid ${C.border}`, marginTop: 4 }}>
+                <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: C.text1 }}>Total fleet (tier)</span>
+                <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color }}>≈ {fmt(tierTotal)}</span>
+              </div>
+              <div style={{ marginTop: 12, padding: '10px 12px', background: '#F8F8F6', borderRadius: 0, border: `1px solid ${C.border}` }}>
+                <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 600, color: '#0A7E45', marginBottom: 4 }}>Sustainability approach</div>
+                <div style={{ fontFamily: SANS, fontSize: 13, color: C.text3, lineHeight: 1.6 }}>{HUB_CARD_SUSTAINABILITY[tier]}</div>
               </div>
             </div>
           </div>
@@ -823,7 +830,7 @@ function HubInfraTable() {
             <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 13, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Mode</th>
             {TIERS.map(t => (
               <th key={t} colSpan={2} style={{ textAlign: 'center', padding: '8px 6px', fontWeight: 700, color: HUB_COLORS_UI[t], fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase', borderLeft: `1px solid ${C.border}` }}>
-                {HUB_LABELS_UI[t]} ({HUB_COUNTS[t]})
+                {HUB_LABELS_UI[t]}
               </th>
             ))}
           </tr>
@@ -878,9 +885,9 @@ const AREA_MAPS = { S_fleet_area, S_circ_area, S_charging_area, S_program_area }
 
 function HubAreaSummaryGrid() {
   const cards = [
-    { label: 'Hub L area', value: `${Math.round(S_hub_area.hub_l)} m²`, sub: `per hub · ${hub_l_count} hubs`, color: HUB_COLORS_UI.hub_l },
-    { label: 'Hub M area', value: `${Math.round(S_hub_area.hub_m)} m²`, sub: `per hub · ${hub_m_count} hubs`, color: HUB_COLORS_UI.hub_m },
-    { label: 'Hub S area', value: `${Math.round(S_hub_area.hub_s)} m²`, sub: `per hub · ${hub_s_count} hubs`, color: HUB_COLORS_UI.hub_s },
+    { label: 'Hub L area', value: `${fmt(Math.round(S_hub_area.hub_l * HUB_COUNTS.hub_l))} m²`, sub: `combined · ${Math.round(S_hub_area.hub_l)} m² per site`, color: HUB_COLORS_UI.hub_l },
+    { label: 'Hub M area', value: `${fmt(Math.round(S_hub_area.hub_m * HUB_COUNTS.hub_m))} m²`, sub: `combined · ${Math.round(S_hub_area.hub_m)} m² per site`, color: HUB_COLORS_UI.hub_m },
+    { label: 'Hub S area', value: `${fmt(Math.round(S_hub_area.hub_s * HUB_COUNTS.hub_s))} m²`, sub: `combined · ${Math.round(S_hub_area.hub_s)} m² per site`, color: HUB_COLORS_UI.hub_s },
     { label: 'Total footprint', value: `${fmt(area_total_all_hubs)} m²`, sub: `${area_pct_of_zone}% of 4 km² zone`, color: '#E67E22' },
     { label: 'Total hectares', value: `${(area_total_all_hubs / 10000).toFixed(2)} ha`, sub: 'combined hub land use', color: '#7C3AED' },
     { label: 'Circ. factor', value: `×${CIRCULATION_FACTOR.hub_s}–×${CIRCULATION_FACTOR.hub_l}`, sub: 'fleet area multiplier by tier', color: '#2980B9' },
@@ -903,7 +910,7 @@ function HubAreaBars() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: HUB_COLORS_UI[tier] }} />
                 <span style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: HUB_COLORS_UI[tier] }}>{HUB_LABELS_UI[tier]}</span>
-                <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{HUB_COUNTS[tier]} hubs · {fmt(S_hub_area[tier] * HUB_COUNTS[tier])} m² total</span>
+                <span style={{ fontFamily: SANS, fontSize: 13, color: C.text3 }}>{fmt(S_hub_area[tier] * HUB_COUNTS[tier])} m² combined · {Math.round(S_hub_area[tier])} m² per site</span>
               </div>
               <span style={{ fontFamily: SANS, fontSize: 14, fontWeight: 700, color: C.text1 }}>{Math.round(total)} m²</span>
             </div>
@@ -1034,6 +1041,72 @@ function HubAreaTable() {
   )
 }
 
+// ─── PART 5 COST COMPARISON ──────────────────────────────────────────────────
+const COST_ROWS = [
+  { item: 'Vehicle acquisition / financing', private: 350, shared: 0,   note: 'Depreciation on new VW Golf (~€30k / 7 yr) or lease' },
+  { item: 'Insurance (Vollkasko)',           private: 95,  shared: 0,   note: 'Full comprehensive, Wolfsburg risk zone' },
+  { item: 'Fuel / energy',                   private: 130, shared: 0,   note: 'avg 1,000 km/month, €0.175/km petrol incl. road losses' },
+  { item: 'Maintenance, tyres, repairs',     private: 75,  shared: 0,   note: 'ADAC average, amortised across ownership period' },
+  { item: 'Parking (resident permit + ad-hoc)', private: 55, shared: 0, note: 'City centre resident permit + occasional paid parking' },
+  { item: 'Annual fees (TÜV, KFZ-Steuer)',   private: 22,  shared: 0,   note: '€105 tax + €155 TÜV biennial, annualised' },
+  { item: 'Autonomous shuttle / pod rides',  private: 0,   shared: 62,  note: '25 trips/month × €2.50 avg (MOIA Hamburg comparable)' },
+  { item: 'Car-share EV (occasional use)',   private: 0,   shared: 27,  note: '2 × 45 min × €0.30/min — longer trips, cargo runs' },
+  { item: 'E-bike access',                   private: 0,   shared: 5,   note: 'Low-cost subscription or free at hub S' },
+]
+const COST_PRIVATE_TOTAL = COST_ROWS.reduce((s, r) => s + r.private, 0)
+const COST_SHARED_TOTAL  = COST_ROWS.reduce((s, r) => s + r.shared,  0)
+const COST_SAVING_MONTH  = COST_PRIVATE_TOTAL - COST_SHARED_TOTAL
+const COST_SAVING_YEAR   = COST_SAVING_MONTH * 12
+
+function CostComparison() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: SANS, fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${C.border}` }}>
+              <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 13, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Monthly cost item</th>
+              <th style={{ textAlign: 'right', padding: '8px 14px', fontWeight: 700, color: '#E63946', fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Private car</th>
+              <th style={{ textAlign: 'right', padding: '8px 14px', fontWeight: 700, color: '#0A7E45', fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Shared mobility</th>
+              <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 600, color: C.text3, fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Basis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {COST_ROWS.map(({ item, private: priv, shared, note }) => (
+              <tr key={item} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td style={{ padding: '9px 10px', color: C.text1, fontWeight: 500 }}>{item}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: priv > 0 ? '#E63946' : C.text3, fontWeight: priv > 0 ? 700 : 400 }}>
+                  {priv > 0 ? `€ ${priv}` : '—'}
+                </td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: shared > 0 ? '#0A7E45' : C.text3, fontWeight: shared > 0 ? 700 : 400 }}>
+                  {shared > 0 ? `€ ${shared}` : '—'}
+                </td>
+                <td style={{ padding: '9px 10px', color: C.text3, fontSize: 13 }}>{note}</td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: `2px solid ${C.border}`, background: '#FFFFFF' }}>
+              <td style={{ padding: '12px 10px', fontWeight: 700, color: C.text1, fontSize: 14 }}>Monthly total</td>
+              <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: '#E63946', fontVariantNumeric: 'tabular-nums' }}>€ {COST_PRIVATE_TOTAL}</td>
+              <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: SERIF, fontSize: 22, fontWeight: 400, color: '#0A7E45', fontVariantNumeric: 'tabular-nums' }}>€ {COST_SHARED_TOTAL}</td>
+              <td style={{ padding: '12px 10px', color: C.text3 }}>ADAC 2024 · MiD 2017 · MOIA Hamburg</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+        <KCard label="Monthly saving" value={`€ ${COST_SAVING_MONTH}`} sub="shared vs. private car" color="#0A7E45" />
+        <KCard label="Annual saving"  value={`€ ${COST_SAVING_YEAR.toLocaleString('de-DE')}`} sub="freed household budget" color="#2980B9" />
+        <KCard label="Cost reduction" value={`${Math.round((COST_SAVING_MONTH / COST_PRIVATE_TOTAL) * 100)}%`} sub="of monthly transport spend" color="#8E44AD" />
+      </div>
+
+      <div style={{ padding: '14px 18px', background: C.card, border: `1px solid ${C.border}`, borderRadius: 0, fontSize: 13, fontFamily: SANS, color: C.text3, lineHeight: 1.7 }}>
+        <strong style={{ color: C.text2 }}>Important caveats:</strong> This comparison assumes a <em>frequent urban user</em> (~25 shared trips/month within the Wolfsburg zone). Private car costs exclude the psychological cost of ownership and the time spent driving, parking and maintaining a vehicle. Shared mobility costs exclude the occasional convenience premium for spontaneous longer trips. Rural or commuting households outside the zone may face higher shared-mobility costs until network coverage expands.
+      </div>
+    </div>
+  )
+}
+
 // ─── NAV ─────────────────────────────────────────────────────────────────────
 const NAV = [
   { href: '#overview',     label: 'Overview' },
@@ -1061,6 +1134,8 @@ const NAV = [
   { href: '#hub-area-bar', label: 'Area breakdown' },
   { href: '#hub-area-pie', label: 'Fleet footprint' },
   { href: '#hub-area-tbl', label: 'Area table' },
+  { href: '#cost',         label: '— Cost Comparison' },
+  { href: '#cost-tbl',     label: 'Shared vs. private' },
   { href: '#methodology',  label: '— Methodology' },
   { href: '#method-p1',    label: 'Baseline' },
   { href: '#method-p2',    label: 'Fleet sizing' },
@@ -1261,11 +1336,12 @@ export default function DataPanel() {
 
           <div id="hubs" className="dp-a" style={{ marginBottom: 8 }}>
             <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 3 · Hub Network</div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Hub Count &amp; Distribution</h2>
+            <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Hub Network &amp; Fleet</h2>
             <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
-              Three hub tiers serve different functions: {hub_l_count} large interchange hubs anchor
-              the zone at existing parking structures, {hub_m_count} district hubs provide mid-scale coverage,
-              and {hub_s_count} micro-hubs ensure walkable access within 200 m across the entire {ZONE_AREA_KM2} km² zone.
+              Three hub tiers serve different functions: large interchange hubs (Hub L) anchor the zone
+              at existing multi-level parking structures; district hubs (Hub M) occupy repurposed underground
+              car parks; and neighbourhood micro-hubs (Hub S) replace on-street parking across the {ZONE_AREA_KM2} km² zone.
+              Together they accumulate a total fleet of {fmt(total_fleet)} vehicles and bikes.
             </p>
           </div>
 
@@ -1299,8 +1375,8 @@ export default function DataPanel() {
             </h2>
             <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
               Each hub tier has a distinct spatial footprint determined by its vehicle mix,
-              circulation requirements, and program elements. Combined, all {hub_l_count + hub_m_count + hub_s_count} hubs
-              require {fmt(area_total_all_hubs)} m² — just {area_pct_of_zone}% of the zone,
+              circulation requirements, and program elements. Combined, the hub network
+              requires {fmt(area_total_all_hubs)} m² — just {area_pct_of_zone}% of the zone,
               or {(area_total_all_hubs / 10000).toFixed(2)} hectares.
             </p>
           </div>
@@ -1319,6 +1395,24 @@ export default function DataPanel() {
 
           <Sect id="hub-area-tbl" eyebrow="Full breakdown · circulation factors · per-hub and total" title="Hub Area Table">
             <HubAreaTable />
+          </Sect>
+
+          {/* ── PART 5 COST COMPARISON ── */}
+          <Rule label="Cost Comparison" />
+
+          <div id="cost" className="dp-a" style={{ marginBottom: 8 }}>
+            <div style={{ fontFamily: SANS, fontSize: 13, fontWeight: 700, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Part 5 · Economics</div>
+            <h2 style={{ fontFamily: SERIF, fontSize: 34, fontWeight: 400, color: C.text1, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>Shared vs. Private Car</h2>
+            <p style={{ fontFamily: SERIF, fontSize: 17, color: C.text2, marginTop: 14, lineHeight: 1.7, maxWidth: 520, marginBottom: 0 }}>
+              A direct cost comparison for a typical Wolfsburg resident making ~25 urban
+              trips per month. All private-car figures follow <strong style={{ color: C.text1 }}>ADAC Autokostenrechner 2024</strong> (VW Golf 1.5 TSI, new).
+              Shared-mobility costs are benchmarked from <strong style={{ color: C.text1 }}>MOIA Hamburg</strong> per-trip pricing
+              and <strong style={{ color: C.text1 }}>Share Now</strong> per-minute rates.
+            </p>
+          </div>
+
+          <Sect id="cost-tbl" eyebrow="Monthly breakdown · approximate values · ADAC 2024 / MOIA Hamburg" title="Monthly Cost Breakdown">
+            <CostComparison />
           </Sect>
 
           {/* ── METHODOLOGY ── */}
@@ -1487,11 +1581,11 @@ export default function DataPanel() {
                   real-time information displays, and minor service areas.
                 </p>
                 <p style={{ fontFamily: SERIF, fontSize: 16, color: C.text2, lineHeight: 1.75, margin: 0 }}>
-                  Total land use across all {hub_l_count + hub_m_count + hub_s_count} hubs is{' '}
+                  Total land use across the entire hub network is{' '}
                   <strong style={{ color: C.text1 }}>{fmt(area_total_all_hubs)} m²</strong> ({(area_total_all_hubs / 10000).toFixed(2)} ha),
                   equivalent to {area_pct_of_zone}% of the 4 km² project zone —
                   comparable to a single urban block. The concentration of area in Hub L
-                  ({Math.round(S_hub_area.hub_l * hub_l_count / area_total_all_hubs * 100)}% of total despite only {hub_l_count} sites)
+                  ({Math.round(S_hub_area.hub_l * hub_l_count / area_total_all_hubs * 100)}% of total footprint)
                   reflects the bus and car-share depot requirements at large interchange nodes.
                 </p>
               </div>
