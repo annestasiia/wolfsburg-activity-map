@@ -835,7 +835,7 @@ export default function LandingPage() {
 
       {/* ── Hero — full width ──────────────────────────────────────────────── */}
       <section style={{
-        minHeight: '100vh',
+        minHeight: '100vh', position: 'relative',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
         padding: '0 72px 72px',
         borderBottom: '1px solid #E8E8E8',
@@ -858,6 +858,52 @@ export default function LandingPage() {
         </div>
         <div style={{ fontFamily: F, fontSize: 11, color: '#ccc', letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 56 }}>
           Scroll to explore ↓
+        </div>
+
+        {/* ── Right column: video + credits ─────────────────────────────── */}
+        <div style={{
+          position: 'absolute', right: 72, bottom: 72,
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 20,
+        }}>
+          {/* Video — loops like GIF, click opens project site */}
+          <a
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'block', textDecoration: 'none', position: 'relative' }}
+          >
+            <video
+              src="/Video/presentation.mp4"
+              autoPlay loop muted playsInline
+              style={{
+                display: 'block', width: 300, borderRadius: 4,
+                border: '1px solid #E8E8E8',
+                objectFit: 'cover',
+              }}
+            />
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              padding: '8px 12px',
+              background: 'rgba(0,0,0,0.55)',
+              borderRadius: '0 0 4px 4px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span style={{ fontFamily: F, fontSize: 11, color: '#fff', fontWeight: 600, letterSpacing: '0.04em' }}>
+                Project Presentation
+              </span>
+              <span style={{ fontFamily: F, fontSize: 13, color: '#fff' }}>↗</span>
+            </div>
+          </a>
+
+          {/* Credits */}
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: F, fontSize: 11, color: '#888', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>
+              Bauhaus-Universität Weimar · M.Sc. IUDD
+            </div>
+            {['Omer Faruk Aslan', 'Anastasiia Mulyndina', 'Basak Pinar'].map(name => (
+              <div key={name} style={{ fontFamily: F, fontSize: 13, color: '#444', lineHeight: 1.7 }}>{name}</div>
+            ))}
+          </div>
         </div>
       </section>
 
