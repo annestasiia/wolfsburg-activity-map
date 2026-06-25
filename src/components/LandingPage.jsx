@@ -887,7 +887,7 @@ export default function LandingPage() {
         }}>
           {/* Video — loops like GIF, click opens project site */}
           <a
-            href="#"
+            href="https://ofa5406.github.io/wolfsburg/"
             target="_blank"
             rel="noopener noreferrer"
             style={{ display: 'block', textDecoration: 'none', position: 'relative', flexShrink: 0 }}
