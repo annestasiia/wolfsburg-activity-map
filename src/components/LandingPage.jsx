@@ -896,7 +896,7 @@ export default function LandingPage() {
               <video
                 src={`${import.meta.env.BASE_URL}Video/presentation.mp4`}
                 autoPlay loop muted playsInline preload="auto"
-                style={{ display: 'block', width: '100%', height: 'auto' }}
+                style={{ display: 'block', width: '100%', height: 'auto', pointerEvents: 'none' }}
               />
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
